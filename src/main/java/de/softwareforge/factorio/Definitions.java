@@ -14,9 +14,11 @@ public final class Definitions {
     public static Path cache(Project project) {
         return PathManager.getSystemDir().resolve("softwareforge-factorio").resolve(Integer.toHexString(Toolkit.root(project).toString().hashCode()));
     }
-    public static void generate(Project project, ProgressIndicator indicator, Consumer<String> log) throws Exception {
+    public static synchronized void generate(Project project, ProgressIndicator indicator, Consumer<String> log) throws Exception {
         var settings = FactorioSettings.get(project);
-        Path root = Toolkit.root(project), active = Toolkit.activeMod(project), cache = cache(project);
+        Path root = Toolkit.root(project), cache = cache(project);
+        var registry=FactorioModules.get(project);
+        var mods=registry.mods();
         Files.createDirectories(cache);
         Path executable = Path.of(settings.factorio).toAbsolutePath();
         Path docs = settings.apiDocs.isBlank() ? executable.getParent().getParent().resolve("doc-html") : Path.of(settings.apiDocs);
@@ -36,11 +38,10 @@ public final class Definitions {
         Path core = docs.getParent().resolve("data/core/lualib");
         if (Files.isDirectory(core)) libraries.add(core.toString());
         Map<String,String> modules = new LinkedHashMap<>();
-        List<Path> dependencies = new ArrayList<>(PathsAndMods.lines(settings.dependencies));
-        dependencies.addAll(PathsAndMods.mods(root));
+        List<Path> dependencies = new ArrayList<>();
+        for(var mod:mods) { dependencies.addAll(PathsAndMods.lines(registry.dependencies(mod))); addMod(mod.root(),libraries,modules); }
         for (Path dependency : dependencies) {
             indicator.checkCanceled();
-            if (dependency.equals(active)) continue;
             if (Files.isRegularFile(dependency) && dependency.toString().endsWith(".zip")) {
                 var hash = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(dependency));
                 Path target = cache.resolve("dependencies/" + HexFormat.of().formatHex(hash).substring(0,24));
@@ -52,12 +53,22 @@ public final class Definitions {
         Path config = root.resolve(".emmyrc.json"), ownership = cache.resolve("emmy-owned.json");
         JsonObject before = Files.exists(config) ? PathsAndMods.read(config) : new JsonObject();
         JsonObject previous = Files.exists(ownership) ? PathsAndMods.read(ownership) : new JsonObject();
-        JsonObject next = EmmyConfig.merge(before, previous, libraries, List.of(active.toString()), modules);
+        JsonObject next = EmmyConfig.merge(before, previous, libraries, mods.stream().map(m->m.root().toString()).toList(), modules);
         // Carry forward ownership of retained managed entries as well as newly introduced ones.
         JsonObject owned = EmmyConfig.ownership(EmmyConfig.merge(before,previous,List.of(),List.of(),Map.of()), next);
         PathsAndMods.write(config, next); PathsAndMods.write(ownership, owned);
         com.redhat.devtools.lsp4ij.LanguageServerManager.getInstance(project).start("EmmyLua", new com.redhat.devtools.lsp4ij.LanguageServerManager.StartOptions().setForceRestart(true));
         log.accept("Generated Factorio " + version + " API and updated EmmyLua libraries.\n");
+    }
+    public static synchronized void clearManaged(Project project) throws Exception {
+        Path config=Toolkit.root(project).resolve(".emmyrc.json"),ownership=cache(project).resolve("emmy-owned.json");
+        if(!Files.isRegularFile(config)||!Files.isRegularFile(ownership))return;
+        var before=PathsAndMods.read(config);var owned=PathsAndMods.read(ownership);
+        var next=EmmyConfig.merge(before,owned,List.of(),List.of(),Map.of());
+        if(!before.equals(next)) {
+            PathsAndMods.write(config,next);PathsAndMods.write(ownership,new JsonObject());
+            com.redhat.devtools.lsp4ij.LanguageServerManager.getInstance(project).start("EmmyLua",new com.redhat.devtools.lsp4ij.LanguageServerManager.StartOptions().setForceRestart(true));
+        }
     }
     private static void addMod(Path mod, List<String> libraries, Map<String,String> modules) throws Exception {
         String name = PathsAndMods.read(mod.resolve("info.json")).get("name").getAsString();

@@ -10,6 +10,7 @@ dependencies {
         local(providers.gradleProperty("ideaPath").get())
         localPlugin(providers.gradleProperty("lsp4ijPath").get())
         localPlugin(providers.gradleProperty("emmyPath").get())
+        localPlugin(file(providers.gradleProperty("ideaPath").get()).resolve("Contents/plugins/java"))
         instrumentationTools()
     }
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")

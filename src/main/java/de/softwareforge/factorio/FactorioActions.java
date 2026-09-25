@@ -48,7 +48,7 @@ public final class FactorioActions {
     public static final class Restart extends ProjectAction {
         @Override public void actionPerformed(AnActionEvent e) {
             Project p=e.getProject(); if(p==null)return;
-            LanguageServerManager.getInstance(p).start(FactorioLanguageServer.ID,new LanguageServerManager.StartOptions().setForceRestart(true));
+            if(FactorioSettings.servicesEnabled(p)) LanguageServerManager.getInstance(p).start(FactorioLanguageServer.ID,new LanguageServerManager.StartOptions().setForceRestart(true));
         }
     }
     private interface Job { void run(ProgressIndicator indicator,Consumer<String> output)throws Exception; }
@@ -56,7 +56,7 @@ public final class FactorioActions {
         var documents=FileDocumentManager.getInstance();
         for(var document:documents.getUnsavedDocuments()) {
             var file=documents.getFile(document);
-            if(file!=null && Path.of(file.getPath()).normalize().startsWith(Toolkit.root(p))) documents.saveDocument(document);
+            if(file!=null && (Path.of(file.getPath()).normalize().startsWith(directory) || (directory.equals(Toolkit.root(p)) && FactorioModules.get(p).containing(Path.of(file.getPath()))!=null))) documents.saveDocument(document);
         }
         ProgressManager.getInstance().run(new Task.Backgroundable(p,title,true) {
             @Override public void run(ProgressIndicator indicator) {
@@ -80,11 +80,13 @@ public final class FactorioActions {
         protected Command(String command) { this.command=command; }
         @Override public void actionPerformed(AnActionEvent e) {
             Project p=e.getProject(); if(p==null)return;
-            final Path mod;
-            try { mod=Toolkit.activeMod(p); } catch(Exception ex) { report(p,ex.getMessage(),true); return; }
+            final ModDiscovery.Mod selected;
+            try { selected=Toolkit.selectMod(e); } catch(Exception ex) { report(p,ex.getMessage(),true); return; }
+            if(selected==null)return;
+            final Path mod=selected.root();
             List<String> args=new ArrayList<>(); args.add(command);
             Map<String,String> env=new HashMap<>();
-            String config=FactorioSettings.get(p).packageConfig;
+            String config=FactorioModules.get(p).packageConfig(selected);
             if(!config.isBlank())env.put("FMTK_CONFIG",config);
             if(command.equals("run")) { String script=Messages.showInputDialog(p,"Script name from info.json package.scripts","Run Package Script",null); if(script==null||script.isBlank())return; args.add(script); }
             if(command.equals("upload")) { String zip=Messages.showInputDialog(p,"Absolute path of ZIP to upload","Upload Mod ZIP",null); if(zip==null||zip.isBlank())return; args.add(zip); }

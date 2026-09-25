@@ -21,3 +21,20 @@ No production release, upstream push, or everyday IDE install is required.
 See [ACCEPTANCE.md](ACCEPTANCE.md) for verified results, remaining UI checks,
 and the upstream rapid-open/edit ordering limitation. Checked implementation
 items do not imply their IDE UI acceptance has passed.
+
+## Project and module support
+
+- [x] Standalone Factorio Mod project/module wizard and safe skeleton generation
+- [x] Existing-sources import with module metadata stored in the IDE project
+- [x] Automatic discovery, legacy migration and explicit service policy
+- [x] Shared toolchain and staged per-module dependency/package overrides
+- [x] Context-selected mod commands and module-associated debug configurations
+- [x] Multiple FMTK workspace folders and managed Emmy workspace roots
+- [x] Isolated New Project/New Module/import/package/debug UI checks
+- [ ] Correct short and named cross-mod Lua imports with multiple attached mods
+
+The final item fails in the bundled EmmyLua server's global module index. The
+protocol reproduction is `scripts/test-module-services.py`; it intentionally
+returns failure until the import checks pass. A separate EmmyLua server patch
+would extend the approved plan's no-additional-EmmyLua-patch boundary; the scope
+question is pending. No Rust server change is included in this checkpoint.

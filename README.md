@@ -27,17 +27,40 @@ Install EmmyLua2 and LSP4IJ, then use **Install Plugin from Disk** for the ZIP i
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
 `aarch64` fix (the local `0.24.0-115-IDEA262-patched` build is tested).
 
-Open the mod or multi-mod workspace. Under **Tools → Factorio → Configure
-Factorio Project**, enable services and select the active mod directory containing
-`info.json`. Set executable paths and additional dependency directories or ZIPs.
-Then run **Regenerate Factorio API Definitions**. Generation uses matching local
-API JSON, keeps generated data in IDE caches, and merges libraries into
-`.emmyrc.json` without replacing unrelated settings.
+Choose **Factorio Mod** in New Project or New Module. This is a separate
+wizard entry alongside Lua. Enter the mod's name, title, author and target
+Factorio major/minor version. It creates `info.json`, `changelog.txt`, the three
+data-stage files, `control.lua`, `settings.lua`, and `prototypes`, `scripts`,
+`graphics` directories. Existing mod files are never overwritten.
+
+For an existing mod, use **New Module from Existing Sources**, select its folder,
+and select the **Factorio Mod** import model. Each module should have one content
+root containing `info.json`. External folders are supported; nested dependencies
+are not automatically imported as modules. Duplicate mod identities and ambiguous
+multi-root modules are reported instead of selected arbitrarily.
+
+**Tools → Factorio → Configure Factorio Project** lists detected mods. Services
+start automatically for detected mods; explicit enable/disable is retained.
+Factorio, Node, API JSON and CLI settings are shared by the project. Dependencies
+and the package config have project defaults and optional module overrides.
+Dependency paths are one per line, including in the editable module table.
+API generation uses matching local JSON, keeps generated data in IDE caches,
+and updates managed entries in `.emmyrc.json` while preserving unrelated settings.
+Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
+Legacy active-mod settings remain usable until that root is attached as a module.
+
+**Current multi-module limitation:** the bundled EmmyLua server can resolve a
+short `require("helper")` to another attached mod's file, and named cross-mod
+imports between attached roots fail. Multi-module Lua import correctness has
+not passed acceptance; use a separate IDE project per mod when relying on those
+imports. Locale services and context-selected packaging passed the multi-module
+checks. See [acceptance status](docs/ACCEPTANCE.md).
 
 Locale keys and changelog support run alongside EmmyLua2. A **Restart Factorio
 Language Service** action is available; process logs also appear in LSP4IJ.
 
-Create a **Factorio** run configuration. Set the Factorio executable, mod
+Create a **Factorio** run configuration and select its module (a sole detected
+module is selected automatically for new configurations). Set the Factorio executable, mod
 directory, save ZIP, config.ini and working directory. For testing, configure a
 separate Factorio write-data directory. Use **Debug** and set Factorio Lua
 breakpoints in the gutter. The debugger talks directly to `factorio --dap`.
@@ -47,7 +70,8 @@ breakpoints in the gutter. The debugger talks directly to `factorio --dap`.
 The Factorio menu exposes package, version increment, changelog datestamp,
 package scripts, ZIP upload, portal details and publish. These use FMTK's CLI
 semantics, including `info.json` package options and hook scripts. Select the
-active mod before invoking them. Commands run in the background and can be
+mod in the editor or Project view before invoking them. When context does not
+identify a mod, the action asks you to choose one. Commands run in the background and can be
 cancelled; cancellation does not undo changes already made by hooks or publish.
 
 Portal credentials are stored in IntelliJ PasswordSafe. They are supplied to

@@ -8,7 +8,9 @@ import org.jetbrains.annotations.NotNull;
 @State(name = "FactorioToolkit", storages = @Storage(StoragePathMacros.WORKSPACE_FILE))
 public final class FactorioSettings implements PersistentStateComponent<FactorioSettings.Data> {
     public static class Data {
-        public boolean enabled;
+        public boolean enabled; // Legacy serialized setting.
+        public String serviceMode = "AUTO";
+        public int schemaVersion = 0;
         public String node = detect("/opt/homebrew/bin/node", "/usr/local/bin/node", "node");
         public String factorio = detect("/Applications/factorio.app/Contents/MacOS/factorio", "factorio");
         public String cli = "";
@@ -21,8 +23,13 @@ public final class FactorioSettings implements PersistentStateComponent<Factorio
             return paths[paths.length - 1];
         }
     }
-    private Data data = new Data();
+    private Data data = fresh();
+    private static Data fresh() { var d=new Data(); d.schemaVersion=1; return d; }
+    public static boolean servicesEnabled(Project p) {
+        var s=get(p);
+        return "ENABLED".equals(s.serviceMode) || ("AUTO".equals(s.serviceMode) && !FactorioModules.get(p).mods().isEmpty());
+    }
     public static Data get(Project project) { return project.getService(FactorioSettings.class).getState(); }
     @Override public @NotNull Data getState() { return data; }
-    @Override public void loadState(@NotNull Data state) { data = state; }
+    @Override public void loadState(@NotNull Data state) { if(state.schemaVersion==0) { state.serviceMode=state.enabled?"ENABLED":"DISABLED"; state.schemaVersion=1; } data = state; }
 }

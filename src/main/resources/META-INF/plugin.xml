@@ -4,9 +4,13 @@
   <vendor>Softwareforge</vendor>
   <description>Factorio mod development with EmmyLua2, locale and changelog services, native debugging, packaging and publishing.</description>
   <depends>com.intellij.modules.platform</depends>
+  <depends optional="true" config-file="factorio-import.xml">com.intellij.java</depends>
   <depends>com.cppcxy.Intellij-EmmyLua</depends>
   <depends>com.redhat.devtools.lsp4ij</depends>
   <extensions defaultExtensionNs="com.intellij">
+    <moduleType id="SOFTWAREFORGE_FACTORIO_MOD" implementationClass="de.softwareforge.factorio.FactorioWizard$Type"/>
+    <moduleService serviceImplementation="de.softwareforge.factorio.FactorioModuleSettings"/>
+    <postStartupActivity implementation="de.softwareforge.factorio.FactorioModules$Startup"/>
     <projectConfigurable id="de.softwareforge.factorio.settings" displayName="Factorio Modding Tool Kit" instance="de.softwareforge.factorio.FactorioConfigurable"/>
     <completion.contributor language="Lua" implementationClass="de.softwareforge.factorio.FreshLocaleCompletion" order="first, before LSPCompletionContributor"/>
     <notificationGroup id="Softwareforge Factorio" displayType="BALLOON"/>

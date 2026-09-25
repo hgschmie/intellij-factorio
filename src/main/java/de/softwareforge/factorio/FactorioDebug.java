@@ -35,12 +35,17 @@ public final class FactorioDebug {
         @Override public Class<? extends BaseState> getOptionsClass() { return DAPRunConfigurationOptions.class; }
     }
     public static final class Configuration extends DAPRunConfiguration {
+        private String modModule="";
+        @Override public void writeExternal(org.jdom.Element e){ super.writeExternal(e);e.setAttribute("factorioModule",modModule); }
+        @Override public void readExternal(org.jdom.Element e) throws com.intellij.openapi.util.InvalidDataException { super.readExternal(e);modModule=e.getAttributeValue("factorioModule",""); }
         public Configuration(Project project, ConfigurationFactory factory, String name) {
             super(project,factory,name); setServerId(ID); setServerName("Factorio");
             setCommand(FactorioSettings.get(project).factorio); setWorkingDirectory(project.getBasePath());
+            var detected=FactorioModules.get(project).mods();
+            if(detected.size()==1){modModule=detected.getFirst().module();setWorkingDirectory(detected.getFirst().root().toString());}
             setDebugMode(DebugMode.LAUNCH); setLaunchConfiguration("{\"request\":\"launch\",\"factorioArgs\":[],\"followSymlinks\":true,\"hookDebugConsole\":true}");
         }
-        @Override public SettingsEditor<? extends RunConfiguration> getConfigurationEditor() { return new Editor(); }
+        @Override public SettingsEditor<? extends RunConfiguration> getConfigurationEditor() { return new Editor(getProject()); }
         @Override public RunProfileState getState(com.intellij.execution.Executor executor, ExecutionEnvironment environment) {
             var state = (DAPCommandLineState) super.getState(executor, environment);
             state.setConsoleBuilder(new com.redhat.devtools.lsp4ij.dap.console.DAPTextConsoleBuilderImpl(getProject()) {
@@ -51,6 +56,7 @@ public final class FactorioDebug {
             return state;
         }
         @Override public void checkConfiguration() throws RuntimeConfigurationException {
+            if (!modModule.isBlank() && FactorioModules.get(getProject()).mods().stream().noneMatch(m->m.module().equals(modModule))) throw new RuntimeConfigurationError("Factorio module is missing or invalid: " + modModule);
             if (getCommand()==null || !Files.isExecutable(Path.of(getCommand()))) throw new RuntimeConfigurationError("Select an executable Factorio installation");
             try { JsonParser.parseString(getLaunchConfiguration()).getAsJsonObject().getAsJsonArray("factorioArgs"); }
             catch (Exception e) { throw new RuntimeConfigurationError("Invalid Factorio launch arguments"); }
@@ -60,10 +66,14 @@ public final class FactorioDebug {
         private final JPanel panel = new JPanel(new GridLayout(0,1,4,4));
         private final JTextField executable=field("Factorio executable"), cwd=field("Working directory"), save=field("Save ZIP (optional)"), mods=field("Mod directory"), config=field("Factorio config.ini (use isolated write-data for tests)");
         private final JTextArea extra = new JTextArea(3,50);
-        public Editor() { panel.add(new JLabel("Additional Factorio arguments (one argument per line)")); panel.add(new JScrollPane(extra)); }
+        private final JComboBox<String> module=new JComboBox<>();
+        private final Project project;
+        public Editor(Project project) { this.project=project;module.addItem("");FactorioModules.get(project).mods().forEach(m->module.addItem(m.module())); panel.add(new JLabel("Factorio module (optional)"),0);panel.add(module,1);
+            module.addActionListener(e->FactorioModules.get(project).mods().stream().filter(m->m.module().equals(module.getSelectedItem())).findFirst().ifPresent(m->cwd.setText(m.root().toString()))); panel.add(new JLabel("Additional Factorio arguments (one argument per line)")); panel.add(new JScrollPane(extra)); }
         private JTextField field(String label) { panel.add(new JLabel(label)); var result=new JTextField(50); panel.add(result); return result; }
         @Override protected JComponent createEditor() { return panel; }
         @Override protected void resetEditorFrom(DAPRunConfiguration c) {
+            if(c instanceof Configuration own){ if(!own.modModule.isBlank() && java.util.stream.IntStream.range(0,module.getItemCount()).noneMatch(i->module.getItemAt(i).equals(own.modModule))) module.addItem(own.modModule); module.setSelectedItem(own.modModule); }
             executable.setText(c.getCommand()); cwd.setText(c.getWorkingDirectory()); save.setText(""); mods.setText(""); config.setText("");
             List<String> extras = new ArrayList<>();
             try {
@@ -77,6 +87,7 @@ public final class FactorioDebug {
             extra.setText(String.join("\n",extras));
         }
         @Override protected void applyEditorTo(DAPRunConfiguration c) {
+            if(c instanceof Configuration own) own.modModule=Objects.toString(module.getSelectedItem(),"");
             c.setServerId(ID); c.setCommand(executable.getText().trim()); c.setWorkingDirectory(cwd.getText().trim()); c.setDebugMode(DebugMode.LAUNCH);
             JsonObject launch=new JsonObject(); launch.addProperty("request","launch"); launch.addProperty("followSymlinks",true); launch.addProperty("hookDebugConsole",true);
             JsonArray args=new JsonArray();
@@ -86,9 +97,9 @@ public final class FactorioDebug {
     }
     public static final class DescriptorFactory extends DebugAdapterDescriptorFactory {
         @Override public DebugAdapterDescriptor createDebugAdapterDescriptor(RunConfigurationOptions options, ExecutionEnvironment environment) { return new Descriptor((DAPRunConfigurationOptions)options,environment,this); }
-        @Override public SettingsEditor<? extends RunConfiguration> getConfigurationEditor(Project project) { return new Editor(); }
+        @Override public SettingsEditor<? extends RunConfiguration> getConfigurationEditor(Project project) { return new Editor(project); }
         @Override public boolean supportsBreakpointType(XBreakpointType type) { return type instanceof Breakpoint; }
-        @Override public boolean isDebuggableFile(VirtualFile file, Project project) { return FactorioSettings.get(project).enabled && "lua".equals(file.getExtension()); }
+        @Override public boolean isDebuggableFile(VirtualFile file, Project project) { return FactorioSettings.servicesEnabled(project) && "lua".equals(file.getExtension()); }
     }
     public static final class Descriptor extends DebugAdapterDescriptor {
         private final DAPRunConfigurationOptions settings;
@@ -122,7 +133,7 @@ public final class FactorioDebug {
             return PathsAndMods.JSON.fromJson(settings.getLaunchConfiguration(),type);
         }
         @Override public FileType getFileType() { return FileTypeManager.getInstance().getFileTypeByExtension("lua"); }
-        @Override public boolean isDebuggableFile(VirtualFile file, Project project) { return FactorioSettings.get(project).enabled && "lua".equals(file.getExtension()); }
+        @Override public boolean isDebuggableFile(VirtualFile file, Project project) { return FactorioSettings.servicesEnabled(project) && "lua".equals(file.getExtension()); }
         @Override public DAPBreakpointHandlerBase<?> createBreakpointHandler(XDebugSession session,Project project) { return new Handler(session,this,project); }
         @Override public XDebuggerEditorsProvider createDebuggerEditorsProvider(FileType type,DAPDebugProcess process) {
             // Lua PSI fragments produced mismatched documents in the spike. DAP evaluates raw text.
@@ -136,7 +147,7 @@ public final class FactorioDebug {
     public static final class Breakpoint extends DAPBreakpointTypeBase<DAPBreakpointProperties> {
         public Breakpoint() { super("softwareforge-factorio-line", "Factorio Lua Breakpoints"); }
         @Override public DAPBreakpointProperties createBreakpointProperties(VirtualFile file,int line) { return new DAPBreakpointProperties(); }
-        @Override public boolean canPutAt(VirtualFile file,int line,Project project) { return FactorioSettings.get(project).enabled && "lua".equals(file.getExtension()); }
+        @Override public boolean canPutAt(VirtualFile file,int line,Project project) { return FactorioSettings.servicesEnabled(project) && "lua".equals(file.getExtension()); }
         @Override public int getPriority() { return 1000; }
     }
     public static final class Handler extends DAPBreakpointHandlerBase<XLineBreakpoint<DAPBreakpointProperties>> {

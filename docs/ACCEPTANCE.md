@@ -1,12 +1,12 @@
 # Development acceptance — 2026-09-25
 
-The core workflows pass in the isolated IDEA 262 environment. This remains a
+The original single-mod core workflows pass in the isolated IDEA 262 environment. This remains a
 development build with the limitations and untested edge cases listed below.
 
 ## Verified
 
 - Java package, Gradle group and plugin ID: `de.softwareforge.factorio`.
-- Java compilation, plugin ZIP construction, and eleven unit tests pass.
+- Java compilation, plugin ZIP construction, and 22 unit tests pass.
 - Unit tests cover preserving user EmmyLua settings, idempotent generation,
   ZIP traversal rejection, versioned dependency extraction, credential redaction, per-directory operation
   locking, failed process reporting, owned-child cancellation, staged settings,
@@ -144,3 +144,46 @@ After acceptance, the isolated IDE and both language servers were stopped; no
 Factorio process remained. Disposable probes and changed mod metadata were
 preserved under `plugin-ui-evidence/fixture-final/`, then the copied mod's
 metadata and LTN source were restored. The everyday IDE profile was not changed.
+
+## Project/module follow-up
+
+Tested with IDEA 2026.2.3 (IU-262.10968.63), macOS 27 on Apple M2 Max,
+Factorio 2.1.20, patched EmmyLua2 0.24.0-115 and LSP4IJ 0.21.0.
+
+- New Project and New Module both expose **Factorio Mod** and create the seven
+  requested files plus prototypes/scripts/graphics directories. The generated
+  mod loaded successfully in Factorio while creating a disposable save.
+- Existing-sources import attached an external mod through the native importer.
+  Hash comparison confirmed every imported mod file was unchanged. Its `.iml`
+  was placed under the IDE project's `.idea/modules` directory.
+- Fresh-project API generation and startup of EmmyLua/FMTK services were
+  automatic. Reopening the multi-module project retained its modules.
+- Settings listed imported/generated mods and the legacy configured root.
+- Packaging from each external module's editor produced that mod's ZIP.
+  A regression test verifies default metadata exclusions, user ignores, and
+  explicit package extras against the updated toolkit CLI.
+- A module-associated Factorio launch stopped at control.lua:13 with count=41;
+  Stop exited with code 0 and disconnected successfully.
+- Unit coverage includes invalid/duplicate identities, ambiguous roots,
+  canonical symlink deduplication, module removal and metadata repair,
+  nonempty destinations, metadata preservation, and legacy service migration.
+
+Evidence: `../spike/module-ui/evidence`, `../spike/module-ui/load-test/output.log`,
+`../spike/package-metadata-test/results.json` (paths relative to the repository).
+
+**Acceptance blocker:** `test-module-services.py` reproduces wrong short-import
+resolution and failed named cross-mod imports with two attached external roots.
+EmmyLua indexes a single global module path; identical helper.lua names collide,
+and root stripping prevents the generated named module maps from matching.
+FMTK locale completion and watched-file creation/deletion work in both roots. This result limits the new
+multi-module Lua workflow and does not invalidate the earlier single-mod tests.
+No additional EmmyLua server patch is bundled. The previously documented
+rapid-open/edit race also remains.
+
+Removal acceptance also passed in the final isolated build: with all modules
+removed, FMTK stopped and plugin-owned API libraries, roots and maps disappeared.
+Pre-existing user roots/maps/libraries and diagnostics remained unchanged.
+Evidence: `../spike/module-ui/evidence/removed-module-config.json`. The original
+test modules were restored after closing the IDE. Final build/test/verifier log:
+`../spike/plugin-modules-final-build.log` (22 tests, Compatible; four deprecated,
+20 experimental and four internal API usages).

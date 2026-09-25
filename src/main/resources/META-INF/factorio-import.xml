@@ -1,0 +1,5 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="com.intellij">
+    <projectImportProvider implementation="de.softwareforge.factorio.FactorioImport"/>
+  </extensions>
+</idea-plugin>
