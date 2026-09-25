@@ -1,0 +1,41 @@
+<idea-plugin>
+  <id>de.softwareforge.factorio</id>
+  <name>Factorio Modding Tool Kit</name>
+  <vendor>Softwareforge</vendor>
+  <description>Factorio mod development with EmmyLua2, locale and changelog services, native debugging, packaging and publishing.</description>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.cppcxy.Intellij-EmmyLua</depends>
+  <depends>com.redhat.devtools.lsp4ij</depends>
+  <extensions defaultExtensionNs="com.intellij">
+    <projectConfigurable id="de.softwareforge.factorio.settings" displayName="Factorio Modding Tool Kit" instance="de.softwareforge.factorio.FactorioConfigurable"/>
+    <completion.contributor language="Lua" implementationClass="de.softwareforge.factorio.FreshLocaleCompletion" order="first"/>
+    <notificationGroup id="Softwareforge Factorio" displayType="BALLOON"/>
+    <configurationType implementation="de.softwareforge.factorio.FactorioDebug$Type"/>
+    <xdebugger.breakpointType implementation="de.softwareforge.factorio.FactorioDebug$Breakpoint"/>
+  </extensions>
+  <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+    <server id="softwareforge.factorio.locale" name="Factorio locale and changelog" factoryClass="de.softwareforge.factorio.FactorioLanguageServer"/>
+    <languageMapping serverId="softwareforge.factorio.locale" language="Lua" languageId="lua" documentMatcher="de.softwareforge.factorio.FactorioLanguageServer$Lua"/>
+    <fileNamePatternMapping serverId="softwareforge.factorio.locale" patterns="*.cfg" languageId="factorio-locale" documentMatcher="de.softwareforge.factorio.FactorioLanguageServer$Locale"/>
+    <fileNamePatternMapping serverId="softwareforge.factorio.locale" patterns="changelog.txt" languageId="factorio-changelog" documentMatcher="de.softwareforge.factorio.FactorioLanguageServer$Changelog"/>
+    <debugAdapterServer id="softwareforge.factorio.debug" name="Factorio" factoryClass="de.softwareforge.factorio.FactorioDebug$DescriptorFactory"/>
+  </extensions>
+  <actions>
+    <group id="SoftwareforgeFactorio" text="Factorio" popup="true">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+      <action id="SoftwareforgeFactorio.Configure" class="de.softwareforge.factorio.FactorioActions$Setup" text="Configure Factorio Project…"/>
+      <action id="SoftwareforgeFactorio.Generate" class="de.softwareforge.factorio.FactorioActions$Generate" text="Regenerate Factorio API Definitions"/>
+      <action id="SoftwareforgeFactorio.Diagnose" class="de.softwareforge.factorio.FactorioActions$Diagnose" text="Check Factorio Toolchain"/>
+      <action id="SoftwareforgeFactorio.Restart" class="de.softwareforge.factorio.FactorioActions$Restart" text="Restart Factorio Language Service"/>
+      <separator/>
+      <action id="SoftwareforgeFactorio.Package" class="de.softwareforge.factorio.FactorioActions$Package" text="Build Mod ZIP"/>
+      <action id="SoftwareforgeFactorio.Version" class="de.softwareforge.factorio.FactorioActions$Version" text="Increment Mod Version"/>
+      <action id="SoftwareforgeFactorio.Datestamp" class="de.softwareforge.factorio.FactorioActions$Datestamp" text="Datestamp Changelog"/>
+      <action id="SoftwareforgeFactorio.Script" class="de.softwareforge.factorio.FactorioActions$Script" text="Run Package Script…"/>
+      <separator/>
+      <action id="SoftwareforgeFactorio.Upload" class="de.softwareforge.factorio.FactorioActions$Upload" text="Upload Mod ZIP…"/>
+      <action id="SoftwareforgeFactorio.Details" class="de.softwareforge.factorio.FactorioActions$Details" text="Synchronize Mod Portal Details…"/>
+      <action id="SoftwareforgeFactorio.Publish" class="de.softwareforge.factorio.FactorioActions$Publish" text="Publish Mod…"/>
+    </group>
+  </actions>
+</idea-plugin>
