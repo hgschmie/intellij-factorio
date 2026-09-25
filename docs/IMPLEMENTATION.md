@@ -9,7 +9,8 @@ FMTK CLI, installed Node and native Factorio DAP. Profiling is deferred.
 - [x] Factorio DAP configuration and dedicated breakpoint implementation
 - [x] Package/version/scripts and publishing UI implementation
 - [x] Mock-portal/local-Git publishing regression tests
-- [ ] Automated checks and isolated IDE acceptance
+- [x] Automated checks and core isolated IDE acceptance
+- [ ] Remaining UI edge cases: service checkbox transition and unsaved locale discard
 - [x] Installation documentation, evidence, signed implementation checkpoint
 
 All development outputs stay under ~/ai/fmtk. Publishing validation uses copied
