@@ -9,8 +9,12 @@ if not fixture.exists():
     (fixture/'write-data').mkdir()
     for name in ['config.ini','.emmyrc.json']:
         p=fixture/name;p.write_text(p.read_text().replace(str(spike/'fixture'),str(fixture)))
-for source,name in [(spike/'ide/plugins/lsp4ij','lsp4ij'),(spike/'emmylua2-source-build/verified/IntelliJ-EmmyLua2','IntelliJ-EmmyLua2')]:
-    if not (profile/'plugins'/name).exists():shutil.copytree(source,profile/'plugins'/name)
+for source,name in [(spike/'ide/plugins/lsp4ij','lsp4ij'),(spike/'emmylua2-module-build/verified/IntelliJ-EmmyLua2','IntelliJ-EmmyLua2')]:
+    if name=='IntelliJ-EmmyLua2':
+        assert (source/'server/darwin-arm64/analyzer.lock').read_text().strip()==(root/'intellij-factorio/emmy-analyzer.lock').read_text().strip(), 'Prepare the pinned EmmyLua development build'
+    target=profile/'plugins'/name
+    if target.exists():shutil.rmtree(target)
+    shutil.copytree(source,target)
 with zipfile.ZipFile(root/'intellij-factorio/build/distributions/intellij-factorio-0.1.0-dev.zip') as z:z.extractall(profile/'plugins')
 (profile/'idea.properties').write_text('\n'.join(f'idea.{k}.path={profile/v}' for k,v in [('config','config'),('system','system'),('plugins','plugins'),('log','log')])+'\nidea.initially.ask.config=false\n')
 (profile/'idea.vmoptions').write_text(f'-Xms256m\n-Xmx2048m\n-Djava.io.tmpdir={profile}/tmp\n-Duser.home={profile}/home\n')

@@ -1,5 +1,5 @@
 """Two externally located mod roots; uses only isolated workspace fixtures."""
-import json, time
+import json, time, os
 from pathlib import Path
 from protocol import ROOT, Peer, initialize, open_document, position
 
@@ -12,14 +12,15 @@ for p in [project, a, b, ROOT/'evidence', ROOT/'tmp']:
 for path,name,number in [(a,'mod-a',11),(b,'mod-b',22)]:
     (path/'info.json').write_text(json.dumps(dict(name=name,version='0.1.0',factorio_version='2.1')))
     (path/'helper.lua').write_text(f'return {{marker_{number} = {number}}}\n')
-    (path/'control.lua').write_text('local helper = require("helper")\nlocal other = require("__mod-b__/helper")\nlocal test = helper.\nlocal api = game.\nlocal locale = {"'+name+'."}\n')
+    (path/'control.lua').write_text('local helper = require("helper")\nlocal other = require("__mod-b__/helper")\nlocal test = helper.\nlocal cross = other.\nlocal api = game.\nlocal locale = {"'+name+'."}\n')
     (path/'locale/en').mkdir(parents=True,exist_ok=True)
     (path/'locale/en/probe.cfg').write_text(f'[{name}]\nready=Ready\n')
 workspace = Path(__file__).resolve().parents[2]
 api = workspace/'spike/plugin-fixture/api/factorio/library'
 config={'runtime':{'version':'Lua 5.2','requirePattern':['?.lua']},'workspace':{'library':[str(api),str(a.parent),str(b.parent)],'workspaceRoots':[str(a),str(b)],'moduleMap':[{'pattern':'^mod-a[.](.*)$','replace':'__mod-a__.$1'},{'pattern':'^mod-b[.](.*)$','replace':'__mod-b__.$1'}]}}
+config=json.loads(os.environ['EMMY_TEST_CONFIG']) if 'EMMY_TEST_CONFIG' in os.environ else config
 (project/'.emmyrc.json').write_text(json.dumps(config))
-emmy = Peer([str(workspace/'spike/plugin-ide/plugins/IntelliJ-EmmyLua2/server/darwin-arm64/emmylua_ls')], 'modules-emmy', project)
+emmy = Peer([os.environ.get('EMMY_LS',str(workspace/'spike/plugin-ide/plugins/IntelliJ-EmmyLua2/server/darwin-arm64/emmylua_ls'))], 'modules-emmy', project)
 fmtk = Peer(['/opt/homebrew/bin/node',str(workspace/'intellij-factorio/build/toolkit/fmtk/fmtk-cli.js'),'lsp','--stdio'],'modules-fmtk',project)
 results={}
 try:
@@ -32,7 +33,7 @@ try:
         file=path/'control.lua';text=file.read_text()
         for name,peer,needle in [('helper',emmy,'require("helper'),('crossmod',emmy,'__mod-b__/helper')]:
             results[path.name+'-'+name]=peer.request('textDocument/definition',{'textDocument':{'uri':file.as_uri()},'position':position(text,needle,-2)})
-        for name,peer,needle in [('completion',emmy,'local test = helper.'),('locale',fmtk,'local locale = {"'+path.name+'.')]:
+        for name,peer,needle in [('completion',emmy,'local test = helper.'),('cross-completion',emmy,'local cross = other.'),('locale',fmtk,'local locale = {"'+path.name+'.')]:
             response=peer.request('textDocument/completion',{'textDocument':{'uri':file.as_uri()},'position':position(text,needle),'context':{'triggerKind':1}})
             results[path.name+'-'+name]=[i['label'] for i in (response.get('items',[]) if isinstance(response,dict) else response or [])]
     # Each external root must receive disk changes, including deletion.
@@ -55,6 +56,7 @@ try:
         'a-local':'mod-a/helper.lua' in json.dumps(results['mod-a-helper']),
         'b-local':'mod-b/helper.lua' in json.dumps(results['mod-b-helper']),
         'crossmod':'mod-b/helper.lua' in json.dumps(results['mod-a-crossmod']),
+        'cross-types':'marker_22' in results['mod-a-cross-completion'],
         'a-types':'marker_11' in results['mod-a-completion'],
         'b-types':'marker_22' in results['mod-b-completion'],
         'a-locale':'mod-a.ready' in results['mod-a-locale'],

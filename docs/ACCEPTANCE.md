@@ -171,13 +171,13 @@ Factorio 2.1.20, patched EmmyLua2 0.24.0-115 and LSP4IJ 0.21.0.
 Evidence: `../spike/module-ui/evidence`, `../spike/module-ui/load-test/output.log`,
 `../spike/package-metadata-test/results.json` (paths relative to the repository).
 
-**Acceptance blocker:** `test-module-services.py` reproduces wrong short-import
+**Original failure, resolved by the follow-up below:** `test-module-services.py` reproduced wrong short-import
 resolution and failed named cross-mod imports with two attached external roots.
 EmmyLua indexes a single global module path; identical helper.lua names collide,
 and root stripping prevents the generated named module maps from matching.
 FMTK locale completion and watched-file creation/deletion work in both roots. This result limits the new
 multi-module Lua workflow and does not invalidate the earlier single-mod tests.
-No additional EmmyLua server patch is bundled. The previously documented
+At that checkpoint no additional EmmyLua server patch was bundled. The previously documented
 rapid-open/edit race also remains.
 
 Removal acceptance also passed in the final isolated build: with all modules
@@ -187,3 +187,41 @@ Evidence: `../spike/module-ui/evidence/removed-module-config.json`. The original
 test modules were restored after closing the IDE. Final build/test/verifier log:
 `../spike/plugin-modules-final-build.log` (22 tests, Compatible; four deprecated,
 20 experimental and four internal API usages).
+
+## EmmyLua multi-root fix follow-up
+
+Configuration experiments (roots, libraries, packages, strict roots) could not
+make both local and named imports correct. Evidence:
+`../spike/emmy-config-tests/results.json`. Upstream main retained the same index.
+
+The generic Rust fix is signed commit `966a16d` on
+`fix/workspace-relative-module-resolution`, based on upstream `aaaca684`.
+Development uses its signed backport `7562964` on `work/intellij-modules`, based
+on 0.24.0, and EmmyLua2 `0.24.0-115-IDEA262-patched-modules`. Only the macOS arm64
+server in that development ZIP is patched. Both repositories remain separate;
+the upstream PR branch contains no local packaging or Factorio-specific logic.
+
+- Upstream: 1,096 analysis tests and 213 server tests passed, one ignored server
+  test. Clippy completed with warnings only in unchanged files.
+- 0.24.0 development backport: 1,082 analysis tests and 213 server tests passed,
+  one ignored server test. Release build and EmmyLua2 packaging passed.
+- Multi-module definition, inferred member completion, named cross-mod imports,
+  and locale completion/create/delete checks all pass. Existing single-mod API,
+  event, dependency-edit and locale lifecycle protocol checks also pass.
+- Actual IDE: wizard-probe imported its own `wizard_marker`; import-probe imported
+  its own `import_marker`; the named cross-mod import completed `import_marker`
+  and navigated to import-probe/helper.lua. Local import navigation selected the
+  correct helper in both modules.
+- Empty-prefix completion did not consistently display in the client even when
+  the captured server response was correct. Typing a member prefix and invoking
+  completion worked. The earlier rapid-open/edit race remains outside this fix.
+- Development preparation now replaces owned dependency directories instead of
+  leaving old versioned JARs beside the new ones. Startup confirms the modules
+  build; the temporary protocol wrapper was removed after validation.
+- Factorio plugin: 22 tests pass and Plugin Verifier reports Compatible against
+  the new development dependency (same dependency API warnings).
+
+Evidence: `../spike/emmy-{upstream,development}-protocol.log`,
+`../spike/emmy-development-single-mod.log`, `../spike/emmy-module-ui-evidence`,
+`../spike/emmy-{patch-test,upstream-ls-tests,development-tests,upstream-clippy}.log`,
+`../spike/emmylua2-module-build.log`, `../spike/factorio-emmy-module-build.log`.

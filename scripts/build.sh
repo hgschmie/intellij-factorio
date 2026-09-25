@@ -6,6 +6,11 @@ export GRADLE_USER_HOME="$WORKSPACE/spike/cache/gradle"
 export JAVA_HOME="${FMTK_JAVA_HOME:-/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home}"
 export JAVA_TOOL_OPTIONS="-Duser.home=$WORKSPACE/spike/build-home -Djava.io.tmpdir=$WORKSPACE/spike/tmp"
 export TMPDIR="$WORKSPACE/spike/tmp"
+EMMY_PLUGIN="$WORKSPACE/spike/emmylua2-module-build/verified/IntelliJ-EmmyLua2"
+if ! cmp -s "$PLUGIN_ROOT/emmy-analyzer.lock" "$EMMY_PLUGIN/server/darwin-arm64/analyzer.lock"; then
+  echo "Prepare the pinned EmmyLua module development build before building Factorio." >&2
+  exit 1
+fi
 cd "$WORKSPACE/vscode-factoriomod-debug"
 EXPECTED_TOOLKIT="$(cat "$PLUGIN_ROOT/toolkit.lock")"
 ACTUAL_TOOLKIT="$(git rev-parse HEAD)"
@@ -19,5 +24,5 @@ cd "$PLUGIN_ROOT"
 bash gradlew --no-daemon \
  "-PideaPath=${FMTK_IDEA_PATH:-/Users/henning/Applications/IntelliJ IDEA.app}" \
  "-Plsp4ijPath=$WORKSPACE/spike/ide/plugins/lsp4ij" \
- "-PemmyPath=$WORKSPACE/spike/emmylua2-source-build/verified/IntelliJ-EmmyLua2" \
+ "-PemmyPath=$EMMY_PLUGIN" \
  "$@"

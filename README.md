@@ -49,12 +49,13 @@ and updates managed entries in `.emmyrc.json` while preserving unrelated setting
 Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
 Legacy active-mod settings remain usable until that root is attached as a module.
 
-**Current multi-module limitation:** the bundled EmmyLua server can resolve a
-short `require("helper")` to another attached mod's file, and named cross-mod
-imports between attached roots fail. Multi-module Lua import correctness has
-not passed acceptance; use a separate IDE project per mod when relying on those
-imports. Locale services and context-selected packaging passed the multi-module
-checks. See [acceptance status](docs/ACCEPTANCE.md).
+The development build now uses EmmyLua2
+`0.24.0-115-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
+short imports and named cross-mod imports across attached roots. Build it with
+`../Intellij-EmmyLua2/scripts/build-module-patch.sh` first. `emmy-analyzer.lock`
+pins the server source revision; build and isolated-profile preparation check
+that pin. Other platform binaries in this local package remain unpatched.
+See [acceptance status](docs/ACCEPTANCE.md) for client completion limitations.
 
 Locale keys and changelog support run alongside EmmyLua2. A **Restart Factorio
 Language Service** action is available; process logs also appear in LSP4IJ.
