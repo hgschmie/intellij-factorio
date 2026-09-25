@@ -1,4 +1,4 @@
-# Development acceptance — 2026-09-24
+# Development acceptance — 2026-09-25
 
 The core workflows pass in the isolated IDEA 262 environment. This remains a
 development build with the limitations and untested edge cases listed below.
@@ -6,10 +6,11 @@ development build with the limitations and untested edge cases listed below.
 ## Verified
 
 - Java package, Gradle group and plugin ID: `de.softwareforge.factorio`.
-- Java compilation, plugin ZIP construction, and eight unit tests pass.
+- Java compilation, plugin ZIP construction, and eleven unit tests pass.
 - Unit tests cover preserving user EmmyLua settings, idempotent generation,
   ZIP traversal rejection, versioned dependency extraction, credential redaction, per-directory operation
-  locking, failed process reporting and owned-child cancellation.
+  locking, failed process reporting, owned-child cancellation, staged settings,
+  graceful debugger stop and its bounded force-kill fallback.
 - JetBrains Plugin Verifier reports **Compatible** with IU-262.10968.63.
   It reports experimental LSP4IJ DAP APIs and internal completion-cache access;
   upgrades of those dependencies require revalidation. The verifier resolves the
@@ -47,9 +48,9 @@ After the desktop was unlocked, actual interaction with this plugin established:
   entered the copied LTN metrics.lua:66 with `key = "probe"`.
 - Three launches hit the persisted probe breakpoint. The third session also
   hit a breakpoint in LTN metrics.lua:66 after its registration settled.
-  Stop ended each process without an orphan. UI stops reported exit 137
-  (SIGKILL), unlike the protocol harness's
-  graceful disconnect. Do not describe the UI shutdown as graceful.
+  Stop ended each process without an orphan. Those initial UI stops used
+  SIGKILL; the September 25 fixes and two later clean UI stops supersede that
+  shutdown limitation (see below).
 - Build Mod ZIP completed and produced the probe archive. The publishing
   preview displayed the mod/version, destination and release effects; Cancel
   exited without supplying credentials or contacting the portal.
@@ -83,17 +84,16 @@ precedes `LSPCompletionContributor`, and the same-caret locale update passed.
 ## Remaining acceptance and limitations
 
 UI access intermittently returned `cgWindowNotFound` but recovered for the
-checks above. Discarding unsaved locale edits across close/reopen is covered by
-the standalone protocol tests, not an accepted final-build UI discard workflow.
-Service disable/re-enable through the settings checkbox was attempted, but the
-automation did not reliably toggle it; that UI transition remains unverified.
+checks above. The service checkbox and locale discard workflow subsequently
+passed the September 25 checks below.
 Real publishing and credential storage against a live portal are intentionally
 outside acceptance; publishing execution uses the loopback harness.
 
-LSP4IJ 0.21.0's console filter leaks fragments of native DAP messages into the
-debug console, including loadedSource events and variable responses. The
-observed breakpoint, evaluation and stepping workflows still succeeded; the
-console presentation needs improvement before calling the debugger polished.
+The plugin suppresses raw stdio protocol output in its console, avoiding
+LSP4IJ 0.21.0's fragmented-message filtering issue. Decoded DAP output events,
+stderr and IDE status remain visible. Stop explicitly requests disconnect with
+`terminateDebuggee: true`, waits up to five seconds off the UI thread, and
+falls back to process-tree termination if the adapter does not exit.
 
 EmmyLua 0.24 dispatches didOpen asynchronously while didChange is synchronous.
 Sending an edit immediately after opening a dependency can let the open handler
@@ -103,6 +103,26 @@ was also attempted, but library diagnostics are not reliably emitted. No upstrea
 
 The IDE logged a recovered VFS `FileDeletedException` during the external
 deletion test; the subsequent navigation result correctly reflected deletion.
+
+## September 25 edge-case validation
+
+- Disabled services through the settings checkbox: FMTK exited while the same
+  EmmyLua process stayed alive. Reopening Configure now leaves the checkbox
+  disabled; previously the action silently enabled services before Apply.
+  Re-enabled services and restarted the IDE: one FMTK and one EmmyLua server
+  ran using the persisted settings. Suggested mod roots are staged in the form
+  rather than written when opening settings; the unit test covers cancellation.
+- Added a locale key without saving; verified the disk file was unchanged and
+  Lua completion inserted the unsaved key. Undid the locale edit, closed and
+  reopened the locale file: the removed key yielded `No suggestions`, while the
+  persisted key still completed. This UI check uses Undo to discard; the protocol
+  harness separately covers didClose with an outstanding unsaved buffer.
+- Two successive debug launches hit control.lua:13, displayed variables, and
+  stopped with exit code 0. Factorio logged `Goodbye`; no Factorio process was
+  left behind. Game output remained visible with no raw DAP fragments.
+- Unit tests cover Stop initiating disconnect with stdin still open and an
+  unresponsive adapter being killed within the bounded fallback.
+- Plugin Verifier remains Compatible (8 experimental and 4 internal API uses).
 
 ## Evidence locations
 
@@ -115,6 +135,8 @@ Under `../spike/`:
 - `plugin-ui-evidence/` (individual accessibility captures, including failed
   completion attempts; only the checks described above are accepted)
 - `plugin-ui-final-build.log`
+- `plugin-edge-build.log`, `plugin-edge-tests.log`, `plugin-edge-verifier.log`
+- `plugin-ui-evidence/edge-*` (settings, unsaved locale and clean DAP stop captures)
 
 Gradle test and verifier reports are under `build/reports/`.
 

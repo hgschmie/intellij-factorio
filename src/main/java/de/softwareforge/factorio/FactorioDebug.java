@@ -41,6 +41,15 @@ public final class FactorioDebug {
             setDebugMode(DebugMode.LAUNCH); setLaunchConfiguration("{\"request\":\"launch\",\"factorioArgs\":[],\"followSymlinks\":true,\"hookDebugConsole\":true}");
         }
         @Override public SettingsEditor<? extends RunConfiguration> getConfigurationEditor() { return new Editor(); }
+        @Override public RunProfileState getState(com.intellij.execution.Executor executor, ExecutionEnvironment environment) {
+            var state = (DAPCommandLineState) super.getState(executor, environment);
+            state.setConsoleBuilder(new com.redhat.devtools.lsp4ij.dap.console.DAPTextConsoleBuilderImpl(getProject()) {
+                @Override protected com.intellij.execution.ui.ConsoleView createConsole() {
+                    return new FactorioDebugConsole(getProject());
+                }
+            });
+            return state;
+        }
         @Override public void checkConfiguration() throws RuntimeConfigurationException {
             if (getCommand()==null || !Files.isExecutable(Path.of(getCommand()))) throw new RuntimeConfigurationError("Select an executable Factorio installation");
             try { JsonParser.parseString(getLaunchConfiguration()).getAsJsonObject().getAsJsonArray("factorioArgs"); }
@@ -83,9 +92,30 @@ public final class FactorioDebug {
     }
     public static final class Descriptor extends DebugAdapterDescriptor {
         private final DAPRunConfigurationOptions settings;
+        private FactorioDebugProcessHandler handler;
         public Descriptor(DAPRunConfigurationOptions options, ExecutionEnvironment environment, DescriptorFactory factory) { super(options,environment,factory.getServerDefinition()); settings=options; }
         @Override public ProcessHandler startServer() throws com.intellij.execution.ExecutionException {
-            return startServer(new GeneralCommandLine(settings.getCommand(),"--dap").withWorkDirectory(settings.getWorkingDirectory()));
+            handler = new FactorioDebugProcessHandler(new GeneralCommandLine(settings.getCommand(),"--dap").withWorkDirectory(settings.getWorkingDirectory()).withCharset(java.nio.charset.StandardCharsets.UTF_8));
+            com.intellij.execution.process.ProcessTerminatedListener.attach(handler);
+            return handler;
+        }
+        @Override public com.redhat.devtools.lsp4ij.dap.client.DAPClient createClient(DAPDebugProcess process, Map<String,Object> parameters, boolean debug, DebugMode mode, com.redhat.devtools.lsp4ij.settings.ServerTrace trace, com.redhat.devtools.lsp4ij.dap.client.DAPClient parent) {
+            var client = new com.redhat.devtools.lsp4ij.dap.client.DAPClient(process, parameters, debug, mode, trace, parent) {
+                private final java.util.concurrent.atomic.AtomicBoolean stopping = new java.util.concurrent.atomic.AtomicBoolean();
+                @Override public void terminate() {
+                    if (!stopping.compareAndSet(false, true)) return;
+                    var server = getDebugProtocolServer();
+                    if (server == null) { dispose(); return; }
+                    // This configuration launches Factorio; Stop must terminate the game.
+                    var args = new org.eclipse.lsp4j.debug.DisconnectArguments();
+                    args.setTerminateDebuggee(true);
+                    server.disconnect(args).orTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+                            .whenCompleteAsync((ignored, failure) -> dispose());
+                }
+            };
+            // The IDE's Stop action can destroy the process before DAPDebugProcess.stop.
+            if (parent == null && handler != null) handler.onStop(client::terminate);
+            return client;
         }
         @Override public Map<String,Object> getDapParameters() {
             var type = new com.google.gson.reflect.TypeToken<Map<String,Object>>(){}.getType();

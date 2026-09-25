@@ -26,8 +26,6 @@ public final class FactorioActions {
     public static final class Setup extends ProjectAction {
         @Override public void actionPerformed(AnActionEvent e) {
             Project p=e.getProject(); if(p==null)return;
-            var s=FactorioSettings.get(p); s.enabled=true;
-            if(s.activeMod.isBlank() && Files.exists(Toolkit.root(p).resolve("info.json"))) s.activeMod=Toolkit.root(p).toString();
             ShowSettingsUtil.getInstance().showSettingsDialog(p,FactorioConfigurable.class);
         }
     }

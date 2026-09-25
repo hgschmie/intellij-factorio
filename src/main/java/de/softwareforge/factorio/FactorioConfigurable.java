@@ -27,5 +27,7 @@ public final class FactorioConfigurable implements Configurable {
     }
     @Override public void reset() {
         var s=FactorioSettings.get(project); enabled.setSelected(s.enabled); node.setText(s.node); factorio.setText(s.factorio); mod.setText(s.activeMod); docs.setText(s.apiDocs); cli.setText(s.cli); config.setText(s.packageConfig); dependencies.setText(s.dependencies);
+        // Suggest a mod root in the form only; Cancel must leave persisted settings alone.
+        if (s.activeMod.isBlank() && java.nio.file.Files.exists(Toolkit.root(project).resolve("info.json"))) mod.setText(Toolkit.root(project).toString());
     }
 }
