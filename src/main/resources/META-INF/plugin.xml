@@ -8,7 +8,7 @@
   <depends>com.redhat.devtools.lsp4ij</depends>
   <extensions defaultExtensionNs="com.intellij">
     <projectConfigurable id="de.softwareforge.factorio.settings" displayName="Factorio Modding Tool Kit" instance="de.softwareforge.factorio.FactorioConfigurable"/>
-    <completion.contributor language="Lua" implementationClass="de.softwareforge.factorio.FreshLocaleCompletion" order="first"/>
+    <completion.contributor language="Lua" implementationClass="de.softwareforge.factorio.FreshLocaleCompletion" order="first, before LSPCompletionContributor"/>
     <notificationGroup id="Softwareforge Factorio" displayType="BALLOON"/>
     <configurationType implementation="de.softwareforge.factorio.FactorioDebug$Type"/>
     <xdebugger.breakpointType implementation="de.softwareforge.factorio.FactorioDebug$Breakpoint"/>
