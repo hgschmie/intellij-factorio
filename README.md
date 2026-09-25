@@ -8,7 +8,8 @@ LuaLS and profiling are not supported.
 
 The local build uses the installed IDEA SDK, the source-built patched EmmyLua2,
 and LSP4IJ from the spike workspace. Install the toolkit's locked Node dependencies
-before the first build. Run:
+before the first build. The exact toolkit commit is pinned in `toolkit.lock`;
+review and update that pin when deliberately adopting toolkit changes. Run:
 
 ```sh
 bash scripts/build.sh test buildPlugin
@@ -68,3 +69,16 @@ The publishing harness uses fake credentials, a loopback portal, and temporary
 Git repositories beneath `../spike/plugin-publishing-tests`. Its preload rejects
 external network destinations. No real mod is published. See
 `docs/IMPLEMENTATION.md` for outstanding checks and acceptance evidence.
+
+## Isolated acceptance environment
+
+With the test IDE closed, `python3 scripts/prepare-test-ide.py` prepares the
+workspace-only profile from the existing spike fixture and dependencies. Run
+`bash scripts/launch-test-ide.sh` to open it. This does not install into your
+everyday IDE.
+
+The existing copied protocol fixture at `../spike/plugin-protocol` can be tested
+with `scripts/test-language-services.py` and `scripts/test-debug-protocol.py`.
+`FACTORIO_TEST_ROOT` can override that fixture/evidence root. See
+[acceptance status](docs/ACCEPTANCE.md) before treating this development build as
+ready for regular use.

@@ -55,7 +55,11 @@ public final class FactorioActions {
     }
     private interface Job { void run(ProgressIndicator indicator,Consumer<String> output)throws Exception; }
     private static void background(Project p,String title,Path directory,Job job) {
-        FileDocumentManager.getInstance().saveAllDocuments();
+        var documents=FileDocumentManager.getInstance();
+        for(var document:documents.getUnsavedDocuments()) {
+            var file=documents.getFile(document);
+            if(file!=null && Path.of(file.getPath()).normalize().startsWith(Toolkit.root(p))) documents.saveDocument(document);
+        }
         ProgressManager.getInstance().run(new Task.Backgroundable(p,title,true) {
             @Override public void run(ProgressIndicator indicator) {
                 boolean acquired=false;
@@ -100,7 +104,7 @@ public final class FactorioActions {
                         key=entered[0]; if(key==null||key.isBlank())throw new IllegalStateException("No portal API key supplied");
                         PasswordSafe.getInstance().setPassword(attributes,key);
                     }
-                    env.put("FACTORIO_UPLOAD_API_KEY",key);
+                    env.put("FACTORIO_UPLOAD_API_KEY",key.trim());
                 }
                 Processes.get(p).run(Toolkit.command(p,args.toArray(String[]::new)),mod,env,indicator,log);
             });

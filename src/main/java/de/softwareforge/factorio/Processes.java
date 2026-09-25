@@ -15,12 +15,15 @@ import java.util.function.Consumer;
 public final class Processes implements Disposable {
     private final Set<Process> children = ConcurrentHashMap.newKeySet();
     private final Map<Process, Set<ProcessHandle>> descendants = new ConcurrentHashMap<>();
-    private final Set<Path> busy = ConcurrentHashMap.newKeySet();
+    private static final Set<Path> busy = ConcurrentHashMap.newKeySet();
     public static Processes get(Project project) { return project.getService(Processes.class); }
-    public void acquire(Path directory) {
-        if (!busy.add(directory.toAbsolutePath().normalize())) throw new IllegalStateException("Another FMTK operation is running for " + directory);
+    private static Path canonical(Path path) {
+        try { return path.toRealPath(); } catch(IOException e) { return path.toAbsolutePath().normalize(); }
     }
-    public void release(Path directory) { busy.remove(directory.toAbsolutePath().normalize()); }
+    public void acquire(Path directory) {
+        if (!busy.add(canonical(directory))) throw new IllegalStateException("Another FMTK operation is running for " + directory);
+    }
+    public void release(Path directory) { busy.remove(canonical(directory)); }
     public String run(List<String> command, Path cwd, Map<String,String> env, ProgressIndicator indicator, Consumer<String> log) throws Exception {
         var builder = new ProcessBuilder(command).directory(cwd.toFile()).redirectErrorStream(true);
         builder.environment().putAll(env);
