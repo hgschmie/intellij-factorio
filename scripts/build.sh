@@ -11,6 +11,12 @@ if ! cmp -s "$PLUGIN_ROOT/emmy-analyzer.lock" "$EMMY_PLUGIN/server/darwin-arm64/
   echo "Prepare the pinned EmmyLua module development build before building Factorio." >&2
   exit 1
 fi
+python3 - "$EMMY_PLUGIN" <<'CHECK_ROUTING'
+import pathlib, sys, zipfile
+jars = pathlib.Path(sys.argv[1]).joinpath("lib").glob("*.jar")
+if not any("com/cppcxy/ide/lsp/EmmyLuaServerProvider.class" in zipfile.ZipFile(jar).namelist() for jar in jars):
+    raise SystemExit("Build the EmmyLua2 work/patched-build file-routing hook before building Factorio.")
+CHECK_ROUTING
 cd "$WORKSPACE/upstream/vscode-factoriomod-debug"
 EXPECTED_TOOLKIT="$(cat "$PLUGIN_ROOT/toolkit.lock")"
 ACTUAL_TOOLKIT="$(git rev-parse HEAD)"

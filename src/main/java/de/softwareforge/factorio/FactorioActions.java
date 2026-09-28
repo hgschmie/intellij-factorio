@@ -48,7 +48,7 @@ public final class FactorioActions {
     public static final class Restart extends ProjectAction {
         @Override public void actionPerformed(AnActionEvent e) {
             Project p=e.getProject(); if(p==null)return;
-            if(FactorioSettings.servicesEnabled(p)) LanguageServerManager.getInstance(p).start(FactorioLanguageServer.ID,new LanguageServerManager.StartOptions().setForceRestart(true));
+            if(FactorioSettings.servicesEnabled(p)) FactorioServerManager.get(p).restart();
         }
     }
     private interface Job { void run(ProgressIndicator indicator,Consumer<String> output)throws Exception; }

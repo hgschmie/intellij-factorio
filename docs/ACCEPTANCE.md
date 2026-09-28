@@ -1,3 +1,20 @@
+# Per-mod manager update — 2026-09-27
+
+The 0.2.0 development build uses one EmmyLua and one FMTK instance per mod.
+See [PER_MOD_SERVERS.md](PER_MOD_SERVERS.md) for installation prerequisites,
+configuration, automated coverage and the remaining importer-type refresh
+limitation. All 28 unit tests and four real-process IDE platform tests pass, including generated API
+hover and `This:storage()` navigation in copies of the two reported mods.
+No everyday IDE installation or interactive UI acceptance was performed for this
+change. Earlier UI results below describe earlier builds.
+
+Plugin Verifier now runs offline against the exact patched client dependencies.
+It reports **Compatible** with IU-262.10968.63: no unresolved classes or binary
+compatibility problems. Its strict Gradle task still exits unsuccessfully for
+seven internal API usages (including existing completion-cache/Toolkit access
+and the manager's editor refresh), with eight deprecated and 26 experimental API
+usages also reported. Keep LSP4IJ at the validated 0.21.0 until revalidated.
+
 # Development acceptance — 2026-09-25
 
 The original single-mod core workflows pass in the isolated IDEA 262 environment. This remains a

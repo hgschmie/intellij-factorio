@@ -1,9 +1,10 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 plugins {
     java
-    id("org.jetbrains.intellij.platform") version "2.6.0"
+    id("org.jetbrains.intellij.platform") version "2.18.1"
 }
 group = "de.softwareforge.factorio"
-version = "0.1.0-dev"
+version = "0.2.0-dev"
 repositories { mavenCentral(); intellijPlatform { defaultRepositories() } }
 dependencies {
     intellijPlatform {
@@ -11,7 +12,6 @@ dependencies {
         localPlugin(providers.gradleProperty("lsp4ijPath").get())
         localPlugin(providers.gradleProperty("emmyPath").get())
         localPlugin(file(providers.gradleProperty("ideaPath").get()).resolve("Contents/plugins/java"))
-        instrumentationTools()
     }
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -45,3 +45,31 @@ tasks.test { useJUnitPlatform() }
 tasks.test { jvmArgs("-Xbootclasspath/a:" + file(providers.gradleProperty("ideaPath").get()).resolve("Contents/lib/nio-fs.jar")) }
 tasks.verifyPlugin { ides.setFrom(file(providers.gradleProperty("ideaPath").get()).resolve("Contents")) }
 dependencies { intellijPlatform { pluginVerifier() } }
+
+// Real LSP4IJ lifecycle tests run separately from the fast filesystem/configuration suite.
+if (providers.gradleProperty("platformTests").isPresent) {
+    dependencies {
+        intellijPlatform { testFramework(TestFrameworkType.Platform) }
+        testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.11.4")
+        testImplementation("junit:junit:4.13.2")
+    }
+    sourceSets.test { java.setSrcDirs(listOf("src/ideTest/java")) }
+    tasks.test {
+        systemProperty("idea.load.plugins.id", "de.softwareforge.factorio,com.cppcxy.Intellij-EmmyLua,com.redhat.devtools.lsp4ij")
+        systemProperty("factorio.test.workspace", projectDir.parentFile.absolutePath)
+        systemProperty("factorio.test.apiDocs", providers.gradleProperty("apiDocs").orElse("/Applications/factorio.app/Contents/doc-html").get())
+        systemProperty("factorio.test.realMods", providers.gradleProperty("realMods").orElse("").get())
+    }
+}
+
+// Verify against the same patched dependencies used to compile and test, not Marketplace releases.
+val prepareVerifierDependencies = tasks.register<Sync>("prepareVerifierDependencies") {
+    into(layout.buildDirectory.dir("verifier-home/loaded-plugins"))
+    from(providers.gradleProperty("emmyPath")) { into("IntelliJ-EmmyLua2") }
+    from(providers.gradleProperty("lsp4ijPath")) { into("lsp4ij") }
+}
+tasks.verifyPlugin {
+    dependsOn(prepareVerifierDependencies)
+    offline.set(true)
+    systemProperty("plugin.verifier.home.dir", layout.buildDirectory.dir("verifier-home").get().asFile.absolutePath)
+}

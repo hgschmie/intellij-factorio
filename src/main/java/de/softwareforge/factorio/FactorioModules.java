@@ -14,7 +14,6 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import com.intellij.openapi.progress.*;
 import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.util.Alarm;
-import com.redhat.devtools.lsp4ij.LanguageServerManager;
 import java.nio.file.*;
 import java.util.*;
 
@@ -44,7 +43,7 @@ public final class FactorioModules implements Disposable {
         var bus=project.getMessageBus().connect(this);
         bus.subscribe(ProjectTopics.PROJECT_ROOTS,new ModuleRootListener(){ @Override public void rootsChanged(ModuleRootEvent event){ schedule(); } });
         bus.subscribe(VirtualFileManager.VFS_CHANGES,new BulkFileListener(){ @Override public void after(List<? extends VFileEvent> events){
-            if(events.stream().anyMatch(e->e.getPath().endsWith("/info.json") || e instanceof com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent || e instanceof com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent || e instanceof com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent)) schedule();
+            if(events.stream().anyMatch(e->e.getPath().endsWith("/info.json") || e.getPath().endsWith("/.emmyrc.json") || e instanceof com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent || e instanceof com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent || e instanceof com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent)) schedule();
         }});
         schedule();
     }
@@ -64,25 +63,23 @@ public final class FactorioModules implements Disposable {
         if(candidates.isEmpty()) candidates.add(new ModDiscovery.Candidate(project.getName(),Toolkit.root(project)));
         snapshot=ModDiscovery.discover(candidates);
     }
-    private void reconcile() {
+    private synchronized void reconcile() {
         if(project.isDisposed())return;
         try {
             refresh();
             var s=FactorioSettings.get(project);
             String fingerprint=snapshot.toString()+s.serviceMode+s.node+s.factorio+s.apiDocs+s.cli+s.dependencies+mods().stream().map(m->m.root()+dependencies(m)).toList();
+            Path userConfig=Toolkit.root(project).resolve(".emmyrc.json");
+            fingerprint += Files.exists(userConfig) ? Files.readString(userConfig) : "";
             if(fingerprint.equals(previousFingerprint))return;
-            previousFingerprint=fingerprint;
             for(String error:errors()) FactorioActions.report(project,error,true);
-            var manager=LanguageServerManager.getInstance(project);
-            if(mods().isEmpty() || !FactorioSettings.servicesEnabled(project)) { manager.stop(FactorioLanguageServer.ID); if(mods().isEmpty())Definitions.clearManaged(project); return; }
-            manager.start(FactorioLanguageServer.ID,new LanguageServerManager.StartOptions().setForceRestart(true));
-            ProgressManager.getInstance().run(new Task.Backgroundable(project,"Configure Factorio modules",true) {
-                @Override public void run(ProgressIndicator indicator) {
-                    try { Definitions.generate(project,indicator,message->{}); }
-                    catch(ProcessCanceledException cancelled) { throw cancelled; }
-                    catch(Exception error) { FactorioActions.report(project,"Factorio modules detected. Configure the Factorio toolchain or regenerate definitions: "+error.getMessage(),true); }
-                }
-            });
+            var manager=FactorioServerManager.get(project);
+            if(mods().isEmpty() || !FactorioSettings.servicesEnabled(project)) {
+                manager.configure(List.of()); Definitions.clearManaged(project); previousFingerprint=fingerprint; return;
+            }
+            manager.retain(mods());
+            Definitions.generate(project,new EmptyProgressIndicator(),message->{});
+            previousFingerprint=fingerprint;
         } catch(Exception error) { FactorioActions.report(project,"Cannot configure Factorio modules: "+error.getMessage(),true); }
     }
     @Override public void dispose() {}

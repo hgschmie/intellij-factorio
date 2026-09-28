@@ -1,6 +1,6 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.1.0.
+Java integration under `de.softwareforge.factorio`. Development release 0.2.0.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and LSP4IJ 0.21.0.
 LuaLS and profiling are not supported.
 
@@ -23,7 +23,8 @@ is not bundled. The tested runtime is Node 26.9.0.
 
 ## Install and configure
 
-Install EmmyLua2 and LSP4IJ, then use **Install Plugin from Disk** for the ZIP in
+Install the patched EmmyLua2 build containing the file-routing extension (work
+branch `work/patched-build`, commit `54818f2` or later) and LSP4IJ, then use **Install Plugin from Disk** for the ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
 `aarch64` fix (the local `0.25.1-115-IDEA262-patched-modules` build is tested).
 
@@ -44,8 +45,12 @@ start automatically for detected mods; explicit enable/disable is retained.
 Factorio, Node, API JSON and CLI settings are shared by the project. Dependencies
 and the package config have project defaults and optional module overrides.
 Dependency paths are one per line, including in the editable module table.
+Select individual mod directories or mod ZIPs, not a parent containing many mods.
 API generation uses matching local JSON, keeps generated data in IDE caches,
-and updates managed entries in `.emmyrc.json` while preserving unrelated settings.
+and creates separate managed EmmyLua workspaces per mod. Previous generated
+project-wide `.emmyrc.json` entries are removed while unrelated settings remain.
+See [per-mod language servers](docs/PER_MOD_SERVERS.md) for routing, configuration
+and known limitations.
 Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
 Legacy active-mod settings remain usable until that root is attached as a module.
 
@@ -58,7 +63,7 @@ that pin. Other platform binaries use upstream 0.25.1 without the local resolver
 See [acceptance status](docs/ACCEPTANCE.md) for client completion limitations.
 
 Locale keys and changelog support run alongside EmmyLua2. A **Restart Factorio
-Language Service** action is available; process logs also appear in LSP4IJ.
+Language Services** action is available; process logs also appear in LSP4IJ.
 
 Create a **Factorio** run configuration and select its module (a sole detected
 module is selected automatically for new configurations). Set the Factorio executable, mod

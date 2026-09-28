@@ -1,0 +1,254 @@
+package de.softwareforge.factorio;
+
+import com.cppcxy.ide.lsp.EmmyLuaServerRouting;
+import com.google.gson.JsonObject;
+import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.application.WriteAction;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.psi.PsiManager;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.HeavyPlatformTestCase;
+import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.roots.ModuleRootModificationUtil;
+import com.intellij.testFramework.PlatformTestUtil;
+import com.redhat.devtools.lsp4ij.*;
+import org.eclipse.lsp4j.*;
+import java.nio.file.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.BooleanSupplier;
+
+/** Exercises the registered definitions, real child processes, and workspace boundaries. */
+public class PerModServersTest extends HeavyPlatformTestCase {
+    private Path temporary;
+    private Path workspace;
+    @Override protected void setUp() throws Exception {
+        super.setUp();
+        workspace=Path.of(System.getProperty("factorio.test.workspace"));
+        temporary=Files.createTempDirectory(workspace.resolve("spike/tmp"),"server-manager-");
+        Files.createDirectories(Toolkit.root(getProject()));
+        var settings=FactorioSettings.get(getProject());
+        settings.serviceMode="DISABLED";
+        settings.cli=workspace.resolve("upstream/vscode-factoriomod-debug/dist/fmtk-cli.js").toString();
+    }
+    @Override protected void tearDown() throws Exception {
+        try { FactorioServerManager.get(getProject()).configure(List.of()); }
+        finally { super.tearDown(); }
+    }
+    private Path mod(String name,String member) throws Exception {
+        Path root=Files.createDirectories(temporary.resolve(name));
+        Files.writeString(root.resolve("info.json"),"{\"name\":\""+name+"\",\"version\":\"0.1.0\",\"factorio_version\":\"2.1\"}");
+        Files.writeString(root.resolve("init.lua"),"---@class "+name+".State\n---@field "+member+" string\nThis = {}\n");
+        Files.writeString(root.resolve("control.lua"),"local value = This."+member+"\nlocal key = 'same.key'\n");
+        Files.createDirectories(root.resolve("locale/en"));
+        Files.writeString(root.resolve("locale/en/test.cfg"),"[same]\nkey="+name+"\n");
+        return root.toRealPath();
+    }
+    private void attach(List<Path> roots) {
+        WriteAction.run(() -> {
+            var modules=ModuleManager.getInstance(getProject());
+            for(Path root:roots) {
+                var module=modules.newModule(temporary.resolve(root.getFileName()+".iml"),"SOFTWAREFORGE_FACTORIO_MOD");
+                ModuleRootModificationUtil.addContentRoot(module,root.toString());
+            }
+        });
+        for(Path root:roots) file(root);
+        FactorioModules.get(getProject()).refresh();
+    }
+    private ModLanguageScope scope(Path root,List<Path> dependencies) throws Exception {
+        Path config=Files.createDirectories(temporary.resolve("config-"+root.getFileName()));
+        var json=ModLanguageScope.configuration(new JsonObject(),root,List.of(),dependencies);
+        PathsAndMods.write(config.resolve(".emmyrc.json"),json);
+        return new ModLanguageScope(root,root.getFileName().toString(),config,List.of(),dependencies,json);
+    }
+    private <T> T await(CompletableFuture<T> future) throws Exception {
+        long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(30);
+        while (!future.isDone() && System.nanoTime()<deadline) {
+            PlatformTestUtil.dispatchAllEventsInIdeEventQueue(); Thread.sleep(20);
+        }
+        return future.get(1,TimeUnit.SECONDS);
+    }
+    private void eventually(BooleanSupplier condition) throws Exception {
+        long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(30);
+        while (!condition.getAsBoolean() && System.nanoTime()<deadline) { PlatformTestUtil.dispatchAllEventsInIdeEventQueue(); Thread.sleep(100); }
+        assertTrue("Timed out waiting for server state",condition.getAsBoolean());
+    }
+    private LanguageServerItem server(String id) throws Exception { return Objects.requireNonNull(await(LanguageServerManager.getInstance(getProject()).getLanguageServer(id))); }
+    private VirtualFile file(Path path) { return Objects.requireNonNull(LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)); }
+    private String definitions(LanguageServerItem item,Path file,int line,int column) throws Exception {
+        var result=await(item.getServer().getTextDocumentService().definition(new DefinitionParams(new TextDocumentIdentifier(file.toUri().toString()),new Position(line,column))));
+        return String.valueOf(result);
+    }
+    private String completions(LanguageServerItem item, Path path) throws Exception {
+        return String.valueOf(await(item.getServer().getTextDocumentService().completion(new CompletionParams(new TextDocumentIdentifier(path.toUri().toString()),new Position(1,21)))));
+    }
+    public void testIndependentLuaAndLocaleServersAndRemoval() throws Exception {
+        Path a=mod("alpha","alphaValue"),b=mod("beta","betaValue");
+        var manager=FactorioServerManager.get(getProject());
+        var one=scope(a,List.of()); var two=scope(b,List.of());
+        WriteAction.run(() -> {
+            var modules=ModuleManager.getInstance(getProject());
+            var am=modules.newModule(temporary.resolve("alpha.iml"),"SOFTWAREFORGE_FACTORIO_MOD");
+            var bm=modules.newModule(temporary.resolve("beta.iml"),"SOFTWAREFORGE_FACTORIO_MOD");
+            ModuleRootModificationUtil.addContentRoot(am,a.toString());
+            ModuleRootModificationUtil.addContentRoot(bm,b.toString());
+        });
+        file(a); file(b);
+        FactorioModules.get(getProject()).refresh();
+        FactorioSettings.get(getProject()).serviceMode="ENABLED";
+        assertEquals(FactorioModules.get(getProject()).errors().toString(),2,FactorioModules.get(getProject()).mods().size());
+        manager.configure(List.of(one,two));
+        String aid=EmmyLuaServerRouting.getServerId(getProject(),file(a.resolve("control.lua")));
+        String bid=EmmyLuaServerRouting.getServerId(getProject(),file(b.resolve("control.lua")));
+        assertNotSame(aid,bid); assertFalse(aid.equals(bid));
+        var as=server(aid); var bs=server(bid);
+        assertNotSame(as.getServer(),bs.getServer());
+        // Wait for asynchronous initial analysis to finish, then request real definitions.
+        eventually(() -> { try { return definitions(as,a.resolve("control.lua"),0,16).contains("alpha/init.lua"); } catch(Exception e) { return false; } });
+        assertTrue(definitions(bs,b.resolve("control.lua"),0,16).contains("beta/init.lua"));
+        assertFalse(definitions(as,a.resolve("control.lua"),0,16).contains("beta/init.lua"));
+        var al=server(aid.replace(".lua.",".locale.")); var bl=server(bid.replace(".lua.",".locale."));
+        for(var pair:List.of(Map.entry(al,a),Map.entry(bl,b))) {
+            Path path=pair.getValue().resolve("control.lua");
+            pair.getKey().getServer().getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(path.toUri().toString(),"lua",1,Files.readString(path))));
+        }
+        eventually(() -> { try { return definitions(al,a.resolve("control.lua"),1,18).contains("alpha/locale/en/test.cfg"); } catch(Exception e) { return false; } });
+        assertFalse(definitions(al,a.resolve("control.lua"),1,18).contains("beta/locale"));
+        assertTrue(definitions(bl,b.resolve("control.lua"),1,18).contains("beta/locale/en/test.cfg"));
+        var psi=Objects.requireNonNull(PsiManager.getInstance(getProject()).findFile(file(a.resolve("control.lua"))));
+        var routed=await(LanguageServiceAccessor.getInstance(getProject()).getLanguageServers(psi,null,null));
+        assertEquals(Set.of(aid,aid.replace(".lua.",".locale.")),new HashSet<>(routed.stream().map(i -> i.getServerDefinition().getId()).toList()));
+        // Exercise real VFS watch delivery, not manually injected protocol notifications.
+        VirtualFile localeDirectory=file(b.resolve("locale/en"));
+        VirtualFile added=WriteAction.compute(() -> {
+            var f=localeDirectory.createChildData(this,"added.cfg");
+            f.setBinaryContent("[same]\nbetaAdded=Only beta\n".getBytes(java.nio.charset.StandardCharsets.UTF_8)); return f;
+        });
+        eventually(() -> { try { return completions(bl,b.resolve("control.lua")).contains("same.betaAdded"); } catch(Exception e) { return false; } });
+        assertFalse(completions(al,a.resolve("control.lua")).contains("same.betaAdded"));
+        WriteAction.run(() -> added.delete(this));
+        eventually(() -> { try { return !completions(bl,b.resolve("control.lua")).contains("same.betaAdded"); } catch(Exception e) { return false; } });
+        var oldServer=as.getServer(); manager.restart();
+        var restarted=server(aid); assertNotSame(oldServer,restarted.getServer());
+        eventually(() -> { try { return definitions(restarted,a.resolve("control.lua"),0,16).contains("alpha/init.lua"); } catch(Exception e) { return false; } });
+        WriteAction.run(() -> ModuleManager.getInstance(getProject()).disposeModule(Objects.requireNonNull(ModuleManager.getInstance(getProject()).findModuleByName("beta"))));
+        FactorioModules.get(getProject()).refresh();
+        manager.retain(FactorioModules.get(getProject()).mods());
+        assertNull(LanguageServersRegistry.getInstance().getServerDefinition(bid));
+        assertNull(LanguageServersRegistry.getInstance().getServerDefinition(bid.replace(".lua.",".locale.")));
+        assertEquals("EmmyLua",EmmyLuaServerRouting.getServerId(getProject(),file(b.resolve("control.lua"))));
+        assertEquals(aid,EmmyLuaServerRouting.getServerId(getProject(),file(a.resolve("control.lua"))));
+    }
+    public void testUnsavedDependencyReachesBothConsumers() throws Exception {
+        Path a=mod("alpha","alphaValue"),b=mod("beta","betaValue"),dep=mod("dependency","unused");
+        Files.delete(dep.resolve("init.lua")); Files.delete(dep.resolve("control.lua"));
+        Path helper=dep.resolve("helper.lua"); Files.writeString(helper,"return { before_value = true }\n");
+        for(Path root:List.of(a,b)) Files.writeString(root.resolve("control.lua"),"local dep = require('__dependency__/helper')\nlocal result = dep.\n");
+        attach(List.of(a,b));
+        var manager=FactorioServerManager.get(getProject()); FactorioSettings.get(getProject()).serviceMode="ENABLED";
+        manager.configure(List.of(scope(a,List.of(dep)),scope(b,List.of(dep))));
+        String aid=manager.luaServer(a.resolve("control.lua")),bid=manager.luaServer(b.resolve("control.lua"));
+        var as=server(aid); var bs=server(bid);
+        java.util.function.Function<LanguageServerItem,String> members=item -> {
+            try {
+                Path path=item==as ? a.resolve("control.lua") : b.resolve("control.lua");
+                return String.valueOf(await(item.getServer().getTextDocumentService().completion(new CompletionParams(new TextDocumentIdentifier(path.toUri().toString()),new Position(1,19)))));
+            } catch(Exception e) { throw new RuntimeException(e); }
+        };
+        eventually(() -> members.apply(bs).contains("before_value"));
+        var vf=file(helper); var psi=Objects.requireNonNull(PsiManager.getInstance(getProject()).findFile(vf));
+        var routed=await(LanguageServiceAccessor.getInstance(getProject()).getLanguageServers(psi,null,null));
+        assertEquals(Set.of(aid,aid.replace(".lua.",".locale.")),new HashSet<>(routed.stream().map(i -> i.getServerDefinition().getId()).toList()));
+        var document=Objects.requireNonNull(FileDocumentManager.getInstance().getDocument(vf));
+        WriteAction.run(() -> document.setText("function unsaved_marker() end\nreturn { before_value = true, after_value = true }\n"));
+        assertFalse(Files.readString(helper).contains("after_value"));
+        // Verify buffer delivery directly. Analyzer 0.25.1 does not invalidate an
+        // importer's cached table type until that importer is reanalyzed.
+        for(var item:List.of(as,bs)) eventually(() -> {
+            try { return String.valueOf(await(item.getServer().getTextDocumentService().documentSymbol(
+                new DocumentSymbolParams(new TextDocumentIdentifier(helper.toUri().toString()))))).contains("unsaved_marker"); }
+            catch(Exception e) { return false; }
+        });
+        for(var pair:List.of(Map.entry(as,a),Map.entry(bs,b))) {
+            Path control=pair.getValue().resolve("control.lua");
+            pair.getKey().getServer().getTextDocumentService().didOpen(new DidOpenTextDocumentParams(
+                new TextDocumentItem(control.toUri().toString(),"lua",1,Files.readString(control))));
+        }
+        eventually(() -> members.apply(as).contains("after_value"));
+        eventually(() -> members.apply(bs).contains("after_value"));
+        FileDocumentManager.getInstance().saveDocument(document);
+        eventually(() -> members.apply(bs).contains("after_value"));
+        // A disk replacement after save proves that the mirrored unsaved document was closed.
+        WriteAction.run(() -> vf.setBinaryContent("function saved_marker() end\nreturn { saved_value = true }\n".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        eventually(() -> {
+            try { return String.valueOf(await(bs.getServer().getTextDocumentService().documentSymbol(
+                new DocumentSymbolParams(new TextDocumentIdentifier(helper.toUri().toString()))))).contains("saved_marker"); }
+            catch(Exception e) { return false; }
+        });
+    }
+
+    public void testGeneratedApiWithSeparateWorkspaces() throws Exception {
+        Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
+        org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));
+        Path a=mod("alpha","alphaValue"),b=mod("beta","betaValue");
+        for(Path root:List.of(a,b)) Files.writeString(root.resolve("control.lua"),"local surface = game.get_surface(1)\n");
+        attach(List.of(a,b));
+        var settings=FactorioSettings.get(getProject());
+        settings.serviceMode="ENABLED"; settings.apiDocs=docs.toString();
+        await(CompletableFuture.runAsync(() -> {
+            try { Definitions.generate(getProject(),new com.intellij.openapi.progress.EmptyProgressIndicator(),message -> {}); }
+            catch(Exception e) { throw new CompletionException(e); }
+        }));
+        var manager=FactorioServerManager.get(getProject());
+        for(Path root:List.of(a,b)) {
+            var item=server(manager.luaServer(root.resolve("control.lua")));
+            eventually(() -> {
+                try { return String.valueOf(await(item.getServer().getTextDocumentService().hover(new HoverParams(
+                    new TextDocumentIdentifier(root.resolve("control.lua").toUri().toString()),new Position(0,24))))).contains("LuaSurface"); }
+                catch(Exception e) { return false; }
+            });
+            Path config=Definitions.cache(getProject()).resolve("language-servers/"+ModLanguageScope.identity(Toolkit.root(getProject()),root)+"/workspace/.emmyrc.json");
+            String json=Files.readString(config);
+            assertTrue(json.contains(root.toString()));
+            assertFalse(json.contains((root.equals(a)?b:a).toString()));
+        }
+    }
+
+    public void testReportedNavigationWithCopiesOfActualMods() throws Exception {
+        String originalPath=System.getProperty("factorio.test.realMods","");
+        org.junit.Assume.assumeTrue("Pass -PrealMods to test copies of the reported mods",!originalPath.isBlank());
+        Path original=Path.of(originalPath);
+        var roots=new ArrayList<Path>();
+        for(String name:List.of("inventory-sensor-improved","logistics-sensor")) {
+            Path source=original.resolve(name); Path target=temporary.resolve(name);
+            Files.walkFileTree(source,EnumSet.of(FileVisitOption.FOLLOW_LINKS),Integer.MAX_VALUE,new SimpleFileVisitor<Path>() {
+                @Override public FileVisitResult preVisitDirectory(Path directory,java.nio.file.attribute.BasicFileAttributes attrs) throws java.io.IOException {
+                    if (Set.of(".git",".portal").contains(directory.getFileName().toString())) return FileVisitResult.SKIP_SUBTREE;
+                    Files.createDirectories(target.resolve(source.relativize(directory))); return FileVisitResult.CONTINUE;
+                }
+                @Override public FileVisitResult visitFile(Path file,java.nio.file.attribute.BasicFileAttributes attrs) throws java.io.IOException {
+                    if (file.toString().matches(".*\\.(lua|json|cfg)$")) Files.copy(file,target.resolve(source.relativize(file)),StandardCopyOption.REPLACE_EXISTING);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+            roots.add(target.toRealPath());
+        }
+        attach(roots);
+        var manager=FactorioServerManager.get(getProject()); FactorioSettings.get(getProject()).serviceMode="ENABLED";
+        manager.configure(List.of(scope(roots.get(0),List.of()),scope(roots.get(1),List.of())));
+        for(Path root:roots) {
+            Path controller=root.resolve("scripts/controller.lua");
+            var lines=Files.readAllLines(controller); int line=0;
+            while(line<lines.size() && !lines.get(line).contains("This:storage()")) line++;
+            assertTrue(line<lines.size());
+            int column=lines.get(line).indexOf("storage")+2; final int at=line;
+            var item=server(manager.luaServer(controller));
+            eventually(() -> { try { return definitions(item,controller,at,column).contains(root.getFileName()+"/lib/this.lua"); } catch(Exception e) { return false; } });
+            String result=definitions(item,controller,line,column);
+            Path other=root.equals(roots.get(0)) ? roots.get(1) : roots.get(0);
+            assertFalse(result.contains(other.getFileName()+"/lib/this.lua"));
+        }
+    }
+
+}

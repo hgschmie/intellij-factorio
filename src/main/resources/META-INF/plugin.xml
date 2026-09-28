@@ -18,11 +18,10 @@
     <xdebugger.breakpointType implementation="de.softwareforge.factorio.FactorioDebug$Breakpoint"/>
   </extensions>
   <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
-    <server id="softwareforge.factorio.locale" name="Factorio locale and changelog" factoryClass="de.softwareforge.factorio.FactorioLanguageServer"/>
-    <languageMapping serverId="softwareforge.factorio.locale" language="Lua" languageId="lua" documentMatcher="de.softwareforge.factorio.FactorioLanguageServer$Lua"/>
-    <fileNamePatternMapping serverId="softwareforge.factorio.locale" patterns="*.cfg" languageId="factorio-locale" documentMatcher="de.softwareforge.factorio.FactorioLanguageServer$Locale"/>
-    <fileNamePatternMapping serverId="softwareforge.factorio.locale" patterns="changelog.txt" languageId="factorio-changelog" documentMatcher="de.softwareforge.factorio.FactorioLanguageServer$Changelog"/>
     <debugAdapterServer id="softwareforge.factorio.debug" name="Factorio" factoryClass="de.softwareforge.factorio.FactorioDebug$DescriptorFactory"/>
+  </extensions>
+  <extensions defaultExtensionNs="com.cppcxy.Intellij-EmmyLua">
+    <serverProvider implementation="de.softwareforge.factorio.FactorioServerManager$Routing"/>
   </extensions>
   <actions>
     <group id="SoftwareforgeFactorio" text="Factorio" popup="true">
@@ -30,7 +29,7 @@
       <action id="SoftwareforgeFactorio.Configure" class="de.softwareforge.factorio.FactorioActions$Setup" text="Configure Factorio Project…"/>
       <action id="SoftwareforgeFactorio.Generate" class="de.softwareforge.factorio.FactorioActions$Generate" text="Regenerate Factorio API Definitions"/>
       <action id="SoftwareforgeFactorio.Diagnose" class="de.softwareforge.factorio.FactorioActions$Diagnose" text="Check Factorio Toolchain"/>
-      <action id="SoftwareforgeFactorio.Restart" class="de.softwareforge.factorio.FactorioActions$Restart" text="Restart Factorio Language Service"/>
+      <action id="SoftwareforgeFactorio.Restart" class="de.softwareforge.factorio.FactorioActions$Restart" text="Restart Factorio Language Services"/>
       <separator/>
       <action id="SoftwareforgeFactorio.Package" class="de.softwareforge.factorio.FactorioActions$Package" text="Build Mod ZIP"/>
       <action id="SoftwareforgeFactorio.Version" class="de.softwareforge.factorio.FactorioActions$Version" text="Increment Mod Version"/>
