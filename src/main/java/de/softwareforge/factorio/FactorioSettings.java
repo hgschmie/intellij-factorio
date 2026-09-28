@@ -33,5 +33,5 @@ public final class FactorioSettings implements PersistentStateComponent<Factorio
     }
     public static Data get(Project project) { return project.getService(FactorioSettings.class).getState(); }
     @Override public @NotNull Data getState() { return data; }
-    @Override public void loadState(@NotNull Data state) { if(state.schemaVersion==0) { state.serviceMode=state.enabled?"ENABLED":"DISABLED"; state.schemaVersion=1; } data = state; }
+    @Override public void loadState(@NotNull Data state) { if(state.schemaVersion==0) { state.serviceMode=state.enabled?"ENABLED":"DISABLED"; state.schemaVersion=1; } state.libraryIgnoreDir=FactorioLibrary.removeObsoletePaths(state.libraryIgnoreDir); data = state; }
 }

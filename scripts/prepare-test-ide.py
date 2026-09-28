@@ -15,7 +15,7 @@ for source,name in [(spike/'ide/plugins/lsp4ij','lsp4ij'),(spike/'emmylua2-modul
     target=profile/'plugins'/name
     if target.exists():shutil.rmtree(target)
     shutil.copytree(source,target)
-with zipfile.ZipFile(root/'intellij-factorio/build/distributions/intellij-factorio-0.2.2-dev.zip') as z:z.extractall(profile/'plugins')
+with zipfile.ZipFile(root/'intellij-factorio/build/distributions/intellij-factorio-0.2.3-dev.zip') as z:z.extractall(profile/'plugins')
 (profile/'idea.properties').write_text('\n'.join(f'idea.{k}.path={profile/v}' for k,v in [('config','config'),('system','system'),('plugins','plugins'),('log','log')])+'\nidea.initially.ask.config=false\n')
 (profile/'idea.vmoptions').write_text(f'-Xms256m\n-Xmx2048m\n-Djava.io.tmpdir={profile}/tmp\n-Duser.home={profile}/home\n')
 # Reuse already-recorded preferences and local license, without logging their contents.

@@ -15,7 +15,7 @@ Requires LSP4IJ 0.21.0 and the patched EmmyLua2 client containing
 The distribution retains version `0.25.1-115-IDEA262-patched-modules`, so an older
 ZIP with that same version must be replaced by the newly built ZIP.
 
-Install that ZIP and `build/distributions/intellij-factorio-0.2.2-dev.zip`, then
+Install that ZIP and `build/distributions/intellij-factorio-0.2.3-dev.zip`, then
 restart IDEA. No LSP4IJ or additional analyzer source changes are required.
 The analyzer remains pinned by `emmy-analyzer.lock`.
 
@@ -75,9 +75,10 @@ covered by FMTK stubs are skipped; the generated stubs remain indexed. Scenario,
 campaign, migration, tutorial and menu-simulation globs are confined to this
 library entry and do not exclude the mod's own files.
 
-Defaults additionally exclude `core/lualib/story.lua`, the current singular
-`base/script/` equivalents of the upstream `base/scripts/` paths, and the
-rocket-rush, supply and team-production script directories in either layout.
+Defaults use the correct `base/script/` paths and additionally exclude
+`core/lualib/story.lua` and the rocket-rush, supply and team-production script
+directories. The erroneous `base/scripts/` entries from 0.2.2 are removed from
+saved settings on load; other user entries are preserved.
 These scripts mutate scenario-owned `storage` and otherwise pollute mod globals.
 
 **Configure Factorio Project → Factorio data library → Edit exclusions…** edits

@@ -4,7 +4,7 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.18.1"
 }
 group = "de.softwareforge.factorio"
-version = "0.2.2-dev"
+version = "0.2.3-dev"
 repositories { mavenCentral(); intellijPlatform { defaultRepositories() } }
 dependencies {
     intellijPlatform {

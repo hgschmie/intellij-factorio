@@ -11,13 +11,17 @@ public final class FactorioLibrary {
         "core/lualib/meld.lua", "core/lualib/mod-gui.lua", "core/lualib/sound-util.lua",
         "core/lualib/util.lua", "core/lualib/silo-script.lua", "core/lualib/space-finish-script.lua",
         "core/lualib/prototype-info.lua", "core/lualib/circuit-connector-sprites.lua",
-        "core/lualib/resource-autoplace.lua", "base/scripts/freeplay/", "base/scripts/pvp/",
-        "base/scripts/sandbox/", "base/scripts/wave-defense/", "core/lualib/story.lua",
+        "core/lualib/resource-autoplace.lua", "core/lualib/story.lua",
         "base/script/freeplay/", "base/script/pvp/", "base/script/sandbox/", "base/script/wave-defense/",
-        "base/script/rocket-rush/", "base/script/supply/", "base/script/team-production/",
-        "base/scripts/rocket-rush/", "base/scripts/supply/", "base/scripts/team-production/");
+        "base/script/rocket-rush/", "base/script/supply/", "base/script/team-production/");
     public static final String IGNORE_GLOBS = String.join("\n", "*/migrations/**", "*/scenarios/**",
         "*/campaigns/**", "*/tutorials/**", "*/menu-simulations/**");
+    /** Remove only the erroneous defaults saved by 0.2.2; retain other user entries. */
+    public static String removeObsoletePaths(String text) {
+        return text.lines().filter(line -> !line.trim().matches(
+            "base/scripts/(freeplay|pvp|sandbox|wave-defense|rocket-rush|supply|team-production)/?"))
+            .collect(java.util.stream.Collectors.joining("\n"));
+    }
     public static void add(JsonObject config, Path data, String directories, String globs) {
         var library = new JsonObject();
         library.addProperty("path",data.toString());

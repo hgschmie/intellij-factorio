@@ -1,3 +1,10 @@
+# Exclusion path correction — 2026-09-28
+
+Version 0.2.3 removes the erroneous `base/scripts/` entries from IntelliJ defaults.
+Only `base/script/` is valid. The seven typo entries saved by 0.2.2 are also removed
+when settings load; unrelated custom exclusions are preserved. The upstream
+VS Code correction remains on its separate PR branch.
+
 # Filtered Factorio data library — 2026-09-28
 
 Version 0.2.2 applies the VS Code toolkit's data-library `ignoreDir`/`ignoreGlobs`
