@@ -1,3 +1,12 @@
+# Toolchain check correction — 2026-09-28
+
+Version 0.2.4 checks FMTK with `--help`, which includes its version and exits
+successfully. FMTK has no `--version` option; its `version` subcommand increments
+a mod's version and is not a diagnostic command. Node/Factorio `--version` and
+Factorio `--help`/`--dap` validation are unchanged. The four diagnostic commands
+were verified directly with the installed tools; the Tools menu was not exercised
+interactively for this fix.
+
 # Development tree relocation — 2026-09-28
 
 Active scripts now use `dev/` and repository-local `build/` paths. Historical

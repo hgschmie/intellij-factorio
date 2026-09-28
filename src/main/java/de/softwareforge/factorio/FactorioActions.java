@@ -38,7 +38,8 @@ public final class FactorioActions {
             background(p,"Check Factorio Toolchain",Toolkit.root(p),(indicator,log)->{
                 var s=FactorioSettings.get(p);
                 Processes.get(p).run(List.of(s.node,"--version"),Toolkit.root(p),Map.of(),indicator,log);
-                Processes.get(p).run(Toolkit.command(p,"--version"),Toolkit.root(p),Map.of(),indicator,log);
+                // FMTK exposes its version in help; its "version" command edits a mod.
+                Processes.get(p).run(Toolkit.command(p,"--help"),Toolkit.root(p),Map.of(),indicator,log);
                 Processes.get(p).run(List.of(s.factorio,"--version"),Toolkit.root(p),Map.of(),indicator,log);
                 String help=Processes.get(p).run(List.of(s.factorio,"--help"),Toolkit.root(p),Map.of(),indicator,log);
                 if(!help.contains("--dap"))throw new IllegalStateException("This Factorio executable does not advertise native --dap support");
