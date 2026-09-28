@@ -15,7 +15,7 @@ Requires LSP4IJ 0.21.0 and the patched EmmyLua2 client containing
 The distribution retains version `0.25.1-115-IDEA262-patched-modules`, so an older
 ZIP with that same version must be replaced by the newly built ZIP.
 
-Install that ZIP and `build/distributions/intellij-factorio-0.2.1-dev.zip`, then
+Install that ZIP and `build/distributions/intellij-factorio-0.2.2-dev.zip`, then
 restart IDEA. No LSP4IJ or additional analyzer source changes are required.
 The analyzer remains pinned by `emmy-analyzer.lock`.
 
@@ -44,7 +44,7 @@ newly claimed files. Open editors are refreshed to select their new owners.
 
 ## Configuration
 
-Generated API/core libraries are shared read-only. Mod source trees are not
+Generated API libraries and the filtered Factorio data library are shared read-only. Mod source trees are not
 shared implicitly. Per-module dependency settings must contain individual mod
 directories or mod ZIPs; a collection parent is rejected to prevent indexing
 unrelated sibling mods. Explicit dependency globals remain visible in that
@@ -66,6 +66,26 @@ project. User `workspaceRoots`/`packages`, structured library entries, or librar
 containing attached mod source trees produce an actionable configuration error.
 Move source roots into module/dependency settings. Global home configs and
 per-mod `.emmyrc.lua` are not inputs to this configuration path.
+
+### Factorio data exclusions (0.2.2)
+
+The data library is a structured EmmyLua entry with `ignoreDir` and `ignoreGlobs`,
+matching `src/vscode/VersionSelector.ts` in the toolkit. Core implementations
+covered by FMTK stubs are skipped; the generated stubs remain indexed. Scenario,
+campaign, migration, tutorial and menu-simulation globs are confined to this
+library entry and do not exclude the mod's own files.
+
+Defaults additionally exclude `core/lualib/story.lua`, the current singular
+`base/script/` equivalents of the upstream `base/scripts/` paths, and the
+rocket-rush, supply and team-production script directories in either layout.
+These scripts mutate scenario-owned `storage` and otherwise pollute mod globals.
+
+**Configure Factorio Project → Factorio data library → Edit exclusions…** edits
+the complete project-wide lists, one relative path or glob per line. Restore
+defaults resets the dialog fields; OK stages them, and applying the parent settings
+persists them and regenerates server configurations. Cancel leaves the prior
+values intact. Empty lists are allowed as an explicit opt-in to indexing all
+files. Existing projects acquire the defaults without editing their source files.
 
 ## Validation
 

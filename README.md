@@ -1,6 +1,6 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.2.1.
+Java integration under `de.softwareforge.factorio`. Development release 0.2.2.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and LSP4IJ 0.21.0.
 LuaLS and profiling are not supported.
 
@@ -51,6 +51,12 @@ and creates separate managed EmmyLua workspaces per mod. Previous generated
 project-wide `.emmyrc.json` entries are removed while unrelated settings remain.
 See [per-mod language servers](docs/PER_MOD_SERVERS.md) for routing, configuration
 and known limitations.
+Factorio's data library uses the VS Code toolkit's exclusions, with additional
+scenario helpers excluded for current Factorio layouts. In **Configure Factorio
+Project → Factorio data library → Edit exclusions…**, edit paths/globs relative
+to the Factorio `data` directory, one per line, or restore defaults. Changes take
+effect when you apply the project settings; generated API/helper stubs remain
+available. Exclusions apply to the installed game library, not your mod files.
 Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
 Legacy active-mod settings remain usable until that root is attached as a module.
 

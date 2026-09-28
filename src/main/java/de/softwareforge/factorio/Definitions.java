@@ -35,8 +35,7 @@ public final class Definitions {
             Files.move(staging, generated, StandardCopyOption.ATOMIC_MOVE);
         }
         List<Path> shared = new ArrayList<>(); shared.add(generated.resolve("factorio/library"));
-        Path core = docs.getParent().resolve("data/core/lualib");
-        if (Files.isDirectory(core)) shared.add(core);
+        Path data = docs.getParent().resolve("data");
         Path config = root.resolve(".emmyrc.json"), ownership = cache.resolve("emmy-owned.json");
         JsonObject before = Files.exists(config) ? PathsAndMods.read(config) : new JsonObject();
         JsonObject previous = Files.exists(ownership) ? PathsAndMods.read(ownership) : new JsonObject();
@@ -72,8 +71,13 @@ public final class Definitions {
             Path workspace = cache.resolve("language-servers/" + ModLanguageScope.identity(root,mod.root())).resolve("workspace");
             Files.createDirectories(workspace);
             var perMod = ModLanguageScope.configuration(user,mod.root(),shared,dependencies);
+            var libraries = new ArrayList<>(shared);
+            if (Files.isDirectory(data)) {
+                FactorioLibrary.add(perMod,data,settings.libraryIgnoreDir,settings.libraryIgnoreGlobs);
+                libraries.add(data);
+            }
             PathsAndMods.write(workspace.resolve(".emmyrc.json"),perMod);
-            scopes.add(new ModLanguageScope(mod.root(),mod.name(),workspace,shared,dependencies,perMod));
+            scopes.add(new ModLanguageScope(mod.root(),mod.name(),workspace,libraries,dependencies,perMod));
         }
         // Remove only the old project-wide entries we previously generated.
         if (Files.exists(ownership) && !previous.entrySet().isEmpty()) {

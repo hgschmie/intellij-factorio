@@ -240,7 +240,7 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
         org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));
         Path a=mod("alpha","alphaValue"),b=mod("beta","betaValue");
-        for(Path root:List.of(a,b)) Files.writeString(root.resolve("control.lua"),"local surface = game.get_surface(1)\n");
+        for(Path root:List.of(a,b)) Files.writeString(root.resolve("control.lua"),"local surface = game.get_surface(1)\nstorage.sensor_data = { sensors = {} }\nlocal saved = storage\nlocal util = require('util')\nlocal copy = util.table.deepcopy({})\n");
         attach(List.of(a,b));
         var settings=FactorioSettings.get(getProject());
         settings.serviceMode="ENABLED"; settings.apiDocs=docs.toString();
@@ -261,6 +261,14 @@ public class PerModServersTest extends HeavyPlatformTestCase {
             String json=Files.readString(config);
             assertTrue(json.contains(root.toString()));
             assertFalse(json.contains((root.equals(a)?b:a).toString()));
+            assertTrue(json.contains("ignoreDir"));
+            var storageHover=String.valueOf(await(item.getServer().getTextDocumentService().hover(new HoverParams(
+                new TextDocumentIdentifier(root.resolve("control.lua").toUri().toString()),new Position(2,17)))));
+            assertTrue(storageHover,storageHover.contains("sensor_data"));
+            for(String foreign:List.of("space_finish_script","silo_script","last_built_position","story_index","no_victory"))
+                assertFalse(storageHover,storageHover.contains(foreign));
+            String utilDefinition=definitions(item,root.resolve("control.lua"),4,26);
+            assertTrue(utilDefinition,utilDefinition.contains("factorio/library/core/lualib/util.lua"));
         }
     }
 
@@ -285,7 +293,12 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         }
         attach(roots);
         var manager=FactorioServerManager.get(getProject()); FactorioSettings.get(getProject()).serviceMode="ENABLED";
-        manager.configure(List.of(scope(roots.get(0),List.of()),scope(roots.get(1),List.of())));
+        FactorioSettings.get(getProject()).apiDocs=System.getProperty("factorio.test.apiDocs");
+        await(CompletableFuture.runAsync(() -> {
+            try { Definitions.generate(getProject(),new com.intellij.openapi.progress.EmptyProgressIndicator(),message -> {}); }
+            catch(Exception e) { throw new CompletionException(e); }
+        }));
+        PlatformTestUtil.dispatchAllEventsInIdeEventQueue();
         for(Path root:roots) {
             Path controller=root.resolve("scripts/controller.lua");
             var lines=Files.readAllLines(controller); int line=0;
@@ -297,6 +310,15 @@ public class PerModServersTest extends HeavyPlatformTestCase {
             String result=definitions(item,controller,line,column);
             Path other=root.equals(roots.get(0)) ? roots.get(1) : roots.get(0);
             assertFalse(result.contains(other.getFileName()+"/lib/this.lua"));
+            Path thisFile=root.resolve("lib/this.lua");
+            var source=Files.readAllLines(thisFile); int storageLine=0;
+            while(storageLine<source.size() && !source.get(storageLine).contains("storage.")) storageLine++;
+            assertTrue(storageLine<source.size());
+            var hover=String.valueOf(await(item.getServer().getTextDocumentService().hover(new HoverParams(
+                new TextDocumentIdentifier(thisFile.toUri().toString()),new Position(storageLine,source.get(storageLine).indexOf("storage")+2)))));
+            assertFalse(hover,hover.contains("space_finish_script"));
+            assertFalse(hover,hover.contains("last_built_position"));
+            if(root.getFileName().toString().equals("logistics-sensor")) assertTrue(hover,hover.contains("sensor_data"));
         }
     }
 

@@ -1,3 +1,23 @@
+# Filtered Factorio data library — 2026-09-28
+
+Version 0.2.2 applies the VS Code toolkit's data-library `ignoreDir`/`ignoreGlobs`
+defaults, plus the stateful story helper and current `base/script` scenario
+helpers (the upstream defaults use `base/scripts`). Exclusions can be edited
+and restored in Configure Factorio Project → Factorio data library → Edit
+exclusions. They apply to the installed game library only; FMTK's helper stubs
+and the mod's own files remain indexed.
+
+All five real-process platform tests pass. The generated-API regression verifies
+that storage contains the mod's `sensor_data` without scenario fields, and that
+`util.table.deepcopy` navigates to FMTK's stub. The actual-mod regression now
+loads the complete generated API and filtered game library into copies of both
+mods, confirms local `This:storage()` navigation, and checks storage hover in
+`lib/this.lua`, including `sensor_data` in logistics-sensor. No original mod
+files were changed. The new exclusions dialog has not been exercised interactively.
+
+Install `build/distributions/intellij-factorio-0.2.2-dev.zip` and restart IDEA.
+The previous patched EmmyLua2 build remains suitable.
+
 # EDT lifecycle fix — 2026-09-28
 
 Version 0.2.1 fixes the reported `LanguageServerExplorer.handleAdded` EDT assertion.

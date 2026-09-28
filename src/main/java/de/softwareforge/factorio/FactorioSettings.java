@@ -17,6 +17,8 @@ public final class FactorioSettings implements PersistentStateComponent<Factorio
         public String activeMod = "";
         public String dependencies = "";
         public String apiDocs = "";
+        public String libraryIgnoreDir = FactorioLibrary.IGNORE_DIR;
+        public String libraryIgnoreGlobs = FactorioLibrary.IGNORE_GLOBS;
         public String packageConfig = "";
         private static String detect(String... paths) {
             for (String path : paths) if (java.nio.file.Files.isExecutable(java.nio.file.Path.of(path))) return path;

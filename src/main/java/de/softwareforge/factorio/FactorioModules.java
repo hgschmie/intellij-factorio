@@ -68,7 +68,7 @@ public final class FactorioModules implements Disposable {
         try {
             refresh();
             var s=FactorioSettings.get(project);
-            String fingerprint=snapshot.toString()+s.serviceMode+s.node+s.factorio+s.apiDocs+s.cli+s.dependencies+mods().stream().map(m->m.root()+dependencies(m)).toList();
+            String fingerprint=snapshot.toString()+s.serviceMode+s.node+s.factorio+s.apiDocs+s.cli+s.dependencies+s.libraryIgnoreDir+s.libraryIgnoreGlobs+mods().stream().map(m->m.root()+dependencies(m)).toList();
             Path userConfig=Toolkit.root(project).resolve(".emmyrc.json");
             fingerprint += Files.exists(userConfig) ? Files.readString(userConfig) : "";
             if(fingerprint.equals(previousFingerprint))return;
