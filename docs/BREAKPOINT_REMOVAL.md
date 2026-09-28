@@ -34,3 +34,30 @@ entire upstream suite or its default IDEA 2024.2 matrix. Evidence and the isolat
 dependency are in `upstream/lsp4ij/build/breakpoint-verification/`.
 This verifies emitted protocol requests; a live Factorio gutter-removal session
 has not been repeated for this fix.
+
+## Updated dependency (0.2.7-dev)
+
+The upstream patch was rebased onto `upstream/main` at `2dbaa593` (0.21.1-SNAPSHOT).
+Its new PR commit is `b7adb84e`; it retains Java 17-compatible test APIs. The
+local `work/factorio-build` branch adds IDEA 262 build tooling separately.
+`lsp4ij.lock` pins that build branch, and `scripts/build-lsp4ij.sh` produces
+`lsp4ij-0.21.1-SNAPSHOT-factorio-patched.zip`. Both Factorio and EmmyLua2 builds
+consume the updated shared dependency at `dev/plugins/lsp4ij`.
+
+The Factorio-specific unregister workaround from 0.2.6 is removed: the actual
+LSP4IJ handler now implements the fix. FactorioBreakpointTest remains as an
+integration regression test to prevent adopting a dependency without the fix.
+Install the patched LSP4IJ ZIP together with Factorio 0.2.7-dev.
+
+The complete LSP4IJ source now builds successfully in its own Gradle project;
+its breakpoint regression passes there. The build is pinned at `4745d824` and
+uses Gradle 9.6.1, Kotlin 2.3.0, IntelliJ Platform Gradle plugin 2.18.1 and the
+local IDEA 262/JBR 25 SDK. The custom ZIP targets IDEA build 262 and later.
+The local build also supplies the newly separated Structure View SDK dependency,
+uses standard Gradle test reporting, and restricts test plugin loading to LSP4IJ.
+These build adaptations are not included in the PR.
+
+Factorio's nine platform tests (including the breakpoint test with no local
+workaround and navigation against copies of the real mods) and EmmyLua2 routing
+tests pass against this full build. Logs are in each repository's `build/logs/`.
+The full upstream test suite and live Factorio debugging were not rerun.

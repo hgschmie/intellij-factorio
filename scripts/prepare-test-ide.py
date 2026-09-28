@@ -11,6 +11,8 @@ if not fixture.exists():
     for name in ['config.ini','.emmyrc.json']:
         p=fixture/name;p.write_text(p.read_text().replace(str(seed),str(fixture)))
 for source,name in [(dev/'plugins/lsp4ij','lsp4ij'),(root/'upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2','IntelliJ-EmmyLua2')]:
+    if name=='lsp4ij':
+        assert (source/'source.lock').read_text().strip()==(root/'intellij-factorio/lsp4ij.lock').read_text().strip(), 'Prepare the pinned LSP4IJ build'
     if name=='IntelliJ-EmmyLua2':
         assert (source/'server/darwin-arm64/analyzer.lock').read_text().strip()==(root/'intellij-factorio/emmy-analyzer.lock').read_text().strip(), 'Prepare the pinned EmmyLua development build'
     target=profile/'plugins'/name

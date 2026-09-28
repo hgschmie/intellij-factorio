@@ -1,17 +1,20 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.2.6.
-Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and LSP4IJ 0.21.0.
+Java integration under `de.softwareforge.factorio`. Development release 0.2.7.
+Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ 0.21.1-SNAPSHOT.
 LuaLS and profiling are not supported.
 
 ## Build
 
 The local build uses the installed IDEA SDK, the source-built patched EmmyLua2,
-and LSP4IJ from `../dev/plugins/lsp4ij`. Install the toolkit's locked Node dependencies
+and source-built LSP4IJ from `../dev/plugins/lsp4ij`. Install the toolkit's locked Node dependencies
 before the first build. The exact toolkit commit is pinned in `toolkit.lock`;
-review and update that pin when deliberately adopting toolkit changes. Run:
+review and update that pin when deliberately adopting toolkit changes. LSP4IJ
+is pinned in `lsp4ij.lock`; its upstream PR branch stays separate from the local
+`work/factorio-build` branch used to build against IDEA 262. Run:
 
 ```sh
+bash scripts/build-lsp4ij.sh  # pinned main + breakpoint fix
 bash scripts/build.sh test buildPlugin
 ```
 
@@ -29,7 +32,9 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for the full directory map.
 ## Install and configure
 
 Install the patched EmmyLua2 build containing the file-routing extension (work
-branch `work/patched-build`, commit `54818f2` or later) and LSP4IJ, then use **Install Plugin from Disk** for the ZIP in
+branch `work/patched-build`, commit `54818f2` or later) and the patched LSP4IJ ZIP
+`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-factorio-patched.zip`,
+then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
 `aarch64` fix (the local `0.25.1-115-IDEA262-patched-modules` build is tested).
 

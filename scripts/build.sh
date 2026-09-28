@@ -10,6 +10,10 @@ export npm_config_cache="$WORKSPACE/dev/cache/npm"
 export JAVA_HOME="${FMTK_JAVA_HOME:-/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home}"
 export JAVA_TOOL_OPTIONS="-Duser.home=$WORKSPACE/dev/build-home -Djava.io.tmpdir=$WORKSPACE/dev/tmp"
 export TMPDIR="$WORKSPACE/dev/tmp"
+if ! cmp -s "$PLUGIN_ROOT/lsp4ij.lock" "$WORKSPACE/dev/plugins/lsp4ij/source.lock"; then
+  echo "Run bash scripts/build-lsp4ij.sh to prepare the pinned patched LSP4IJ dependency." >&2
+  exit 1
+fi
 EMMY_PLUGIN="$WORKSPACE/upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2"
 if ! cmp -s "$PLUGIN_ROOT/emmy-analyzer.lock" "$EMMY_PLUGIN/server/darwin-arm64/analyzer.lock"; then
   echo "Prepare the pinned EmmyLua module development build before building Factorio." >&2

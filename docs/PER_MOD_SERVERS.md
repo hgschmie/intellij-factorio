@@ -7,7 +7,7 @@ that fixes short and named module imports.
 
 ## Dependencies and installation
 
-Requires LSP4IJ 0.21.0 and the patched EmmyLua2 client containing
+Requires the pinned patched LSP4IJ 0.21.1-SNAPSHOT build and the patched EmmyLua2 client containing
 `EmmyLuaServerProvider` and `EmmyLuaServerRouting`. In
 `../upstream/Intellij-EmmyLua2`, the contribution branch is
 `fix/file-language-server-routing` (`547e03e`), merged into
@@ -15,8 +15,10 @@ Requires LSP4IJ 0.21.0 and the patched EmmyLua2 client containing
 The distribution retains version `0.25.1-115-IDEA262-patched-modules`, so an older
 ZIP with that same version must be replaced by the newly built ZIP.
 
-Install that ZIP and `build/distributions/intellij-factorio-0.2.6-dev.zip`, then
-restart IDEA. No LSP4IJ or additional analyzer source changes are required.
+Install that ZIP and `build/distributions/intellij-factorio-0.2.7-dev.zip`, then
+restart IDEA. Use the LSP4IJ ZIP from `upstream/lsp4ij/build/distributions/`;
+its breakpoint-removal fix is documented in [BREAKPOINT_REMOVAL.md](BREAKPOINT_REMOVAL.md).
+No additional analyzer source changes are required.
 The analyzer remains pinned by `emmy-analyzer.lock`.
 
 ## Ownership and lifecycle
@@ -123,7 +125,7 @@ to verify their new fields. No full-workspace reindex or analyzer patch is hidde
 in this manager. Save changes and restart the language services if stale types
 persist. The earlier rapid-open/edit ordering limitation also remains.
 
-The validated runtime is macOS arm64, IDEA 262, LSP4IJ 0.21.0 and the pinned
+The validated runtime is macOS arm64, IDEA 262, patched LSP4IJ 0.21.1-SNAPSHOT and the pinned
 EmmyLua 0.25.1 development build. Other operating systems need runtime validation.
 
 Plugin Verifier reports **Compatible** against the exact patched dependencies

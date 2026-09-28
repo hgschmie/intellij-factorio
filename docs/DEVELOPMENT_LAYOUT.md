@@ -10,8 +10,8 @@ old profiles and unused artifacts. Do not redirect new validation logs there.
 | `upstream/emmylua-analyzer-rust/` | Analyzer source; compiler outputs stay in `target/` |
 | `upstream/Intellij-EmmyLua2/` | EmmyLua2 source, distribution ZIPs in `build/distributions/` |
 | `upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2/` | Extracted, verified development dependency used by Factorio builds/tests |
-| `upstream/lsp4ij/` | Read-only upstream source checkout for investigation |
-| `dev/plugins/lsp4ij/` | Installed LSP4IJ dependency used to compile and test |
+| `upstream/lsp4ij/` | Upstream LSP4IJ repository and PR branch |
+| `dev/plugins/lsp4ij/` | Pinned source-built LSP4IJ dependency used to compile and test |
 | `dev/cache/{gradle,cargo,npm,...}/` | Shared reusable caches |
 | `dev/build-home/` | Isolated Java/build-tool home |
 | `dev/tmp/` | Shared process temporary files |
@@ -51,3 +51,10 @@ The migration did not delete old spike evidence, the old `spike/emmy-target/`,
 or the historical `spike/ide/`; it copied LSP4IJ and reusable protocol/module
 inputs from those historical locations. Historical acceptance notes retain their
 original paths and describe the old layout.
+
+LSP4IJ's local `work/factorio-build` branch is checked out in the isolated Git
+worktree `upstream/lsp4ij/build/checkouts/patched`. Its build tooling adjustments
+are separate from `fix/dap-clear-last-breakpoint-per-source`. Run
+`intellij-factorio/scripts/build-lsp4ij.sh` to rebuild the pinned revision and
+refresh `dev/plugins/lsp4ij`. Installable ZIPs are copied to
+`upstream/lsp4ij/build/distributions/`; no regular IDE profile is changed.
