@@ -3,7 +3,7 @@
 import http.server, threading, tempfile, pathlib, json, os, subprocess, sys, zipfile
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 WORKSPACE=ROOT.parent
-CLI=pathlib.Path(sys.argv[1]).resolve() if len(sys.argv)>1 else WORKSPACE/'vscode-factoriomod-debug/dist/fmtk-cli.js'
+CLI=pathlib.Path(sys.argv[1]).resolve() if len(sys.argv)>1 else WORKSPACE/'upstream/vscode-factoriomod-debug/dist/fmtk-cli.js'
 requests=[]
 class Portal(http.server.BaseHTTPRequestHandler):
     def log_message(self,*args): pass

@@ -1,7 +1,10 @@
 import json
+import os
 import time
+from pathlib import Path
 from protocol import ROOT, Peer, initialize, open_document, position
 
+WORKSPACE = Path(__file__).resolve().parents[2]
 fixture = ROOT / 'fixture'
 probe = fixture / 'mods/fmtk-probe'
 results = {}
@@ -17,8 +20,8 @@ def labels(result):
     return [item['label'] for item in (result.get('items', []) if isinstance(result, dict) else result or [])]
 
 
-fmtk = Peer(['/opt/homebrew/bin/node', str(ROOT.parent.parent / 'intellij-factorio/build/toolkit/fmtk/fmtk-cli.js'), 'lsp', '--stdio'], 'fmtk-lsp', fixture)
-emmy = Peer([str(ROOT.parent / 'plugin-ide/plugins/IntelliJ-EmmyLua2/server/darwin-arm64/emmylua_ls'), '--resources-path', str(ROOT.parent / 'cache/emmy'), '--log-path', str(ROOT / 'evidence'), '--editor', 'intellij'], 'emmy-lsp', fixture)
+fmtk = Peer(['/opt/homebrew/bin/node', str(WORKSPACE / 'intellij-factorio/build/toolkit/fmtk/fmtk-cli.js'), 'lsp', '--stdio'], 'fmtk-lsp', fixture)
+emmy = Peer([os.environ.get('EMMY_LS', str(WORKSPACE / 'spike/plugin-ide/plugins/IntelliJ-EmmyLua2/server/darwin-arm64/emmylua_ls')), '--resources-path', str(WORKSPACE / 'spike/cache/emmy'), '--log-path', str(ROOT / 'evidence'), '--editor', 'intellij'], 'emmy-lsp', fixture)
 try:
     for peer in [fmtk, emmy]:
         results['fmtk-init' if peer is fmtk else 'emmy-init'] = initialize(peer, fixture)

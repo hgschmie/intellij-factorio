@@ -225,3 +225,42 @@ Evidence: `../spike/emmy-{upstream,development}-protocol.log`,
 `../spike/emmy-development-single-mod.log`, `../spike/emmy-module-ui-evidence`,
 `../spike/emmy-{patch-test,upstream-ls-tests,development-tests,upstream-clippy}.log`,
 `../spike/emmylua2-module-build.log`, `../spike/factorio-emmy-module-build.log`.
+
+
+## September 27: main-based analyzer and relocated repositories
+
+`emmy-analyzer.lock` now pins `34b9c1071b5bc9b075c851deaf259657de775acf`,
+the main-based analyzer development merge (0.25.1). EmmyLua2 packaging commit
+`47bfa05` on `work/patched-build` produces
+`IntelliJ-EmmyLua2-0.25.1-115-IDEA262-patched-modules.zip`. Both upstream
+repositories, plus `vscode-factoriomod-debug`, now live under `../upstream/`.
+Build, license collection, and packaging test paths have been updated. The FMTK
+source pin remains `6dc3400fafbeb5f2c21702e06b7003e3027d4226`.
+
+Validation against the new dependency:
+
+- `scripts/build.sh test buildPlugin verifyPlugin` passed: 22 tests, no failures
+  or skipped tests. Plugin Verifier reports Compatible with IDEA
+  IU-262.10968.63; the existing four deprecated, 20 experimental, and four
+  internal API usages remain.
+- All 10 single-module and 12 multi-module language-service checks passed with
+  the packaged arm64 analyzer and rebuilt FMTK bundle. Single-module tests used
+  a fresh copy of the existing fixture, with absolute library paths updated.
+- Packaging metadata and simulated publishing regressions passed after their
+  toolkit paths were updated. Publishing used fake credentials, temporary Git
+  repositories, and a loopback-only portal; no real publication occurred.
+- The Factorio ZIP's toolkit source stamp matches `toolkit.lock`, and its CLI
+  matches the tested bundle. The EmmyLua2 package's embedded analyzer pin and
+  native binary hash were checked during its build.
+
+Evidence is in `build/evidence/emmy-0.25.1/` (build, protocol, packaging and
+simulated-publishing logs; single/modules JSON results). The new artifact is
+`build/distributions/intellij-factorio-0.1.0-dev.zip`.
+
+`test-language-services.py` now accepts `EMMY_LS` and resolves tool paths from
+this repository, independently of `FACTORIO_TEST_ROOT`. This permits testing a
+new analyzer with fresh fixtures without updating the isolated IDE installation.
+Neither IDE installation was changed, and actual IDE UI/debug acceptance was
+not rerun. The earlier completion-display and rapid-open/edit limitations remain.
+Only macOS arm64 includes the local analyzer patch; other servers in the
+EmmyLua2 package are upstream 0.25.1 binaries.

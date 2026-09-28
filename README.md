@@ -16,7 +16,7 @@ bash scripts/build.sh test buildPlugin
 ```
 
 `FMTK_IDEA_PATH` and `FMTK_JAVA_HOME` override the local SDK/JDK paths.
-The sibling `vscode-factoriomod-debug` repository must be on the accepted
+The `../upstream/vscode-factoriomod-debug` repository must be on the accepted
 `work/intellij-toolkit` baseline. The ZIP includes the built CLI, JavaScript chunks,
 toolkit license and a `fmtk/BUILD.txt` identifying its source commit. Node itself
 is not bundled. The tested runtime is Node 26.9.0.
@@ -25,7 +25,7 @@ is not bundled. The tested runtime is Node 26.9.0.
 
 Install EmmyLua2 and LSP4IJ, then use **Install Plugin from Disk** for the ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
-`aarch64` fix (the local `0.24.0-115-IDEA262-patched` build is tested).
+`aarch64` fix (the local `0.25.1-115-IDEA262-patched-modules` build is tested).
 
 Choose **Factorio Mod** in New Project or New Module. This is a separate
 wizard entry alongside Lua. Enter the mod's name, title, author and target
@@ -50,11 +50,11 @@ Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
 Legacy active-mod settings remain usable until that root is attached as a module.
 
 The development build now uses EmmyLua2
-`0.24.0-115-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
+`0.25.1-115-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
 short imports and named cross-mod imports across attached roots. Build it with
-`../Intellij-EmmyLua2/scripts/build-module-patch.sh` first. `emmy-analyzer.lock`
+`../upstream/Intellij-EmmyLua2/scripts/build-module-patch.sh` first. `emmy-analyzer.lock`
 pins the server source revision; build and isolated-profile preparation check
-that pin. Other platform binaries in this local package remain unpatched.
+that pin. Other platform binaries use upstream 0.25.1 without the local resolver patch.
 See [acceptance status](docs/ACCEPTANCE.md) for client completion limitations.
 
 Locale keys and changelog support run alongside EmmyLua2. A **Restart Factorio
@@ -104,6 +104,8 @@ everyday IDE.
 
 The existing copied protocol fixture at `../spike/plugin-protocol` can be tested
 with `scripts/test-language-services.py` and `scripts/test-debug-protocol.py`.
-`FACTORIO_TEST_ROOT` can override that fixture/evidence root. See
+`FACTORIO_TEST_ROOT` can override that fixture/evidence root. `EMMY_LS` selects
+the analyzer binary for language-service tests without replacing the isolated
+IDE installation. See
 [acceptance status](docs/ACCEPTANCE.md) before treating this development build as
 ready for regular use.

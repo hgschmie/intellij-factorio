@@ -28,7 +28,7 @@ intellijPlatform {
     }
     buildSearchableOptions = false
 }
-val toolkitDir = providers.gradleProperty("toolkitPath").orElse("../vscode-factoriomod-debug")
+val toolkitDir = providers.gradleProperty("toolkitPath").orElse("../upstream/vscode-factoriomod-debug")
 val bundleToolkit by tasks.registering(Sync::class) {
     from(file(toolkitDir.get()).resolve("dist")) { include("*.js"); exclude("fmtk-vscode.js", "*Webview.js") }
     from(file(toolkitDir.get()).resolve("LICENSE.txt"))

@@ -3,7 +3,7 @@
 from pathlib import Path
 import json
 root=Path(__file__).resolve().parents[1]
-toolkit=root.parent/'vscode-factoriomod-debug'
+toolkit=root.parent/'upstream/vscode-factoriomod-debug'
 lock=json.loads((toolkit/'package-lock.json').read_text())
 parts=['Third-party notices for the bundled FMTK CLI\n','This inventory includes build-time dependencies as well as runtime dependencies.\n']
 for name,meta in sorted(lock['packages'].items()):

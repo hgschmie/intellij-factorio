@@ -11,7 +11,7 @@ if ! cmp -s "$PLUGIN_ROOT/emmy-analyzer.lock" "$EMMY_PLUGIN/server/darwin-arm64/
   echo "Prepare the pinned EmmyLua module development build before building Factorio." >&2
   exit 1
 fi
-cd "$WORKSPACE/vscode-factoriomod-debug"
+cd "$WORKSPACE/upstream/vscode-factoriomod-debug"
 EXPECTED_TOOLKIT="$(cat "$PLUGIN_ROOT/toolkit.lock")"
 ACTUAL_TOOLKIT="$(git rev-parse HEAD)"
 if [ "$EXPECTED_TOOLKIT" != "$ACTUAL_TOOLKIT" ]; then

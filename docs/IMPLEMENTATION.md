@@ -33,10 +33,12 @@ items do not imply their IDE UI acceptance has passed.
 - [x] Isolated New Project/New Module/import/package/debug UI checks
 - [x] Correct short and named cross-mod Lua imports with multiple attached mods (patched macOS arm64 analyzer)
 
-The multi-module protocol reproduction and IDE checks pass with the patched
-analyzer pinned in `emmy-analyzer.lock`. The generic upstream patch is signed on
-`fix/workspace-relative-module-resolution` in `../spike/emmy-analyzer-source`;
-its signed 0.24.0 backport is on `work/intellij-modules`. Development EmmyLua2
-packaging is on `../Intellij-EmmyLua2`'s `work/patched-build` branch. The user
-authorized this patch after configuration alternatives failed; additional
-patches are a last resort, not prohibited. No upstream PR or push was sent.
+The analyzer is pinned to `34b9c107` on `work/intellij-modules` in
+`../upstream/emmylua-analyzer-rust`, now based on upstream main (0.25.1). It
+includes the reviewed changes through `07cbc7ce` from upstream PR #1266.
+Development EmmyLua2 packaging is on `../upstream/Intellij-EmmyLua2`'s
+`work/patched-build` branch, commit `47bfa05`. The package version is
+`0.25.1-115-IDEA262-patched-modules`; the local resolver patch applies to macOS
+arm64 only. See `ACCEPTANCE.md` for current validation and historical IDE checks.
+The user authorized this patch after configuration alternatives failed;
+additional patches are a last resort, not prohibited.
