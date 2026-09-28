@@ -165,5 +165,13 @@ public final class FactorioDebug {
     }
     public static final class Handler extends DAPBreakpointHandlerBase<XLineBreakpoint<DAPBreakpointProperties>> {
         public Handler(XDebugSession session,DebugAdapterDescriptor descriptor,Project project) { super(Breakpoint.class,session,descriptor,project); }
+        @Override public void unregisterBreakpoint(XLineBreakpoint<DAPBreakpointProperties> breakpoint,boolean temporary) {
+            var position=breakpoint.getSourcePosition();
+            if (!breakpoints.remove(breakpoint) || position==null) return;
+            // LSP4IJ 0.21 only clears a removed source when the entire session is empty.
+            // DAP replacement is per source: clear this file even if another has breakpoints.
+            // This also retains any remaining breakpoints in the same source.
+            unregisterTemporaryBreakpoint(position);
+        }
     }
 }

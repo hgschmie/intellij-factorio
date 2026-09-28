@@ -15,7 +15,7 @@ Requires LSP4IJ 0.21.0 and the patched EmmyLua2 client containing
 The distribution retains version `0.25.1-115-IDEA262-patched-modules`, so an older
 ZIP with that same version must be replaced by the newly built ZIP.
 
-Install that ZIP and `build/distributions/intellij-factorio-0.2.5-dev.zip`, then
+Install that ZIP and `build/distributions/intellij-factorio-0.2.6-dev.zip`, then
 restart IDEA. No LSP4IJ or additional analyzer source changes are required.
 The analyzer remains pinned by `emmy-analyzer.lock`.
 
