@@ -24,7 +24,7 @@
     <serverProvider implementation="de.softwareforge.factorio.FactorioServerManager$Routing"/>
   </extensions>
   <actions>
-    <group id="SoftwareforgeFactorio" text="Factorio" popup="true">
+    <group id="SoftwareforgeFactorio" text="Factorio" popup="true" icon="de.softwareforge.factorio.FactorioIcons.FACTORIO">
       <add-to-group group-id="ToolsMenu" anchor="last"/>
       <action id="SoftwareforgeFactorio.Configure" class="de.softwareforge.factorio.FactorioActions$Setup" text="Configure Factorio Project…"/>
       <action id="SoftwareforgeFactorio.Generate" class="de.softwareforge.factorio.FactorioActions$Generate" text="Regenerate Factorio API Definitions"/>

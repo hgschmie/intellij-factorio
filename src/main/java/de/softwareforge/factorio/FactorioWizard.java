@@ -1,6 +1,6 @@
 package de.softwareforge.factorio;
 
-import com.intellij.icons.AllIcons;
+import com.intellij.ui.components.JBTextField;
 import com.intellij.ide.util.projectWizard.*;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.module.ModuleType;
@@ -19,12 +19,15 @@ public final class FactorioWizard {
         @Override public Builder createModuleBuilder(){ return new Builder(); }
         @Override public String getName(){ return "Factorio Mod"; }
         @Override public String getDescription(){ return "Create a Factorio mod with runtime, settings and data stages"; }
-        @Override public Icon getNodeIcon(boolean opened){ return AllIcons.Nodes.Module; }
+        @Override public Icon getNodeIcon(boolean opened){ return FactorioIcons.FACTORIO; }
     }
     public static final class Form {
-        final JPanel panel=new JPanel(new GridLayout(0,2,8,8));
-        final JTextField name=field("Mod name"),title=field("Title"),author=field("Author"),description=field("Description"),version=field("Factorio version (major.minor)");
+        private final FactorioForms.Form fields=new FactorioForms.Form();
+        final JPanel panel=new JPanel(new BorderLayout());
+        final JTextField name=field("Mod name"),title=field("Title"),author=field("Author"),description=field("Description"),version=field("Factorio version");
         Form(Project project) {
+            panel.add(fields,BorderLayout.NORTH);
+            version.setToolTipText("Major.minor version, for example 2.1");
             var settings=project==null?new FactorioSettings.Data():FactorioSettings.get(project);
             try {
                 Path docs=settings.apiDocs.isBlank()?Path.of(settings.factorio).getParent().getParent().resolve("doc-html"):Path.of(settings.apiDocs);
@@ -32,7 +35,7 @@ public final class FactorioWizard {
                 version.setText(detected.replaceFirst("^(\\d+\\.\\d+).*", "$1"));
             } catch(Exception ignored) { /* Explicit input required if detection fails. */ }
         }
-        JTextField field(String label){ panel.add(new JLabel(label)); var f=new JTextField(28);panel.add(f);return f; }
+        JTextField field(String label){ var f=new JBTextField(28);fields.row(label,f);return f; }
         ModSkeleton.Metadata metadata(){return new ModSkeleton.Metadata(name.getText().trim(),title.getText().trim(),author.getText().trim(),description.getText().trim(),version.getText().trim());}
     }
     public static final class Builder extends ModuleBuilder {

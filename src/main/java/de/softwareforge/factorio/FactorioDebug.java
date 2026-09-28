@@ -4,7 +4,7 @@ import com.google.gson.*;
 import com.intellij.execution.configurations.*;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
-import com.intellij.icons.AllIcons;
+import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.components.BaseState;
 import com.intellij.openapi.fileTypes.*;
 import com.intellij.openapi.options.SettingsEditor;
@@ -21,12 +21,12 @@ import com.redhat.devtools.lsp4ij.dap.descriptors.*;
 import java.nio.file.*;
 import java.util.*;
 import javax.swing.*;
-import java.awt.GridLayout;
+
 
 public final class FactorioDebug {
     public static final String ID = "softwareforge.factorio.debug";
     public static final class Type extends ConfigurationTypeBase {
-        public Type() { super("SoftwareforgeFactorio", "Factorio", "Run and debug a Factorio mod", NotNullLazyValue.createValue(() -> AllIcons.Debugger.Console)); addFactory(new Factory(this)); }
+        public Type() { super("SoftwareforgeFactorio", "Factorio", "Run and debug a Factorio mod", NotNullLazyValue.createValue(() -> FactorioIcons.FACTORIO)); addFactory(new Factory(this)); }
     }
     public static final class Factory extends ConfigurationFactory {
         public Factory(ConfigurationType type) { super(type); }
@@ -63,14 +63,27 @@ public final class FactorioDebug {
         }
     }
     public static final class Editor extends SettingsEditor<DAPRunConfiguration> {
-        private final JPanel panel = new JPanel(new GridLayout(0,1,4,4));
-        private final JTextField executable=field("Factorio executable"), cwd=field("Working directory"), save=field("Save ZIP (optional)"), mods=field("Mod directory"), config=field("Factorio config.ini (use isolated write-data for tests)");
-        private final JTextArea extra = new JTextArea(3,50);
-        private final JComboBox<String> module=new JComboBox<>();
+        private final JComponent panel;
+        private final TextFieldWithBrowseButton executable,cwd,save,mods,config;
+        private final com.intellij.ui.components.JBTextArea extra = new com.intellij.ui.components.JBTextArea(3,36);
+        private final com.intellij.openapi.ui.ComboBox<String> module=new com.intellij.openapi.ui.ComboBox<>();
         private final Project project;
-        public Editor(Project project) { this.project=project;module.addItem("");FactorioModules.get(project).mods().forEach(m->module.addItem(m.module())); panel.add(new JLabel("Factorio module (optional)"),0);panel.add(module,1);
-            module.addActionListener(e->FactorioModules.get(project).mods().stream().filter(m->m.module().equals(module.getSelectedItem())).findFirst().ifPresent(m->cwd.setText(m.root().toString()))); panel.add(new JLabel("Additional Factorio arguments (one argument per line)")); panel.add(new JScrollPane(extra)); }
-        private JTextField field(String label) { panel.add(new JLabel(label)); var result=new JTextField(50); panel.add(result); return result; }
+        public Editor(Project project) {
+            this.project=project;
+            executable=FactorioForms.path(project,"Select Factorio Executable",false,"");
+            cwd=FactorioForms.path(project,"Select Working Directory",true,"");
+            save=FactorioForms.path(project,"Select Save ZIP",false,"Optional");
+            mods=FactorioForms.path(project,"Select Mod Directory",true,"");
+            config=FactorioForms.path(project,"Select Factorio Configuration",false,"Optional config.ini");
+            module.addItem("");FactorioModules.get(project).mods().forEach(m->module.addItem(m.module()));
+            module.addActionListener(e->FactorioModules.get(project).mods().stream().filter(m->m.module().equals(module.getSelectedItem())).findFirst().ifPresent(m->cwd.setText(m.root().toString())));
+            var form=new FactorioForms.Form();
+            form.row("Mod module",FactorioForms.left(module));form.row("Factorio",executable);
+            form.row("Working directory",cwd);form.row("Save ZIP",save);form.row("Mod directory",mods);form.row("Config file",config);
+            extra.setToolTipText("One argument per line");
+            form.row("Additional arguments",new com.intellij.ui.components.JBScrollPane(extra));
+            panel=form.topAligned();
+        }
         @Override protected JComponent createEditor() { return panel; }
         @Override protected void resetEditorFrom(DAPRunConfiguration c) {
             if(c instanceof Configuration own){ if(!own.modModule.isBlank() && java.util.stream.IntStream.range(0,module.getItemCount()).noneMatch(i->module.getItemAt(i).equals(own.modModule))) module.addItem(own.modModule); module.setSelectedItem(own.modModule); }
@@ -80,7 +93,7 @@ public final class FactorioDebug {
                 JsonArray args=JsonParser.parseString(c.getLaunchConfiguration()).getAsJsonObject().getAsJsonArray("factorioArgs");
                 for(int i=0;i<args.size();i++) {
                     String arg=args.get(i).getAsString();
-                    JTextField field=switch(arg) { case "--load-game" -> save; case "--mod-directory" -> mods; case "--config" -> config; default -> null; };
+                    TextFieldWithBrowseButton field=switch(arg) { case "--load-game" -> save; case "--mod-directory" -> mods; case "--config" -> config; default -> null; };
                     if(field!=null && i+1<args.size()) field.setText(args.get(++i).getAsString()); else extras.add(arg);
                 }
             } catch(Exception ignored) {}

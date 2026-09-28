@@ -1,6 +1,6 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.2.4.
+Java integration under `de.softwareforge.factorio`. Development release 0.2.5.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and LSP4IJ 0.21.0.
 LuaLS and profiling are not supported.
 
@@ -49,7 +49,10 @@ multi-root modules are reported instead of selected arbitrarily.
 start automatically for detected mods; explicit enable/disable is retained.
 Factorio, Node, API JSON and CLI settings are shared by the project. Dependencies
 and the package config have project defaults and optional module overrides.
-Dependency paths are one per line, including in the editable module table.
+Dependency paths are one per line; **Add…** opens a file/folder chooser.
+Select a module and click **Edit Module Overrides…** to customize its dependencies
+and package configuration. Changes stay staged until the parent Settings dialog
+is applied. Toolchain, package, and run-configuration paths have browse buttons.
 Select individual mod directories or mod ZIPs, not a parent containing many mods.
 API generation uses matching local JSON, keeps generated data in IDE caches,
 and creates separate managed EmmyLua workspaces per mod. Previous generated

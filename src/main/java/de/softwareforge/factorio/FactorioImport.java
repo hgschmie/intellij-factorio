@@ -1,6 +1,5 @@
 package de.softwareforge.factorio;
 
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.module.*;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -25,7 +24,7 @@ public final class FactorioImport extends ProjectImportProvider {
     @Override public String getFileSample(){return "Factorio mod folder or info.json";}
     public static final class Builder extends ProjectImportBuilder<String> {
         @Override public String getName(){return "Factorio Mod";}
-        @Override public Icon getIcon(){return AllIcons.Nodes.Module;}
+        @Override public Icon getIcon(){return FactorioIcons.FACTORIO;}
         @Override public boolean isMarked(String item){return true;}
         @Override public void setOpenProjectSettingsAfter(boolean open){}
         @Override public boolean validate(Project current,Project target){
