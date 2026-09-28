@@ -2,11 +2,15 @@
 set -euo pipefail
 PLUGIN_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORKSPACE="$(dirname "$PLUGIN_ROOT")"
-export GRADLE_USER_HOME="$WORKSPACE/spike/cache/gradle"
+mkdir -p "$WORKSPACE/dev/tmp" "$WORKSPACE/dev/build-home"
+mkdir -p "$PLUGIN_ROOT/build/logs"
+exec > >(tee "$PLUGIN_ROOT/build/logs/build-$(date +%Y%m%d-%H%M%S)-$$.log") 2>&1
+export GRADLE_USER_HOME="$WORKSPACE/dev/cache/gradle"
+export npm_config_cache="$WORKSPACE/dev/cache/npm"
 export JAVA_HOME="${FMTK_JAVA_HOME:-/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home}"
-export JAVA_TOOL_OPTIONS="-Duser.home=$WORKSPACE/spike/build-home -Djava.io.tmpdir=$WORKSPACE/spike/tmp"
-export TMPDIR="$WORKSPACE/spike/tmp"
-EMMY_PLUGIN="$WORKSPACE/spike/emmylua2-module-build/verified/IntelliJ-EmmyLua2"
+export JAVA_TOOL_OPTIONS="-Duser.home=$WORKSPACE/dev/build-home -Djava.io.tmpdir=$WORKSPACE/dev/tmp"
+export TMPDIR="$WORKSPACE/dev/tmp"
+EMMY_PLUGIN="$WORKSPACE/upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2"
 if ! cmp -s "$PLUGIN_ROOT/emmy-analyzer.lock" "$EMMY_PLUGIN/server/darwin-arm64/analyzer.lock"; then
   echo "Prepare the pinned EmmyLua module development build before building Factorio." >&2
   exit 1
@@ -29,6 +33,6 @@ python3 "$PLUGIN_ROOT/scripts/bundle-notices.py"
 cd "$PLUGIN_ROOT"
 bash gradlew --no-daemon \
  "-PideaPath=${FMTK_IDEA_PATH:-/Users/henning/Applications/IntelliJ IDEA.app}" \
- "-Plsp4ijPath=$WORKSPACE/spike/ide/plugins/lsp4ij" \
+ "-Plsp4ijPath=$WORKSPACE/dev/plugins/lsp4ij" \
  "-PemmyPath=$EMMY_PLUGIN" \
  "$@"

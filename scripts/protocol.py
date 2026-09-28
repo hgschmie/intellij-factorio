@@ -1,5 +1,6 @@
 """Small stdio LSP/DAP probe; records full protocol traffic under evidence/."""
 import json
+import shutil
 import os
 import queue
 import subprocess
@@ -7,7 +8,19 @@ import threading
 import time
 from pathlib import Path
 
-ROOT = Path(os.environ.get('FACTORIO_TEST_ROOT', str(Path(__file__).resolve().parents[2] / 'spike/plugin-protocol')))
+WORKSPACE = Path(__file__).resolve().parents[2]
+ROOT = Path(os.environ.get('FACTORIO_TEST_ROOT', str(WORKSPACE / 'intellij-factorio/build/test-work/protocol'))).resolve()
+for directory in [ROOT / 'evidence', ROOT / 'tmp', ROOT / 'runtime/home', ROOT / 'runtime/data']:
+    directory.mkdir(parents=True, exist_ok=True)
+# Tests modify only a disposable copy, never the reusable fixture.
+if not (ROOT / 'fixture').exists():
+    source = WORKSPACE / 'dev/fixtures/protocol'
+    shutil.copytree(source, ROOT / 'fixture', ignore=shutil.ignore_patterns('write-data', '.idea'))
+    (ROOT / 'fixture/write-data').mkdir()
+    for name in ['config.ini', '.emmyrc.json']:
+        path = ROOT / 'fixture' / name
+        path.write_text(path.read_text().replace(str(source), str(ROOT / 'fixture')))
+
 
 
 class Peer:
@@ -19,7 +32,8 @@ class Peer:
         self.incoming = queue.Queue()
         self.trace = (ROOT / 'evidence' / f'{name}.jsonl').open('w')
         self.stderr = (ROOT / 'evidence' / f'{name}.stderr').open('w')
-        env = dict(os.environ, TMPDIR=str(ROOT / 'tmp'))
+        env = dict(os.environ, TMPDIR=str(ROOT / 'tmp'), HOME=str(ROOT / 'runtime/home'),
+                   XDG_DATA_HOME=str(ROOT / 'runtime/data'), LOCALAPPDATA=str(ROOT / 'runtime/data'))
         self.process = subprocess.Popen(command, cwd=cwd or ROOT, env=env,
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=self.stderr)

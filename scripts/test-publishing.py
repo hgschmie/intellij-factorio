@@ -22,7 +22,7 @@ class Portal(http.server.BaseHTTPRequestHandler):
         self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(json.dumps(result).encode())
 portal=http.server.ThreadingHTTPServer(('127.0.0.1',0),Portal)
 threading.Thread(target=portal.serve_forever,daemon=True).start()
-base=WORKSPACE/'spike/plugin-publishing-tests';base.mkdir(exist_ok=True)
+base=WORKSPACE/'intellij-factorio/build/test-work/publishing';base.mkdir(parents=True,exist_ok=True)
 test=pathlib.Path(tempfile.mkdtemp(prefix='run-',dir=base))
 env=os.environ.copy();env.update(FACTORIO_UPLOAD_API_KEY='fake-test-key',FACTORIO_TEST_PORTAL=f'http://127.0.0.1:{portal.server_port}',TMPDIR=str(test),FMTK_CONFIG=str(test/'config.json'))
 (test/'config.json').write_text('{}')

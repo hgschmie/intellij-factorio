@@ -1,3 +1,20 @@
+# Development tree relocation — 2026-09-28
+
+Active scripts now use `dev/` and repository-local `build/` paths. Historical
+paths in the older results below remain unchanged. See
+[DEVELOPMENT_LAYOUT.md](DEVELOPMENT_LAYOUT.md) for the directory map.
+
+Validated after relocation: analyzer release build and EmmyLua2 package/hash/pin
+checks, 30 Factorio unit tests, five Factorio platform tests using real-mod copies,
+five EmmyLua2 routing tests, language/module protocol probes, package metadata
+and mock-portal publishing checks. The relocated debugger fixture also passed
+three launch/breakpoint/inspect/evaluate/step/dependency-breakpoint/disconnect
+cycles, with exit code zero each time. Build logs are now automatically captured under
+each repository's `build/logs/`. The isolated IDE profile was prepared at
+`dev/ide`; it was not opened for interactive UI acceptance. Preparation replaces
+the Factorio plugin directory before extracting its ZIP so obsolete versioned
+JARs cannot remain alongside the current JAR.
+
 # Exclusion path correction — 2026-09-28
 
 Version 0.2.3 removes the erroneous `base/scripts/` entries from IntelliJ defaults.

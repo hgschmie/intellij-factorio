@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 
 workspace = Path(__file__).resolve().parents[2]
-root = workspace / 'spike/package-metadata-test'
+root = workspace / 'intellij-factorio/build/test-work/package-metadata'
 if root.exists():
     shutil.rmtree(root)
 mod = root / 'mod'

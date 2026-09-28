@@ -16,11 +16,11 @@ for path,name,number in [(a,'mod-a',11),(b,'mod-b',22)]:
     (path/'locale/en').mkdir(parents=True,exist_ok=True)
     (path/'locale/en/probe.cfg').write_text(f'[{name}]\nready=Ready\n')
 workspace = Path(__file__).resolve().parents[2]
-api = workspace/'spike/plugin-fixture/api/factorio/library'
+api = workspace/'dev/fixtures/plugin/api/factorio/library'
 config={'runtime':{'version':'Lua 5.2','requirePattern':['?.lua']},'workspace':{'library':[str(api),str(a.parent),str(b.parent)],'workspaceRoots':[str(a),str(b)],'moduleMap':[{'pattern':'^mod-a[.](.*)$','replace':'__mod-a__.$1'},{'pattern':'^mod-b[.](.*)$','replace':'__mod-b__.$1'}]}}
 config=json.loads(os.environ['EMMY_TEST_CONFIG']) if 'EMMY_TEST_CONFIG' in os.environ else config
 (project/'.emmyrc.json').write_text(json.dumps(config))
-emmy = Peer([os.environ.get('EMMY_LS',str(workspace/'spike/plugin-ide/plugins/IntelliJ-EmmyLua2/server/darwin-arm64/emmylua_ls'))], 'modules-emmy', project)
+emmy = Peer([os.environ.get('EMMY_LS',str(workspace/'upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2/server/darwin-arm64/emmylua_ls'))], 'modules-emmy', project)
 fmtk = Peer(['/opt/homebrew/bin/node',str(workspace/'intellij-factorio/build/toolkit/fmtk/fmtk-cli.js'),'lsp','--stdio'],'modules-fmtk',project)
 results={}
 try:

@@ -26,7 +26,7 @@ public class PerModServersTest extends HeavyPlatformTestCase {
     @Override protected void setUp() throws Exception {
         super.setUp();
         workspace=Path.of(System.getProperty("factorio.test.workspace"));
-        temporary=Files.createTempDirectory(workspace.resolve("spike/tmp"),"server-manager-");
+        temporary=Files.createTempDirectory(Files.createDirectories(Path.of(System.getProperty("factorio.test.work"))),"server-manager-");
         Files.createDirectories(Toolkit.root(getProject()));
         var settings=FactorioSettings.get(getProject());
         settings.serviceMode="DISABLED";

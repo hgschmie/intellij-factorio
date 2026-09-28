@@ -7,7 +7,7 @@ LuaLS and profiling are not supported.
 ## Build
 
 The local build uses the installed IDEA SDK, the source-built patched EmmyLua2,
-and LSP4IJ from the spike workspace. Install the toolkit's locked Node dependencies
+and LSP4IJ from `../dev/plugins/lsp4ij`. Install the toolkit's locked Node dependencies
 before the first build. The exact toolkit commit is pinned in `toolkit.lock`;
 review and update that pin when deliberately adopting toolkit changes. Run:
 
@@ -20,6 +20,11 @@ The `../upstream/vscode-factoriomod-debug` repository must be on the accepted
 `work/intellij-toolkit` baseline. The ZIP includes the built CLI, JavaScript chunks,
 toolkit license and a `fmtk/BUILD.txt` identifying its source commit. Node itself
 is not bundled. The tested runtime is Node 26.9.0.
+
+Build logs are written automatically to `build/logs/`. Shared caches, temporary
+files and the isolated build home live under `../dev/`. The prepared EmmyLua2
+dependency is `../upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2`.
+See [development layout](docs/DEVELOPMENT_LAYOUT.md) for the full directory map.
 
 ## Install and configure
 
@@ -102,19 +107,20 @@ python3 scripts/test-publishing.py
 ```
 
 The publishing harness uses fake credentials, a loopback portal, and temporary
-Git repositories beneath `../spike/plugin-publishing-tests`. Its preload rejects
+Git repositories beneath `build/test-work/publishing`. Its preload rejects
 external network destinations. No real mod is published. See
 `docs/IMPLEMENTATION.md` for outstanding checks and acceptance evidence.
 
 ## Isolated acceptance environment
 
 With the test IDE closed, `python3 scripts/prepare-test-ide.py` prepares the
-workspace-only profile from the existing spike fixture and dependencies. Run
+profile at `../dev/ide` using `../dev/fixtures/plugin` and the prepared dependencies. Run
 `bash scripts/launch-test-ide.sh` to open it. This does not install into your
 everyday IDE.
 
-The existing copied protocol fixture at `../spike/plugin-protocol` can be tested
-with `scripts/test-language-services.py` and `scripts/test-debug-protocol.py`.
+The reusable protocol fixture at `../dev/fixtures/protocol` is copied into
+`build/test-work/protocol/fixture` by `scripts/test-language-services.py` and
+`scripts/test-debug-protocol.py`; evidence and runtime files stay under that test-work directory.
 `FACTORIO_TEST_ROOT` can override that fixture/evidence root. `EMMY_LS` selects
 the analyzer binary for language-service tests without replacing the isolated
 IDE installation. See

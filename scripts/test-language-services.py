@@ -21,7 +21,7 @@ def labels(result):
 
 
 fmtk = Peer(['/opt/homebrew/bin/node', str(WORKSPACE / 'intellij-factorio/build/toolkit/fmtk/fmtk-cli.js'), 'lsp', '--stdio'], 'fmtk-lsp', fixture)
-emmy = Peer([os.environ.get('EMMY_LS', str(WORKSPACE / 'spike/plugin-ide/plugins/IntelliJ-EmmyLua2/server/darwin-arm64/emmylua_ls')), '--resources-path', str(WORKSPACE / 'spike/cache/emmy'), '--log-path', str(ROOT / 'evidence'), '--editor', 'intellij'], 'emmy-lsp', fixture)
+emmy = Peer([os.environ.get('EMMY_LS', str(WORKSPACE / 'upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2/server/darwin-arm64/emmylua_ls')), '--resources-path', str(WORKSPACE / 'dev/cache/emmy'), '--log-path', str(ROOT / 'evidence'), '--editor', 'intellij'], 'emmy-lsp', fixture)
 try:
     for peer in [fmtk, emmy]:
         results['fmtk-init' if peer is fmtk else 'emmy-init'] = initialize(peer, fixture)
