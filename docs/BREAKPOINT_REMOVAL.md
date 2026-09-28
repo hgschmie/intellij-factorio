@@ -61,3 +61,31 @@ Factorio's nine platform tests (including the breakpoint test with no local
 workaround and navigation against copies of the real mods) and EmmyLua2 routing
 tests pass against this full build. Logs are in each repository's `build/logs/`.
 The full upstream test suite and live Factorio debugging were not rerun.
+
+## Review against upstream issue #1316
+
+Reviewed https://github.com/redhat-developer/lsp4ij/issues/1316 and its fix,
+https://github.com/redhat-developer/lsp4ij/pull/1318, commit `89d94eac`.
+That issue concerns removing the session's final breakpoint. The old
+`sendBreakpoints` guard returned whenever `breakpoints.isEmpty()`, even if a
+removed source was supplied. The essential correction was to return only when
+`breakpoints.isEmpty() && temporaryBreakpoint == null`. Our patch preserves
+that guard, as well as the no-initialized-server guard.
+
+The same upstream commit also restricted the removed-source argument to cases
+where the session-wide list was empty. Our patch removes that restriction only.
+When the session is empty, both versions send exactly the same removal marker;
+when it is not, our version additionally keeps the removed source in the request.
+`computeIfAbsent` in the DAP request builder preserves remaining breakpoints in
+that source. Disassembly handling ignores this marker and continues replacing
+its entire instruction-breakpoint list as before (source review only).
+
+The existing regression test covers the final breakpoint, same-file retention,
+cross-file removal, re-registration and temporary unregistration. To check its
+sensitivity to #1316, an isolated mutation test restored the old unconditional
+empty-list guard. It failed on the final `b.lua` removal because no replacement
+request was sent. Restoring our unchanged patch passes. Test execution was forced
+to avoid reusing cached test results. Logs, XML results and the mutation driver
+are in `upstream/lsp4ij/build/checkouts/patched/build/issue-1316-review/`.
+No production change or new regression test was needed; the existing test detects
+both reported failure modes. Published ZIPs and dependency pins are unchanged.
