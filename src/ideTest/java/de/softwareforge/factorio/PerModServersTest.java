@@ -83,6 +83,54 @@ public class PerModServersTest extends HeavyPlatformTestCase {
     private String completions(LanguageServerItem item, Path path) throws Exception {
         return String.valueOf(await(item.getServer().getTextDocumentService().completion(new CompletionParams(new TextDocumentIdentifier(path.toUri().toString()),new Position(1,21)))));
     }
+    public void testBackgroundRegistryLifecycleRunsOnEdt() throws Exception {
+        Path root=mod("alpha","alphaValue");
+        attach(List.of(root));
+        FactorioSettings.get(getProject()).serviceMode="ENABLED";
+        var manager=FactorioServerManager.get(getProject());
+        var initial=scope(root,List.of());
+        var callbacks=new java.util.concurrent.CopyOnWriteArrayList<Boolean>();
+        var added=new java.util.concurrent.atomic.AtomicInteger();
+        var removed=new java.util.concurrent.atomic.AtomicInteger();
+        var listener=new com.redhat.devtools.lsp4ij.server.definition.LanguageServerDefinitionListener() {
+            @Override public void handleChanged(LanguageServerChangedEvent event) {}
+            @Override public void handleAdded(LanguageServerAddedEvent event) {
+                callbacks.add(com.intellij.openapi.application.ApplicationManager.getApplication().isDispatchThread());
+                added.addAndGet(event.serverDefinitions.size());
+            }
+            @Override public void handleRemoved(LanguageServerRemovedEvent event) {
+                callbacks.add(com.intellij.openapi.application.ApplicationManager.getApplication().isDispatchThread());
+                removed.addAndGet(event.serverDefinitions.size());
+            }
+        };
+        var registry=LanguageServersRegistry.getInstance();
+        registry.addLanguageServerDefinitionListener(listener);
+        try {
+            await(CompletableFuture.runAsync(() -> manager.configure(List.of(initial))));
+            eventually(() -> added.get()==2);
+            assertFalse("Background registration notified listeners off EDT",callbacks.contains(false));
+            var replacement=new ModLanguageScope(root,"renamed",initial.workspace(),List.of(),List.of(),initial.config());
+            await(CompletableFuture.runAsync(() -> manager.configure(List.of(replacement))));
+            eventually(() -> added.get()==4 && removed.get()==2);
+            await(CompletableFuture.runAsync(() -> manager.retain(List.of())));
+            eventually(() -> removed.get()==4);
+            manager.configure(List.of(initial));
+            eventually(() -> added.get()==6);
+            String id=manager.luaServer(root.resolve("control.lua"));
+            CompletableFuture.runAsync(() -> {
+                manager.configure(List.of(replacement)); // queued before disposal; must be ignored
+                manager.dispose();
+                manager.configure(List.of(initial)); // must not resurrect definitions
+            }).get(5,TimeUnit.SECONDS);
+            eventually(() -> removed.get()==6);
+            PlatformTestUtil.dispatchAllEventsInIdeEventQueue();
+            assertEquals(6,added.get());
+            assertNull(registry.getServerDefinition(id));
+            assertNull(registry.getServerDefinition(id.replace(".lua.",".locale.")));
+            assertFalse("Registry notifications must all be on EDT: "+callbacks,callbacks.contains(false));
+        } finally { registry.removeLanguageServerDefinitionListener(listener); }
+    }
+
     public void testIndependentLuaAndLocaleServersAndRemoval() throws Exception {
         Path a=mod("alpha","alphaValue"),b=mod("beta","betaValue");
         var manager=FactorioServerManager.get(getProject());
@@ -200,6 +248,7 @@ public class PerModServersTest extends HeavyPlatformTestCase {
             try { Definitions.generate(getProject(),new com.intellij.openapi.progress.EmptyProgressIndicator(),message -> {}); }
             catch(Exception e) { throw new CompletionException(e); }
         }));
+        PlatformTestUtil.dispatchAllEventsInIdeEventQueue();
         var manager=FactorioServerManager.get(getProject());
         for(Path root:List.of(a,b)) {
             var item=server(manager.luaServer(root.resolve("control.lua")));

@@ -1,6 +1,6 @@
 # Per-mod language servers
 
-The 0.2.0 development build registers an independent EmmyLua analyzer and FMTK
+The 0.2.1 development build registers an independent EmmyLua analyzer and FMTK
 locale/changelog server for each detected Factorio mod. This isolates globals
 such as `This` in unrelated modules, in addition to the existing analyzer patch
 that fixes short and named module imports.
@@ -15,7 +15,7 @@ Requires LSP4IJ 0.21.0 and the patched EmmyLua2 client containing
 The distribution retains version `0.25.1-115-IDEA262-patched-modules`, so an older
 ZIP with that same version must be replaced by the newly built ZIP.
 
-Install that ZIP and `build/distributions/intellij-factorio-0.2.0-dev.zip`, then
+Install that ZIP and `build/distributions/intellij-factorio-0.2.1-dev.zip`, then
 restart IDEA. No LSP4IJ or additional analyzer source changes are required.
 The analyzer remains pinned by `emmy-analyzer.lock`.
 
@@ -24,7 +24,11 @@ The analyzer remains pinned by `emmy-analyzer.lock`.
 `FactorioServerManager` registers project-specific LSP4IJ definitions with stable
 IDs derived from canonical project/mod paths. Servers start on demand. Settings
 and module changes replace affected definitions; removal and project disposal
-unregister them. **Restart Factorio Language Services** restarts the registered
+unregister them. Registry mutations and restart operations run on the EDT because
+LSP4IJ calls its Swing explorer listeners synchronously. Background callers enqueue
+immutable configuration snapshots without waiting for the EDT; disposal immediately
+deactivates definitions and then schedules registry cleanup. Queued configuration
+is ignored after disposal. **Restart Factorio Language Services** restarts the registered
 instances. The old static FMTK definition is removed.
 
 An attached mod owns its editor files. An external dependency shared by several

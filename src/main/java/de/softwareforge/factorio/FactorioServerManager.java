@@ -7,6 +7,7 @@ import com.intellij.lang.Language;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
@@ -69,7 +70,19 @@ public final class FactorioServerManager implements Disposable {
     private boolean owns(ModLanguageScope scope, Path file, boolean lua) {
         return scope.equals(ModLanguageScope.owner(scopes,file,lua));
     }
-    public synchronized void configure(List<ModLanguageScope> next) {
+    // Registry listeners update Swing synchronously. Queue before acquiring any
+    // manager lock; waiting for the EDT while holding it can deadlock disposal.
+    private static void onEdt(Runnable operation) {
+        var application = ApplicationManager.getApplication();
+        if (application.isDispatchThread()) operation.run();
+        else application.invokeLater(operation, ModalityState.any());
+    }
+    public void configure(List<ModLanguageScope> next) {
+        var snapshot = List.copyOf(next);
+        onEdt(() -> configureOnEdt(snapshot));
+    }
+    private synchronized void configureOnEdt(List<ModLanguageScope> next) {
+        ApplicationManager.getApplication().assertIsDispatchThread();
         if (disposed || project.isDisposed()) return;
         var old = scopes;
         scopes = List.copyOf(next);
@@ -111,11 +124,16 @@ public final class FactorioServerManager implements Disposable {
         return lua ? "lua".equals(file.getExtension()) : "lua".equals(file.getExtension()) ||
             file.getName().equals("changelog.txt") || file.getPath().matches(".*/locale/[^/]+/[^/]+\\.cfg");
     }
-    public synchronized void retain(List<ModDiscovery.Mod> mods) {
-        configure(scopes.stream().filter(s -> mods.stream().anyMatch(m -> m.root().equals(s.root()))).toList());
+    public void retain(List<ModDiscovery.Mod> mods) {
+        var snapshot = List.copyOf(mods);
+        onEdt(() -> configureOnEdt(scopes.stream().filter(s -> snapshot.stream().anyMatch(m -> m.root().equals(s.root()))).toList()));
     }
-    public synchronized void restart() {
-        configure(scopes);
+    public void restart() {
+        onEdt(this::restartOnEdt);
+    }
+    private synchronized void restartOnEdt() {
+        if (disposed || project.isDisposed()) return;
+        configureOnEdt(scopes);
         for (var d : definitions.values()) LanguageServerManager.getInstance(project).start(d,new LanguageServerManager.StartOptions().setForceRestart(true));
         refreshEditors();
     }
@@ -153,11 +171,18 @@ public final class FactorioServerManager implements Disposable {
             for (var d : definitions.values()) if (d.features != null) d.features.sync(buffers);
         }
     }
-    @Override public synchronized void dispose() {
-        disposed = true;
-        scopes = List.of();
-        for (var d : definitions.values()) { d.active = false; LanguageServersRegistry.getInstance().removeServerDefinition(project,d); }
-        definitions.clear();
+    @Override public void dispose() {
+        List<Definition> removed;
+        synchronized (this) {
+            disposed = true;
+            scopes = List.of();
+            removed = List.copyOf(definitions.values());
+            removed.forEach(d -> d.active = false);
+            definitions.clear();
+        }
+        // Do not expire this callback with the project: global registry cleanup
+        // must still run when project disposal originated on a background thread.
+        onEdt(() -> removed.forEach(d -> LanguageServersRegistry.getInstance().removeServerDefinition(project,d)));
     }
     private final class Definition extends LanguageServerDefinition {
         final ModLanguageScope scope;

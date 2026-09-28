@@ -1,3 +1,22 @@
+# EDT lifecycle fix — 2026-09-28
+
+Version 0.2.1 fixes the reported `LanguageServerExplorer.handleAdded` EDT assertion.
+Background module reconciliation previously registered server definitions directly;
+LSP4IJ then updated its Swing tree on that same background thread. Registration,
+replacement, removal and restart now run on the EDT. Background disposal deactivates
+servers immediately and schedules registry cleanup; pending configuration cannot
+recreate disposed definitions. Generation and dependency buffer work stay in the
+background.
+
+All five platform tests pass. The new regression observes real registry callbacks during background
+configuration, replacement, module removal and disposal, asserting that every
+notification arrives on the EDT. It also tests configuration queued around disposal.
+The generated-API background configuration test and existing real-mod navigation,
+locale, dependency update and restart tests are retained. This is automated platform
+validation; the user's running IDE was not modified or exercised interactively.
+Install `build/distributions/intellij-factorio-0.2.1-dev.zip`; the patched EmmyLua2
+build from the previous installation remains suitable.
+
 # Per-mod manager update — 2026-09-27
 
 The 0.2.0 development build uses one EmmyLua and one FMTK instance per mod.
