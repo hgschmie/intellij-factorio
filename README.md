@@ -80,8 +80,9 @@ and package configuration. Changes stay staged until the parent Settings dialog
 is applied. Toolchain, package, and run-configuration paths have browse buttons.
 Select individual mod directories or mod ZIPs, not a parent containing many mods.
 API generation uses matching local JSON, keeps generated data in IDE caches,
-and creates separate managed EmmyLua workspaces per mod. Previous generated
-project-wide `.emmyrc.json` entries are removed while unrelated settings remain.
+and runs a separate EmmyLua server rooted in each mod. Put analysis preferences
+in the mod’s `.emmyrc.json`, `.luarc.json`, or `.emmyrc.lua`; the plugin supplies
+Factorio integration settings separately and never rewrites these files.
 See [per-mod language servers](docs/PER_MOD_SERVERS.md) for routing, configuration
 and known limitations.
 Factorio's data library uses the VS Code toolkit's exclusions, with additional

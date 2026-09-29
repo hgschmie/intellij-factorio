@@ -53,21 +53,56 @@ unrelated sibling mods. Explicit dependency globals remain visible in that
 consumer, so declaring another attached mod as a dependency intentionally widens
 its scope.
 
-Each analyzer initializes in a managed workspace under the IDE system cache:
-`softwareforge-factorio/<project>/language-servers/<identity>/workspace`.
-Its `.emmyrc.json` names only that mod, its explicit dependencies and API/user
-libraries. Sibling directories hold analyzer logs and standard-library resources.
-The child environment redirects home/config/data lookup to avoid inheriting
-project-wide roots from global analyzer configuration. The generated config is
-automatic; edit project settings or the project's `.emmyrc.json` instead.
+Each analyzer initializes with its mod directory as its root and working directory.
+The analyzer loads native `.luarc.json`, `.emmyrc.json`, and `.emmyrc.lua` files
+from that directory. Prefer one file; when several exist, the analyzer loads them
+in that order. Module-relative paths and `${workspaceFolder}` refer to the mod.
+Project-level configuration is not inherited by sibling modules. No migration or
+rewriting of user configuration files is performed.
 
-Previously managed entries in the project's `.emmyrc.json` are removed using
-the existing ownership record. Unrelated options are preserved and copied into
-the per-instance config. Relative user library paths are resolved against the
-project. User `workspaceRoots`/`packages`, structured library entries, or libraries
-containing attached mod source trees produce an actionable configuration error.
-Move source roots into module/dependency settings. Global home configs and
-per-mod `.emmyrc.lua` are not inputs to this configuration path.
+Keep diagnostics, severity overrides, completion, hints, and other analysis
+preferences in the module configuration. For example, `.emmyrc.json`:
+
+```json
+{
+  "diagnostics": {
+    "disable": ["unnecessary-assert"]
+  }
+}
+```
+
+The plugin answers each server's `workspace/configuration` request with only
+Factorio integration settings: Lua 5.2, the `?.lua` require pattern, generated API
+and filtered game libraries, explicit dependency packages, source roots and
+`__mod-name__` mappings. Those values are not user preferences. Configure
+Factorio libraries/dependencies through the plugin settings instead. No generic
+project-wide LSP4IJ settings are forwarded to these servers.
+
+**Current limitation:** native configuration merges objects, replaces scalars
+with later values, and appends arrays. The plugin overlay is applied last, but
+cannot replace user arrays. Do not set `workspace.workspaceRoots`,
+`workspace.packages`, `workspace.library`, `workspace.moduleMap`, or
+`runtime.requirePattern` in module configuration. Conflicting entries are not
+automatically rejected and can bring unrelated mods into the analyzer. Additional
+libraries outside managed roots also have no plugin-provided watches or editor
+routing. Strict enforcement would require separate analyzer work; this version
+uses the existing server protocol without upstream patches.
+
+Saving, creating, deleting, moving or renaming any of the three configuration
+files triggers a debounced restart of only that module's EmmyLua server. Analyzer
+0.25.1 ignores deletion notifications; the plugin uses a fresh process consistently
+for all config changes so deletion and editor atomic saves behave the same way.
+Other module servers and FMTK locale services remain running. Invalid
+configuration is handled by the analyzer (logged and skipped); retaining the last
+valid configuration is not
+guaranteed. Configuration changes must be saved to take effect.
+
+Managed overlay snapshots (`workspace/managed-emmy-config.json`), logs and
+standard-library resources remain under the IDE system cache:
+`softwareforge-factorio/<project>/language-servers/<identity>/`.
+The snapshot is for inspection, not editing. Child home/config/data lookup stays
+isolated from global analyzer configuration. This also means `~` refers to the
+isolated home; use module-relative paths instead.
 
 ### Factorio data exclusions (0.2.2)
 
@@ -109,7 +144,9 @@ Platform tests use actual LSP4IJ definitions and native analyzer/Node processes.
 They cover isolated globals, editor routing to exactly the owning pair of servers,
 locale navigation and VFS create/delete, restart, module removal, unsaved shared
 dependency delivery/save/disk replacement, generated API hover/configuration,
-and the reported `This:storage()` navigation in both real mods. These are IDE
+native module configuration in all three formats, per-module diagnostics, relative
+exclusions, config create/edit/delete/rename, neighboring Lua/locale server
+stability, and the reported `This:storage()` navigation in both real mods. These are IDE
 platform tests, not interactive UI acceptance. The test runner disables LSP work
 progress because synchronous IntelliJ test progress otherwise blocks LSP4IJ's
 notification queue; normal IDE progress is unchanged.
@@ -121,14 +158,14 @@ exported table types in importers. Changing a dependency's returned table can
 leave completion in an unchanged consumer stale until that consumer is
 reanalyzed (for example, edited or reopened). The regression test separately
 verifies that both servers receive the unsaved buffer, then reopens the importers
-to verify their new fields. No full-workspace reindex or analyzer patch is hidden
-in this manager. Save changes and restart the language services if stale types
+to verify their new fields. Ordinary dependency edits do not trigger a full
+reindex or a server restart. Save changes and restart the language services if stale types
 persist. The earlier rapid-open/edit ordering limitation also remains.
 
 The validated runtime is macOS arm64, IDEA 262, patched LSP4IJ 0.21.1-SNAPSHOT and the pinned
 EmmyLua 0.25.1 development build. Other operating systems need runtime validation.
 
-Plugin Verifier reports **Compatible** against the exact patched dependencies
+The previous Plugin Verifier run (0.2.8-dev) reported **Compatible** against the exact patched dependencies
 and IDEA IU-262.10968.63. Its strict Gradle task remains nonzero for internal API
 usages; deprecated and experimental APIs are also reported. Editor refresh uses
 LSP4IJ's internal `LSPFileSupport`, as does the existing locale completion cache

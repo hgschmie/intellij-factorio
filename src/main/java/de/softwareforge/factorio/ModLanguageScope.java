@@ -27,7 +27,7 @@ public record ModLanguageScope(Path root, String name, Path workspace, List<Path
     }
     public List<Path> roots(boolean lua) {
         var roots = new ArrayList<Path>(); roots.add(root); roots.addAll(dependencies);
-        if (lua) { roots.addAll(libraries); roots.add(workspace); }
+        if (lua) roots.addAll(libraries);
         return roots.stream().distinct().toList();
     }
     public boolean includes(Path file, boolean lua) {
@@ -42,14 +42,14 @@ public record ModLanguageScope(Path root, String name, Path workspace, List<Path
         return own.orElseGet(() -> scopes.stream().filter(s -> s.includes(path,lua))
             .min(Comparator.comparing(s -> s.root.toString())).orElse(null));
     }
-    public static JsonObject configuration(JsonObject user, Path root, List<Path> libraries, List<Path> dependencies) throws Exception {
-        var result = user.deepCopy();
-        var workspace = result.has("workspace") ? result.getAsJsonObject("workspace").deepCopy() : new JsonObject();
+    public static JsonObject configuration(Path root, List<Path> libraries, List<Path> dependencies) throws Exception {
+        var result = new JsonObject();
+        var workspace = new JsonObject();
         workspace.add("workspaceRoots", strings(List.of(root)));
         workspace.add("library", strings(libraries));
         var packages = new ArrayList<Path>(); packages.add(root); packages.addAll(dependencies);
         workspace.add("packages", strings(packages));
-        var maps = workspace.has("moduleMap") ? workspace.getAsJsonArray("moduleMap").deepCopy() : new JsonArray();
+        var maps = new JsonArray();
         for (Path mod : packages) {
             var map = new JsonObject();
             String directory = mod.getFileName().toString().replaceAll("([\\\\.^$|?*+()\\[\\]{}])", "\\\\$1");
@@ -59,9 +59,9 @@ public record ModLanguageScope(Path root, String name, Path workspace, List<Path
         }
         workspace.add("moduleMap", maps);
         result.add("workspace",workspace);
-        var runtime = result.has("runtime") ? result.getAsJsonObject("runtime") : new JsonObject();
-        if (!runtime.has("version")) runtime.addProperty("version","Lua 5.2");
-        if (!runtime.has("requirePattern")) { var patterns=new JsonArray(); patterns.add("?.lua"); runtime.add("requirePattern",patterns); }
+        var runtime = new JsonObject();
+        runtime.addProperty("version","Lua 5.2");
+        var patterns=new JsonArray(); patterns.add("?.lua"); runtime.add("requirePattern",patterns);
         result.add("runtime",runtime);
         return result;
     }
@@ -69,7 +69,7 @@ public record ModLanguageScope(Path root, String name, Path workspace, List<Path
     /** Replace server-wide globs with bounded watches, including external module directories. */
     public JsonObject watchers(boolean lua) {
         var watchers = new JsonArray();
-        for (Path path : roots(lua)) for (String pattern : lua ? List.of("**/*.lua", ".emmyrc.json") : List.of("**/locale/*/*.cfg", "**/changelog.txt")) {
+        for (Path path : roots(lua)) for (String pattern : lua ? List.of("**/*.lua", ".emmyrc.json", ".luarc.json", ".emmyrc.lua") : List.of("**/locale/*/*.cfg", "**/changelog.txt")) {
             var glob = new JsonObject(); glob.addProperty("baseUri",path.toUri().toString()); glob.addProperty("pattern",pattern);
             var watcher = new JsonObject(); watcher.add("globPattern",glob); watcher.addProperty("kind",7); watchers.add(watcher);
         }

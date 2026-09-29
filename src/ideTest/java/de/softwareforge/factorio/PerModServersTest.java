@@ -58,8 +58,7 @@ public class PerModServersTest extends HeavyPlatformTestCase {
     }
     private ModLanguageScope scope(Path root,List<Path> dependencies) throws Exception {
         Path config=Files.createDirectories(temporary.resolve("config-"+root.getFileName()));
-        var json=ModLanguageScope.configuration(new JsonObject(),root,List.of(),dependencies);
-        PathsAndMods.write(config.resolve(".emmyrc.json"),json);
+        var json=ModLanguageScope.configuration(root,List.of(),dependencies);
         return new ModLanguageScope(root,root.getFileName().toString(),config,List.of(),dependencies,json);
     }
     private <T> T await(CompletableFuture<T> future) throws Exception {
@@ -71,10 +70,17 @@ public class PerModServersTest extends HeavyPlatformTestCase {
     }
     private void eventually(BooleanSupplier condition) throws Exception {
         long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(30);
-        while (!condition.getAsBoolean() && System.nanoTime()<deadline) { PlatformTestUtil.dispatchAllEventsInIdeEventQueue(); Thread.sleep(100); }
-        assertTrue("Timed out waiting for server state",condition.getAsBoolean());
+        do {
+            if (condition.getAsBoolean()) return;
+            PlatformTestUtil.dispatchAllEventsInIdeEventQueue(); Thread.sleep(100);
+        } while (System.nanoTime()<deadline);
+        fail("Timed out waiting for server state");
     }
-    private LanguageServerItem server(String id) throws Exception { return Objects.requireNonNull(await(LanguageServerManager.getInstance(getProject()).getLanguageServer(id))); }
+    private LanguageServerItem server(String id) throws Exception {
+        var result = new LanguageServerItem[1];
+        eventually(() -> { try { result[0] = await(LanguageServerManager.getInstance(getProject()).getLanguageServer(id)); return result[0] != null; } catch (Exception e) { return false; } });
+        return result[0];
+    }
     private VirtualFile file(Path path) { return Objects.requireNonNull(LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)); }
     private String definitions(LanguageServerItem item,Path file,int line,int column) throws Exception {
         var result=await(item.getServer().getTextDocumentService().definition(new DefinitionParams(new TextDocumentIdentifier(file.toUri().toString()),new Position(line,column))));
@@ -236,6 +242,93 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         });
     }
 
+    private String diagnostics(LanguageServerItem item, Path path) throws Exception {
+        var params = new DocumentDiagnosticParams();
+        params.setTextDocument(new TextDocumentIdentifier(path.toUri().toString()));
+        return String.valueOf(await(item.getServer().getTextDocumentService().diagnostic(params)));
+    }
+
+    private LanguageServerItem afterConfigRestart(FactorioServerManager manager, Path control, LanguageServerItem old) throws Exception {
+        var current = new LanguageServerItem[1];
+        eventually(() -> {
+            try {
+                current[0] = server(manager.luaServer(control));
+                return current[0].getServer() != old.getServer();
+            } catch (Exception e) { return false; }
+        });
+        return current[0];
+    }
+
+    public void testNativeModuleConfigurationsAndVfsReload() throws Exception {
+        var names = List.of(".luarc.json", ".emmyrc.json", ".emmyrc.lua");
+        var roots = new ArrayList<Path>();
+        for (int i = 0; i < names.size(); i++) {
+            Path root = mod("config"+i, "ownValue");
+            Files.writeString(root.resolve("control.lua"), "print(missing_config_global)\n");
+            Files.createDirectories(root.resolve("excluded"));
+            Files.writeString(root.resolve("excluded/marker.lua"), "ConfigHidden = {}\n");
+            Files.writeString(root.resolve("probe.lua"), "local x = ConfigHidden\n");
+            String config = names.get(i).endsWith(".lua")
+                ? "return { diagnostics = { disable = { 'undefined-global' } }, workspace = { ignoreDir = { './excluded' } } }"
+                : "{\"diagnostics\":{\"disable\":[\"undefined-global\"]},\"workspace\":{\"ignoreDir\":[\"./excluded\"]}}";
+            Files.writeString(root.resolve(names.get(i)), config);
+            roots.add(root);
+        }
+        Path baseline = mod("baseline", "ownValue");
+        Files.writeString(baseline.resolve("control.lua"), "print(missing_config_global)\n");
+        roots.add(baseline);
+        attach(roots);
+        FactorioSettings.get(getProject()).serviceMode = "ENABLED";
+        var manager = FactorioServerManager.get(getProject());
+        FactorioSettings.get(getProject()).apiDocs = System.getProperty("factorio.test.apiDocs");
+        await(CompletableFuture.runAsync(() -> {
+            try { Definitions.generate(getProject(),new com.intellij.openapi.progress.EmptyProgressIndicator(),message -> {}); }
+            catch(Exception e) { throw new CompletionException(e); }
+        }));
+        PlatformTestUtil.dispatchAllEventsInIdeEventQueue();
+        var other = server(manager.luaServer(baseline.resolve("control.lua")));
+        var locale = server(manager.luaServer(baseline.resolve("control.lua")).replace(".lua.", ".locale."));
+        eventually(() -> { try { return diagnostics(other, baseline.resolve("control.lua")).contains("undefined-global"); } catch (Exception e) { return false; } });
+        for (int i = 0; i < names.size(); i++) {
+            Path root = roots.get(i), control = root.resolve("control.lua");
+            var item = server(manager.luaServer(control));
+            // Positive request establishes that initial indexing has completed.
+            eventually(() -> { try { return definitions(item,root.resolve("init.lua"),2,1).contains("init.lua"); } catch (Exception e) { return false; } });
+            assertFalse(diagnostics(item, control), diagnostics(item, control).contains("undefined-global"));
+            assertFalse(definitions(item, root.resolve("probe.lua"), 0, 13).contains("marker.lua"));
+            VirtualFile config = file(root.resolve(names.get(i)));
+            WriteAction.run(() -> config.delete(this));
+            var deleted = afterConfigRestart(manager, control, item);
+            eventually(() -> { try { return diagnostics(deleted,control).contains("undefined-global") && definitions(deleted,root.resolve("probe.lua"),0,13).contains("marker.lua"); } catch (Exception e) { return false; } });
+            String disabled = names.get(i).endsWith(".lua")
+                ? "return { diagnostics = { disable = { 'undefined-global' } } }"
+                : "{\"diagnostics\":{\"disable\":[\"undefined-global\"]}}";
+            String empty = names.get(i).endsWith(".lua") ? "return {}" : "{}";
+            String filename = names.get(i);
+            VirtualFile restored = WriteAction.compute(() -> {
+                var created = file(root).createChildData(this, filename);
+                created.setBinaryContent(disabled.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                return created;
+            });
+            var reloaded = afterConfigRestart(manager, control, deleted);
+            eventually(() -> { try { return !diagnostics(reloaded,control).contains("undefined-global"); } catch (Exception e) { return false; } });
+            WriteAction.run(() -> restored.setBinaryContent(empty.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            var edited = afterConfigRestart(manager, control, reloaded);
+            eventually(() -> { try { return diagnostics(edited,control).contains("undefined-global"); } catch (Exception e) { return false; } });
+            if (filename.equals(".emmyrc.json")) {
+                WriteAction.run(() -> restored.setBinaryContent(disabled.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                var beforeRename = afterConfigRestart(manager, control, edited);
+                eventually(() -> { try { return !diagnostics(beforeRename,control).contains("undefined-global"); } catch (Exception e) { return false; } });
+                WriteAction.run(() -> restored.rename(this, "emmy-config.backup"));
+                var renamed = afterConfigRestart(manager, control, beforeRename);
+                eventually(() -> { try { return diagnostics(renamed,control).contains("undefined-global"); } catch (Exception e) { return false; } });
+            }
+            assertSame("Reload must preserve the other module's server", other.getServer(), server(manager.luaServer(baseline.resolve("control.lua"))).getServer());
+            assertSame("Locale services must not restart", locale.getServer(), server(manager.luaServer(baseline.resolve("control.lua")).replace(".lua.", ".locale.")).getServer());
+            assertTrue(diagnostics(other, baseline.resolve("control.lua")).contains("undefined-global"));
+        }
+    }
+
     public void testGeneratedApiWithSeparateWorkspaces() throws Exception {
         Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
         org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));
@@ -257,7 +350,7 @@ public class PerModServersTest extends HeavyPlatformTestCase {
                     new TextDocumentIdentifier(root.resolve("control.lua").toUri().toString()),new Position(0,24))))).contains("LuaSurface"); }
                 catch(Exception e) { return false; }
             });
-            Path config=Definitions.cache(getProject()).resolve("language-servers/"+ModLanguageScope.identity(Toolkit.root(getProject()),root)+"/workspace/.emmyrc.json");
+            Path config=Definitions.cache(getProject()).resolve("language-servers/"+ModLanguageScope.identity(Toolkit.root(getProject()),root)+"/workspace/managed-emmy-config.json");
             String json=Files.readString(config);
             assertTrue(json.contains(root.toString()));
             assertFalse(json.contains((root.equals(a)?b:a).toString()));

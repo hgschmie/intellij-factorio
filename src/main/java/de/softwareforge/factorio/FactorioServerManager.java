@@ -37,6 +37,8 @@ import java.util.concurrent.CompletableFuture;
 @Service(Service.Level.PROJECT)
 public final class FactorioServerManager implements Disposable {
     private final Project project;
+    private final Alarm configAlarm = new Alarm(Alarm.ThreadToUse.SWING_THREAD, this);
+    private final Set<Path> pendingConfigRoots = new HashSet<>();
     private final Alarm syncAlarm = new Alarm(Alarm.ThreadToUse.POOLED_THREAD, this);
     private volatile List<ModLanguageScope> scopes = List.of();
     private final Map<String, Definition> definitions = new LinkedHashMap<>();
@@ -46,6 +48,41 @@ public final class FactorioServerManager implements Disposable {
         EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new DocumentListener() {
             @Override public void documentChanged(DocumentEvent event) { scheduleSync(); }
         }, this);
+        project.getMessageBus().connect(this).subscribe(com.intellij.openapi.vfs.VirtualFileManager.VFS_CHANGES,
+            new com.intellij.openapi.vfs.newvfs.BulkFileListener() {
+                private final Set<Path> changedConfigs = new HashSet<>();
+                private void collect(List<? extends com.intellij.openapi.vfs.newvfs.events.VFileEvent> events) {
+                    for (var event : events) {
+                        Path path = Path.of(event.getPath());
+                        if (Set.of(".emmyrc.json", ".luarc.json", ".emmyrc.lua").contains(path.getFileName().toString()))
+                            changedConfigs.add(ModLanguageScope.canonical(path.getParent()));
+                        // For rename/move events, getPath can still refer to the old location.
+                        var file = event.getFile();
+                        if (file != null && file.isValid() && Set.of(".emmyrc.json", ".luarc.json", ".emmyrc.lua").contains(file.getName()))
+                            changedConfigs.add(ModLanguageScope.canonical(Path.of(file.getParent().getPath())));
+                    }
+                }
+                @Override public void before(List<? extends com.intellij.openapi.vfs.newvfs.events.VFileEvent> events) {
+                    changedConfigs.clear();
+                    collect(events);
+                }
+                @Override public void after(List<? extends com.intellij.openapi.vfs.newvfs.events.VFileEvent> events) {
+                    collect(events);
+                    if (changedConfigs.isEmpty()) return;
+                    var roots = Set.copyOf(changedConfigs);
+                    changedConfigs.clear();
+                    onEdt(() -> {
+                        if (disposed || project.isDisposed()) return;
+                        pendingConfigRoots.addAll(roots);
+                        configAlarm.cancelAllRequests();
+                        configAlarm.addRequest(() -> {
+                            var pending = Set.copyOf(pendingConfigRoots);
+                            pendingConfigRoots.clear();
+                            restartLuaRoots(pending);
+                        }, 300);
+                    });
+                }
+            });
         project.getMessageBus().connect(this).subscribe(FileDocumentManagerListener.TOPIC, new FileDocumentManagerListener() {
             @Override public void beforeDocumentSaving(com.intellij.openapi.editor.Document document) { scheduleSync(); }
         });
@@ -137,6 +174,14 @@ public final class FactorioServerManager implements Disposable {
         for (var d : definitions.values()) LanguageServerManager.getInstance(project).start(d,new LanguageServerManager.StartOptions().setForceRestart(true));
         refreshEditors();
     }
+    private synchronized void restartLuaRoots(Set<Path> roots) {
+        if (disposed || project.isDisposed()) return;
+        for (var definition : definitions.values()) {
+            if (definition.lua && roots.contains(definition.scope.root()))
+                LanguageServerManager.getInstance(project).start(definition,
+                    new LanguageServerManager.StartOptions().setForceRestart(true));
+        }
+    }
     private void refreshEditors() {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (disposed || project.isDisposed()) return;
@@ -201,7 +246,7 @@ public final class FactorioServerManager implements Disposable {
         @Override public boolean isEnabled(Project p) { return p == project && active && !disposed && FactorioSettings.servicesEnabled(p) && super.isEnabled(p); }
         @Override public StreamConnectionProvider createConnectionProvider(Project p) {
             var provider = new OSProcessStreamConnectionProvider();
-            var line = new GeneralCommandLine(command).withWorkDirectory(scope.workspace().toFile());
+            var line = new GeneralCommandLine(command).withWorkDirectory((lua ? scope.root() : scope.workspace()).toFile());
             // Match the analyzer's default resource location as well as --resources-path:
             // its extraction guard checks the default version marker.
             String data=scope.workspace().getParent().resolve("data-"+scope.name()).toString();
@@ -220,6 +265,19 @@ public final class FactorioServerManager implements Disposable {
         @Override public LSPClientFeatures createClientFeatures() { features = new Features(this); return features; }
         @Override public LanguageClientImpl createLanguageClient(Project p) {
             return new LanguageClientImpl(p) {
+                @Override public CompletableFuture<List<Object>> configuration(ConfigurationParams params) {
+                    // Never inherit project-wide LSP4IJ settings into an isolated mod server.
+                    var settings = new ArrayList<Object>();
+                    for (var item : params.getItems()) {
+                        boolean matches = item.getScopeUri() == null;
+                        if (!matches) {
+                            try { matches = scope.root().equals(ModLanguageScope.canonical(Path.of(URI.create(item.getScopeUri())))); }
+                            catch (IllegalArgumentException ignored) { /* Unsupported resource scope. */ }
+                        }
+                        settings.add(lua && matches && "emmylua".equals(item.getSection()) ? scope.config().deepCopy() : null);
+                    }
+                    return CompletableFuture.completedFuture(settings);
+                }
                 @Override public CompletableFuture<Void> registerCapability(RegistrationParams params) {
                     for (var registration : params.getRegistrations()) if (registration.getMethod().equals("workspace/didChangeWatchedFiles")) registration.setRegisterOptions(scope.watchers(lua));
                     return super.registerCapability(params);
@@ -243,7 +301,7 @@ public final class FactorioServerManager implements Disposable {
                     return new WorkspaceFolderStrategy() {
                         @Override public boolean sendAllFoldersOnInitialization() { return true; }
                         @Override public List<WorkspaceFolder> getWorkspaceFolders(Project p, FileUriSupport uri) {
-                            var roots = definition.lua ? List.of(definition.scope.workspace()) : definition.scope.roots(false);
+                            var roots = definition.lua ? List.of(definition.scope.root()) : definition.scope.roots(false);
                             return roots.stream().map(path -> new WorkspaceFolder(path.toUri().toString(),path.getFileName().toString())).toList();
                         }
                         @Override public WorkspaceFolder getWorkspaceFolderForFile(VirtualFile f,Project p,FileUriSupport uri) { return null; }
@@ -253,10 +311,11 @@ public final class FactorioServerManager implements Disposable {
         }
         @Override public boolean isEnabled(VirtualFile file) { return definition.active && owns(definition.scope,filePath(file),definition.lua) && accepts(file,definition.lua); }
         @Override public void initializeParams(InitializeParams params) {
-            params.setRootUri(definition.scope.workspace().toUri().toString());
-            params.setRootPath(definition.scope.workspace().toString());
-            // Configuration comes from the per-instance workspace, not project-wide LSP settings.
-            params.getCapabilities().getWorkspace().setConfiguration(false);
+            Path root = definition.lua ? definition.scope.root() : definition.scope.workspace();
+            params.setRootUri(root.toUri().toString());
+            params.setRootPath(root.toString());
+            // Native module files supply preferences; this client supplies only Factorio integration.
+            params.getCapabilities().getWorkspace().setConfiguration(definition.lua);
             // IntelliJ runs Backgroundable progress synchronously in unit-test mode;
             // LSP4IJ's progress consumer then blocks its own notification queue.
             if (ApplicationManager.getApplication().isUnitTestMode()) params.getCapabilities().getWindow().setWorkDoneProgress(false);

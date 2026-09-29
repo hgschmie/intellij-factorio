@@ -20,7 +20,7 @@ class ModLanguageScopeTest {
         Path a=mod("a"), b=mod("b"); var scope=scope(a,List.of());
         assertTrue(scope.includes(a.resolve("lib/this.lua"),true));
         assertFalse(scope.includes(b.resolve("lib/this.lua"),true));
-        var config=ModLanguageScope.configuration(new JsonObject(),a,scope.libraries(),List.of());
+        var config=ModLanguageScope.configuration(a,scope.libraries(),List.of());
         var workspace=config.getAsJsonObject("workspace");
         assertEquals(1,workspace.getAsJsonArray("workspaceRoots").size());
         assertEquals(1,workspace.getAsJsonArray("packages").size());
@@ -55,11 +55,10 @@ class ModLanguageScopeTest {
         assertFalse(watchers.toString().contains(b.toUri().toString()));
         assertFalse(watchers.toString().contains(directory.resolve("api").toUri().toString()));
     }
-    @Test void configurationKeepsDiagnosticsAndMapsOnlyExplicitPackages() throws Exception {
-        Path a=mod("a"),dep=mod("dep-name"); var user=new JsonObject(); var diagnostic=new JsonObject(); diagnostic.addProperty("enable",false); user.add("diagnostics",diagnostic);
-        var result=ModLanguageScope.configuration(user,a,List.of(directory.resolve("api")),List.of(dep));
-        assertEquals(diagnostic,result.get("diagnostics"));
-        assertFalse(user.has("workspace"));
+    @Test void configurationLeavesDiagnosticsToModuleAndMapsOnlyExplicitPackages() throws Exception {
+        Path a=mod("a"),dep=mod("dep-name");
+        var result=ModLanguageScope.configuration(a,List.of(directory.resolve("api")),List.of(dep));
+        assertFalse(result.has("diagnostics"));
         var workspace=result.getAsJsonObject("workspace");
         assertEquals(2,workspace.getAsJsonArray("packages").size());
         assertTrue(workspace.getAsJsonArray("moduleMap").toString().contains("__dep-name__.$1"));

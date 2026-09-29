@@ -43,7 +43,7 @@ public final class FactorioModules implements Disposable {
         var bus=project.getMessageBus().connect(this);
         bus.subscribe(ProjectTopics.PROJECT_ROOTS,new ModuleRootListener(){ @Override public void rootsChanged(ModuleRootEvent event){ schedule(); } });
         bus.subscribe(VirtualFileManager.VFS_CHANGES,new BulkFileListener(){ @Override public void after(List<? extends VFileEvent> events){
-            if(events.stream().anyMatch(e->e.getPath().endsWith("/info.json") || e.getPath().endsWith("/.emmyrc.json") || e instanceof com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent || e instanceof com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent || e instanceof com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent)) schedule();
+            if(events.stream().anyMatch(e->e.getPath().endsWith("/info.json") || e instanceof com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent || e instanceof com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent || e instanceof com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent)) schedule();
         }});
         schedule();
     }
@@ -69,13 +69,11 @@ public final class FactorioModules implements Disposable {
             refresh();
             var s=FactorioSettings.get(project);
             String fingerprint=snapshot.toString()+s.serviceMode+s.node+s.factorio+s.apiDocs+s.cli+s.dependencies+s.libraryIgnoreDir+s.libraryIgnoreGlobs+mods().stream().map(m->m.root()+dependencies(m)).toList();
-            Path userConfig=Toolkit.root(project).resolve(".emmyrc.json");
-            fingerprint += Files.exists(userConfig) ? Files.readString(userConfig) : "";
             if(fingerprint.equals(previousFingerprint))return;
             for(String error:errors()) FactorioActions.report(project,error,true);
             var manager=FactorioServerManager.get(project);
             if(mods().isEmpty() || !FactorioSettings.servicesEnabled(project)) {
-                manager.configure(List.of()); Definitions.clearManaged(project); previousFingerprint=fingerprint; return;
+                manager.configure(List.of()); previousFingerprint=fingerprint; return;
             }
             manager.retain(mods());
             Definitions.generate(project,new EmptyProgressIndicator(),message->{});
