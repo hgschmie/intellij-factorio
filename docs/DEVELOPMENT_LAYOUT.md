@@ -30,8 +30,17 @@ rebuild it after cleaning that repository's `build/` directory. There is no
 second EmmyLua2 dependency installation under `dev/plugins/` (the isolated IDE
 has its own installed copy, as required to run it).
 
-`bash scripts/build.sh test buildPlugin` prepares missing shared temporary/home
-directories. It checks analyzer and toolkit pins plus the EmmyLua routing hook.
+`./gradlew test buildPlugin` is the native build entry point. Gradle checks
+source pins and the EmmyLua routing hook, installs locked npm dependencies,
+builds the toolkit and generates/bundles notices when needed. All local dependency
+paths have defaults; `-PideaPath`, `-Plsp4ijPath`, `-PemmyPath` and `-PtoolkitPath`
+override them. `clean`, `help` and `tasks` do not prepare external dependencies.
+
+The optional `bash scripts/build.sh ...` wrapper selects the isolated shared
+cache/home/temp directories and JDK, captures output, and delegates to Gradle.
+Direct Gradle invocations use normal Gradle/JVM environment settings; use
+`GRADLE_USER_HOME=$WORKSPACE/dev/cache/gradle` for the shared cache. The wrapper's
+log is removed if its command cleans `build/`; native console output is unaffected.
 `-PplatformTests` selects real-process platform tests with temporary mod projects
 in `build/test-work/platform/`; `-PrealMods=/path/to/mods` tests copies of real mods.
 

@@ -95,9 +95,9 @@ files. Existing projects acquire the defaults without editing their source files
 Run from the plugin repository:
 
 ```sh
-bash scripts/build.sh test buildPlugin
-bash scripts/build.sh -PplatformTests -PrealMods=/Users/henning/factorio/mods test
-bash scripts/build.sh verifyPlugin
+./gradlew test buildPlugin
+./gradlew -PplatformTests -PrealMods=/Users/henning/factorio/mods test
+./gradlew verifyPlugin
 ```
 
 `-PapiDocs=/path/to/doc-html` overrides the platform API test's local Factorio

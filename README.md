@@ -6,28 +6,48 @@ LuaLS and profiling are not supported.
 
 ## Build
 
-The local build uses the installed IDEA SDK, the source-built patched EmmyLua2,
-and source-built LSP4IJ from `../dev/plugins/lsp4ij`. Install the toolkit's locked Node dependencies
-before the first build. The exact toolkit commit is pinned in `toolkit.lock`;
-review and update that pin when deliberately adopting toolkit changes. LSP4IJ
-is pinned in `lsp4ij.lock`; its upstream PR branch stays separate from the local
-`work/factorio-build` branch used to build against IDEA 262. Run:
+Use Gradle directly with JDK 25 on `JAVA_HOME` (or selected as your Gradle JVM):
 
 ```sh
-bash scripts/build-lsp4ij.sh  # pinned main + breakpoint fix
-bash scripts/build.sh test buildPlugin
+./gradlew help
+./gradlew clean
+./gradlew test buildPlugin
+./gradlew -PplatformTests -PrealMods=/path/to/mods test
+./gradlew verifyPlugin
 ```
 
-`FMTK_IDEA_PATH` and `FMTK_JAVA_HOME` override the local SDK/JDK paths.
-The `../upstream/vscode-factoriomod-debug` repository must be on the accepted
-`work/intellij-toolkit` baseline. The ZIP includes the built CLI, JavaScript chunks,
-toolkit license and a `fmtk/BUILD.txt` identifying its source commit. Node itself
-is not bundled. The tested runtime is Node 26.9.0.
+Gradle owns the toolkit source-pin check, locked `npm ci`, CLI/server compilation,
+third-party notices and bundling. Node/npm must be on `PATH`; `-PnpmExecutable`
+selects another npm executable. Dependency installation and toolkit compilation
+are incremental. Ordinary unit tests do not build the toolkit; platform tests and
+plugin packaging do. `clean` removes this repository's build outputs, leaving
+shared caches, external checkouts and their build outputs intact.
 
-Build logs are written automatically to `build/logs/`. Shared caches, temporary
-files and the isolated build home live under `../dev/`. The prepared EmmyLua2
-dependency is `../upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2`.
-See [development layout](docs/DEVELOPMENT_LAYOUT.md) for the full directory map.
+The IDE SDK and patched plugins are prepared separately. Gradle defaults to
+`~/Applications/IntelliJ IDEA.app` (then `/Applications/IntelliJ IDEA.app`),
+`../dev/plugins/lsp4ij` and
+`../upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2`.
+Override these with `-PideaPath`, `-Plsp4ijPath` and `-PemmyPath`.
+`FMTK_IDEA_PATH` is also supported. `./gradlew verifyIdeDependencies` checks
+prepared plugin source pins and the EmmyLua routing hook.
+
+To prepare those dependencies, use `bash scripts/build-lsp4ij.sh` and the
+EmmyLua2 repository's `bash scripts/build-module-patch.sh`. They retain their
+separate source-build workflows. `clean`, `help` and `tasks` do not need them.
+
+The toolkit defaults to `../upstream/vscode-factoriomod-debug`; override it with
+`-PtoolkitPath`. Keep the accepted `work/intellij-toolkit` baseline checked out.
+Its exact commit is pinned in `toolkit.lock`; LSP4IJ and the analyzer have their
+own lock files. Review pin changes before adopting new dependencies.
+The ZIP includes CLI bundles, licenses and `fmtk/BUILD.txt` identifying the
+source revision. Node is not bundled; the tested runtime is Node 26.9.0.
+
+`bash scripts/build.sh ...` remains an optional wrapper that selects JDK 25,
+isolates the build home/caches/temporary files under `../dev/`, and captures
+console logs in `build/logs/`. It simply delegates tasks to Gradle; `FMTK_JAVA_HOME`
+overrides its JDK. Native Gradle uses the normal `JAVA_HOME`/`GRADLE_USER_HOME`
+settings and console output. Gradle reports remain in `build/reports/`.
+See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 ## Install and configure
 
