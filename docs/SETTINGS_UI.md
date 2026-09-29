@@ -13,8 +13,11 @@ Override and exclusion dialogs stage changes; only Apply in Settings persists th
 
 The supplied Factorio thumbnail is displayed at 16 logical pixels for the Tools
 menu group, mod module rows, module wizard/import and Factorio run configurations.
-`src/main/resources/icons/factorio.png` is an unmodified copy of
+Since 0.2.8-dev, `src/main/resources/icons/factorio.png` is a 16×16 PNG, with
+`factorio@2x.png` at 32×32 for HiDPI displays. Both are resized from
 `/Applications/factorio.app/Contents/data/base/thumbnail.png`, supplied by the user.
+IconLoader loads these directly; the original 144×144 asset and runtime scaling
+are no longer used, preventing the source dimensions from reaching UI rows.
 It is a Factorio/Wube Software asset, not an original artwork of this project.
 
 Design references:

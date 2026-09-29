@@ -15,7 +15,7 @@ Requires the pinned patched LSP4IJ 0.21.1-SNAPSHOT build and the patched EmmyLua
 The distribution retains version `0.25.1-115-IDEA262-patched-modules`, so an older
 ZIP with that same version must be replaced by the newly built ZIP.
 
-Install that ZIP and `build/distributions/intellij-factorio-0.2.7-dev.zip`, then
+Install that ZIP and `build/distributions/intellij-factorio-0.2.8-dev.zip`, then
 restart IDEA. Use the LSP4IJ ZIP from `upstream/lsp4ij/build/distributions/`;
 its breakpoint-removal fix is documented in [BREAKPOINT_REMOVAL.md](BREAKPOINT_REMOVAL.md).
 No additional analyzer source changes are required.
