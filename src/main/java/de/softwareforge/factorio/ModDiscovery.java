@@ -1,5 +1,6 @@
 package de.softwareforge.factorio;
 
+import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 
@@ -31,9 +32,25 @@ public final class ModDiscovery {
         return new Result(List.copyOf(found),List.copyOf(errors));
     }
     public static Mod containing(List<Mod> mods, Path file) {
-        Path normalized=file.toAbsolutePath().normalize();
-        try { normalized=file.toRealPath(); } catch(Exception ignored) {}
-        final Path path=normalized;
+        final Path path=resolveExistingParent(file);
         return mods.stream().filter(m->path.startsWith(m.root())).max(Comparator.comparingInt(m->m.root().getNameCount())).orElse(null);
+    }
+    /** Unsaved/deleted files still belong to a mod when an ancestor is a symlink. */
+    private static Path resolveExistingParent(Path file) {
+        Path absolute=file.toAbsolutePath(), parent=absolute;
+        var missing=new ArrayDeque<Path>();
+        while(parent!=null) {
+            try {
+                Path resolved=parent.toRealPath();
+                for(Path part:missing) resolved=resolved.resolve(part);
+                return resolved.normalize();
+            } catch(NoSuchFileException e) {
+                if(parent.getFileName()!=null) missing.addFirst(parent.getFileName());
+                parent=parent.getParent();
+            } catch(IOException | SecurityException e) {
+                return absolute.normalize();
+            }
+        }
+        return absolute.normalize();
     }
 }
