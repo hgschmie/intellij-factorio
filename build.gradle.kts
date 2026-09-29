@@ -4,9 +4,10 @@ import java.util.zip.ZipFile
 plugins {
     java
     id("org.jetbrains.intellij.platform") version "2.18.1"
+    id("org.jetbrains.intellij.platform.grammarkit") version "2.18.1"
 }
 group = "de.softwareforge.factorio"
-version = "0.3.2-dev"
+version = "0.3.3-dev"
 repositories { mavenCentral(); intellijPlatform { defaultRepositories() } }
 // Defaults follow the workspace layout; every external location can be overridden with -P.
 val workspaceDir = projectDir.parentFile
@@ -185,3 +186,12 @@ tasks.verifyPlugin {
     offline.set(true)
     systemProperty("plugin.verifier.home.dir", layout.buildDirectory.dir("verifier-home").get().asFile.absolutePath)
 }
+
+// Generate the highlighting lexer as part of normal Java compilation.
+tasks.generateLexer {
+    sourceFile.set(file("src/main/grammars/FactorioLocale.flex"))
+    targetRootOutputDir.set(layout.buildDirectory.dir("generated/sources/locale"))
+    purgeOldFiles.set(true)
+}
+sourceSets.main { java.srcDir(layout.buildDirectory.dir("generated/sources/locale")) }
+tasks.compileJava { dependsOn(tasks.generateLexer) }

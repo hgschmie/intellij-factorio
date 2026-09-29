@@ -1,6 +1,6 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.3.2-dev.
+Java integration under `de.softwareforge.factorio`. Development release 0.3.3-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ 0.21.1-SNAPSHOT.
 LuaLS and profiling are not supported.
 
@@ -96,6 +96,10 @@ Bundled mods (`base`, `core`, `elevated-rails`, `quality`, `recycler`, and
 Imports such as `require('__base__.prototypes.entity.rail-pictures')` and
 `require('__core__/lualib/collision-mask-util')` resolve to installed game files;
 no dependency override is needed. Library exclusions still apply.
+Locale `.cfg` files have native syntax highlighting for sections, keys, comments,
+placeholders, rich-text tags, and newline escapes. Customize colors under
+**Editor → Color Scheme → Factorio Locale**. Highlighting works without a running
+language server; FMTK continues to provide diagnostics and navigation.
 Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
 Legacy active-mod settings remain usable until that root is attached as a module.
 
