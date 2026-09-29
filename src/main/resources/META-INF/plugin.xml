@@ -8,6 +8,7 @@
   <depends>com.cppcxy.Intellij-EmmyLua</depends>
   <depends>com.redhat.devtools.lsp4ij</depends>
   <extensions defaultExtensionNs="com.intellij">
+    <fileType name="Factorio Locale" language="FactorioLocale" extensions="cfg" implementationClass="de.softwareforge.factorio.FactorioLocaleFileType" fieldName="INSTANCE"/>
     <moduleType id="SOFTWAREFORGE_FACTORIO_MOD" implementationClass="de.softwareforge.factorio.FactorioWizard$Type"/>
     <moduleService serviceImplementation="de.softwareforge.factorio.FactorioModuleSettings"/>
     <postStartupActivity implementation="de.softwareforge.factorio.FactorioModules$Startup"/>
