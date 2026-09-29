@@ -1,6 +1,6 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.3.1-dev.
+Java integration under `de.softwareforge.factorio`. Development release 0.3.2-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ 0.21.1-SNAPSHOT.
 LuaLS and profiling are not supported.
 
@@ -91,6 +91,11 @@ Project → Factorio data library → Edit exclusions…**, edit paths/globs rel
 to the Factorio `data` directory, one per line, or restore defaults. Changes take
 effect when you apply the project settings; generated API/helper stubs remain
 available. Exclusions apply to the installed game library, not your mod files.
+Bundled mods (`base`, `core`, `elevated-rails`, `quality`, `recycler`, and
+`space-age`) are mapped automatically when present in that data directory.
+Imports such as `require('__base__.prototypes.entity.rail-pictures')` and
+`require('__core__/lualib/collision-mask-util')` resolve to installed game files;
+no dependency override is needed. Library exclusions still apply.
 Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
 Legacy active-mod settings remain usable until that root is attached as a module.
 

@@ -1,11 +1,14 @@
 package de.softwareforge.factorio;
 
 import com.google.gson.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 /** Data-library exclusions from FMTK's VersionSelector, plus the stateful story helper. */
 public final class FactorioLibrary {
     private FactorioLibrary() {}
+    private static final List<String> BUNDLED_MODS = List.of("base", "core", "elevated-rails", "quality", "recycler", "space-age");
     public static final String IGNORE_DIR = String.join("\n",
         "core/lualib/event_handler.lua", "core/lualib/crash-site.lua", "core/lualib/math2d.lua",
         "core/lualib/meld.lua", "core/lualib/mod-gui.lua", "core/lualib/sound-util.lua",
@@ -27,7 +30,19 @@ public final class FactorioLibrary {
         library.addProperty("path",data.toString());
         library.add("ignoreDir",lines(directories));
         library.add("ignoreGlobs",lines(globs));
-        config.getAsJsonObject("workspace").getAsJsonArray("library").add(library);
+        var workspace = config.getAsJsonObject("workspace");
+        workspace.getAsJsonArray("library").add(library);
+        var maps = workspace.getAsJsonArray("moduleMap");
+        if (maps == null) { maps = new JsonArray(); workspace.add("moduleMap", maps); }
+        // The data library indexes files as base.prototypes..., core.lualib..., etc.
+        // Match Factorio's __mod-name__ imports without adding unfiltered library roots.
+        for (String name : BUNDLED_MODS) {
+            if (!Files.isRegularFile(data.resolve(name).resolve("info.json"))) continue;
+            var map = new JsonObject();
+            map.addProperty("pattern", "^" + name + "[.](.*)$");
+            map.addProperty("replace", "__" + name + "__.$1");
+            if (!maps.contains(map)) maps.add(map);
+        }
     }
     private static JsonArray lines(String text) {
         var result = new JsonArray();

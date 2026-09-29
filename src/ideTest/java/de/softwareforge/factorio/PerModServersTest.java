@@ -334,6 +334,19 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));
         Path a=mod("alpha","alphaValue"),b=mod("beta","betaValue");
         for(Path root:List.of(a,b)) Files.writeString(root.resolve("control.lua"),"local surface = game.get_surface(1)\nstorage.sensor_data = { sensors = {} }\nlocal saved = storage\nlocal util = require('util')\nlocal copy = util.table.deepcopy({})\n");
+        Path data=docs.getParent().resolve("data");
+        var imports=new ArrayList<String>();
+        var targets=new ArrayList<Path>();
+        for(String name:List.of("base","core","elevated-rails","quality","recycler","space-age")) {
+            if(!Files.isRegularFile(data.resolve(name+"/info.json"))) continue;
+            for(String separator:List.of(".","/")) {
+                imports.add("__"+name+"__"+separator+"data"); targets.add(data.resolve(name+"/data.lua"));
+            }
+        }
+        imports.add("__base__.prototypes.entity.rail-pictures"); targets.add(data.resolve("base/prototypes/entity/rail-pictures.lua"));
+        imports.add("__core__/lualib/collision-mask-util"); targets.add(data.resolve("core/lualib/collision-mask-util.lua"));
+        for(Path root:List.of(a,b)) for(String name:imports)
+            Files.writeString(root.resolve("control.lua"),"local bundled = require('"+name+"')\n",StandardOpenOption.APPEND);
         attach(List.of(a,b));
         var settings=FactorioSettings.get(getProject());
         settings.serviceMode="ENABLED"; settings.apiDocs=docs.toString();
@@ -362,6 +375,10 @@ public class PerModServersTest extends HeavyPlatformTestCase {
                 assertFalse(storageHover,storageHover.contains(foreign));
             String utilDefinition=definitions(item,root.resolve("control.lua"),4,26);
             assertTrue(utilDefinition,utilDefinition.contains("factorio/library/core/lualib/util.lua"));
+            for(int i=0;i<imports.size();i++) {
+                String target=definitions(item,root.resolve("control.lua"),5+i,27);
+                assertTrue(imports.get(i)+": "+target,target.contains(targets.get(i).toUri().toString()));
+            }
         }
     }
 
