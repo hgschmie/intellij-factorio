@@ -1,6 +1,6 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.2.8.
+Java integration under `de.softwareforge.factorio`. Development release 0.3.1-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ 0.21.1-SNAPSHOT.
 LuaLS and profiling are not supported.
 
