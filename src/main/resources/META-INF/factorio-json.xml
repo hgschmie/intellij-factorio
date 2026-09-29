@@ -1,0 +1,5 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="JavaScript">
+    <JsonSchema.ProviderFactory implementation="de.softwareforge.factorio.FactorioModSchemaProvider"/>
+  </extensions>
+</idea-plugin>

@@ -4,6 +4,7 @@
   <vendor>Softwareforge</vendor>
   <description>Factorio mod development with EmmyLua2, locale and changelog services, native debugging, packaging and publishing.</description>
   <depends>com.intellij.modules.platform</depends>
+  <depends optional="true" config-file="factorio-json.xml">com.intellij.modules.json</depends>
   <depends optional="true" config-file="factorio-import.xml">com.intellij.java</depends>
   <depends>com.cppcxy.Intellij-EmmyLua</depends>
   <depends>com.redhat.devtools.lsp4ij</depends>

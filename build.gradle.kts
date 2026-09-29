@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.intellij.platform.grammarkit") version "2.18.1"
 }
 group = "de.softwareforge.factorio"
-version = "0.3.3-dev"
+version = "0.3.4-dev"
 repositories { mavenCentral(); intellijPlatform { defaultRepositories() } }
 // Defaults follow the workspace layout; every external location can be overridden with -P.
 val workspaceDir = projectDir.parentFile
@@ -28,6 +28,7 @@ dependencies {
         if (ideaDir.isDirectory) local(ideaDir)
         if (lsp4ijDir.isDirectory) localPlugin(lsp4ijDir)
         if (emmyDir.isDirectory) localPlugin(emmyDir)
+        if (ideaContents.resolve("plugins/json").isDirectory) localPlugin(ideaContents.resolve("plugins/json"))
         if (ideaContents.resolve("plugins/java").isDirectory) localPlugin(ideaContents.resolve("plugins/java"))
     }
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
@@ -195,3 +196,33 @@ tasks.generateLexer {
 }
 sourceSets.main { java.srcDir(layout.buildDirectory.dir("generated/sources/locale")) }
 tasks.compileJava { dependsOn(tasks.generateLexer) }
+
+// Give the pinned schemas stable IDs so IntelliJ resolves bundled references through its registry.
+val bundleModSchemas = tasks.register("bundleModSchemas") {
+    dependsOn(verifyToolkit)
+    val mod = toolkitDir.resolve("schema/modinfo.json")
+    val base = toolkitDir.resolve("schema/datainfo.json")
+    val output = layout.buildDirectory.dir("generated/resources/mod-schemas/schemas/factorio")
+    inputs.files(mod, base)
+    outputs.dir(output)
+    doLast {
+        val prefix = "urn:de.softwareforge.factorio:schema:"
+        @Suppress("UNCHECKED_CAST")
+        val schema = JsonSlurper().parse(mod) as MutableMap<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        val allOf = schema["allOf"] as MutableList<Any?>
+        check((allOf.first() as Map<*, *>)["\$ref"] == "datainfo.json") { "Review the changed toolkit schema reference." }
+        schema["\$id"] = prefix + "modinfo"
+        allOf[0] = mapOf("\$ref" to prefix + "datainfo")
+        @Suppress("UNCHECKED_CAST")
+        val data = JsonSlurper().parse(base) as MutableMap<String, Any?>
+        data["\$id"] = prefix + "datainfo"
+        output.get().asFile.apply {
+            mkdirs()
+            resolve("modinfo.json").writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(schema)))
+            resolve("datainfo.json").writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(data)))
+        }
+    }
+}
+sourceSets.main { resources.srcDir(layout.buildDirectory.dir("generated/resources/mod-schemas")) }
+tasks.processResources { dependsOn(bundleModSchemas) }
