@@ -60,19 +60,25 @@ public final class FactorioActions {
             var file=documents.getFile(document);
             if(file!=null && (Path.of(file.getPath()).normalize().startsWith(directory) || (directory.equals(Toolkit.root(p)) && FactorioModules.get(p).containing(Path.of(file.getPath()))!=null))) documents.saveDocument(document);
         }
+        var console = FactorioOutput.open(p,title);
+        console.print("Directory: " + directory + "\n",com.intellij.execution.ui.ConsoleViewContentType.SYSTEM_OUTPUT);
         ProgressManager.getInstance().run(new Task.Backgroundable(p,title,true) {
             @Override public void run(ProgressIndicator indicator) {
+                console.start(indicator);
                 boolean acquired=false;
                 try {
+                    indicator.checkCanceled();
                     Processes.get(p).acquire(directory); acquired=true;
                     Path logs=Definitions.cache(p).resolve("logs"); Files.createDirectories(logs);
                     Path path=logs.resolve(System.currentTimeMillis()+".log");
+                    console.print("Log: " + path + "\n",com.intellij.execution.ui.ConsoleViewContentType.SYSTEM_OUTPUT);
                     try(var writer=Files.newBufferedWriter(path)) {
-                        job.run(indicator,line->{ try { synchronized(writer) { writer.write(line); writer.flush(); } } catch(Exception ex) { throw new RuntimeException(ex); } });
+                        job.run(indicator,line->{ try { synchronized(writer) { writer.write(line); writer.flush(); } console.print(line,com.intellij.execution.ui.ConsoleViewContentType.NORMAL_OUTPUT); } catch(Exception ex) { throw new RuntimeException(ex); } });
                     }
+                    console.finish(title+" completed.",false);
                     report(p,title+" completed. Log: "+path,false);
-                } catch(com.intellij.openapi.progress.ProcessCanceledException cancelled) { report(p,title+" cancelled. Review the log and working tree before retrying.",false); throw cancelled; }
-                catch(Exception error) { report(p,title+" failed: "+error.getMessage(),true); }
+                } catch(com.intellij.openapi.progress.ProcessCanceledException cancelled) { console.finish(title+" cancelled. Review the working tree before retrying.",false); report(p,title+" cancelled. Review the log and working tree before retrying.",false); throw cancelled; }
+                catch(Exception error) { console.finish(title+" failed: "+error.getMessage(),true); report(p,title+" failed: "+error.getMessage(),true); }
                 finally { if(acquired)Processes.get(p).release(directory); VirtualFileManager.getInstance().asyncRefresh(null); }
             }
         });
@@ -93,22 +99,28 @@ public final class FactorioActions {
             if(command.equals("run")) { String script=Messages.showInputDialog(p,"Script name from info.json package.scripts","Run Package Script",null); if(script==null||script.isBlank())return; args.add(script); }
             if(command.equals("upload")) { String zip=Messages.showInputDialog(p,"Absolute path of ZIP to upload","Upload Mod ZIP",null); if(zip==null||zip.isBlank())return; args.add(zip); }
             background(p,"FMTK "+command,mod,(indicator,log)->{
-                if(Set.of("publish","upload","details").contains(command)) {
-                    String summary=ReleaseSummary.create(mod,command,config,FactorioSettings.get(p).commandPath);
-                    int[] decision={Messages.CANCEL};
-                    ApplicationManager.getApplication().invokeAndWait(()->decision[0]=Messages.showOkCancelDialog(p,summary,"Publish Mod","Continue","Cancel",Messages.getWarningIcon()));
-                    if(decision[0]!=Messages.OK)throw new ProcessCanceledException();
-                    var attributes=new CredentialAttributes("Softwareforge Factorio Mod Portal");
-                    String key=PasswordSafe.getInstance().getPassword(attributes);
-                    if(key==null || key.isBlank()) {
-                        final String[] entered={null};
-                        ApplicationManager.getApplication().invokeAndWait(()->entered[0]=Messages.showPasswordDialog(p,"Mod Portal API key (stored in PasswordSafe)","Factorio Mod Portal",null));
-                        key=entered[0]; if(key==null||key.isBlank())throw new IllegalStateException("No portal API key supplied");
-                        PasswordSafe.getInstance().setPassword(attributes,key);
+                var settings = FactorioSettings.get(p);
+                try (var publishConfig = command.equals("publish")
+                    ? PublishConfig.prepare(config, settings.publishAuthorName, settings.publishAuthorEmail, Definitions.cache(p).resolve("tmp"))
+                    : new PublishConfig(config, false)) {
+                    if (!publishConfig.path().isBlank()) env.put("FMTK_CONFIG", publishConfig.path());
+                    if(Set.of("publish","upload","details").contains(command)) {
+                        String summary=ReleaseSummary.create(mod,command,publishConfig.path(),FactorioSettings.get(p).commandPath);
+                        int[] decision={Messages.CANCEL};
+                        ApplicationManager.getApplication().invokeAndWait(()->decision[0]=Messages.showOkCancelDialog(p,summary,"Publish Mod","Continue","Cancel",Messages.getWarningIcon()));
+                        if(decision[0]!=Messages.OK)throw new ProcessCanceledException();
+                        var attributes=new CredentialAttributes("Softwareforge Factorio Mod Portal");
+                        String key=PasswordSafe.getInstance().getPassword(attributes);
+                        if(key==null || key.isBlank()) {
+                            final String[] entered={null};
+                            ApplicationManager.getApplication().invokeAndWait(()->entered[0]=Messages.showPasswordDialog(p,"Mod Portal API key (stored in PasswordSafe)","Factorio Mod Portal",null));
+                            key=entered[0]; if(key==null||key.isBlank())throw new IllegalStateException("No portal API key supplied");
+                            PasswordSafe.getInstance().setPassword(attributes,key);
+                        }
+                        env.put("FACTORIO_UPLOAD_API_KEY",key.trim());
                     }
-                    env.put("FACTORIO_UPLOAD_API_KEY",key.trim());
+                    Processes.get(p).run(Toolkit.command(p,args.toArray(String[]::new)),mod,env,indicator,log);
                 }
-                Processes.get(p).run(Toolkit.command(p,args.toArray(String[]::new)),mod,env,indicator,log);
             });
         }
     }

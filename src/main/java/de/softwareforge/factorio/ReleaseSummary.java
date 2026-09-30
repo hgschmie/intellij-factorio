@@ -25,6 +25,8 @@ public final class ReleaseSummary {
         return "Action: "+action+"\nMod: "+info.get("name").getAsString()+"\nVersion: "+info.get("version").getAsString()+"\nDirectory: "+mod+
             "\nPortal: https://mods.factorio.com\nGit branch: "+branch+"\nPush destination: "+remote+" "+url+"\nRelease tag: "+tag+
             "\nWorking tree: "+(status.isBlank()?"clean or no Git repository":"has changes; publish will refuse")+
+            "\nCommit author: "+(config.has("package.autoCommitAuthor")?config.get("package.autoCommitAuthor").getAsString():"compilatron <compilatron@justarandomgeek.com>")+
+            "\nCommitter and signing: Git configuration"+
             "\nPackage options and hooks:\n"+info.get("package")+
             "\nPublish performs configured hooks, commits/tags, portal upload/details, version increment and Git push unless disabled by package options.\nCancellation does not undo completed steps.";
     }

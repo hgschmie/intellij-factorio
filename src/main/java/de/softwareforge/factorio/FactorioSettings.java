@@ -15,6 +15,8 @@ public final class FactorioSettings implements PersistentStateComponent<Factorio
         public String factorio = detect("/Applications/factorio.app/Contents/MacOS/factorio", "factorio");
         public String cli = "";
         public String commandPath = "";
+        public String publishAuthorName = "";
+        public String publishAuthorEmail = "";
         public String activeMod = "";
         public String dependencies = "";
         public String apiDocs = "";

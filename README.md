@@ -190,3 +190,16 @@ Use absolute directories separated by `:` (`;` on Windows). The value is literal
 `$PATH` and `~` are not expanded. Explicit Node and Factorio executable paths still
 take precedence. **Check Factorio Toolchain** reports Git and GPG lookup paths.
 This setting does not change the language-server or debugger launch environment.
+
+### Publish output and author
+
+Toolkit actions open a **Factorio** tool window with live output, completion or
+failure status, and a Stop button. Closing an active console also cancels its
+operation. Log files remain available; cancellation does not undo completed
+publish steps. Output is a console, not an interactive shell.
+
+**Author name** and **Author email** under Publishing in Factorio settings override
+FMTK's `package.autoCommitAuthor` for publishing. Set both or leave both empty to
+retain the package configuration/default. Other package settings are preserved,
+and the source config file is unchanged. Git's committer and signing settings
+remain in effect. The release confirmation displays the selected author.

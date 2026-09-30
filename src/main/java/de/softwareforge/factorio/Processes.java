@@ -28,6 +28,7 @@ public final class Processes implements Disposable {
     }
     public void release(Path directory) { busy.remove(canonical(directory)); }
     public String run(List<String> command, Path cwd, Map<String,String> env, ProgressIndicator indicator, Consumer<String> log) throws Exception {
+        indicator.checkCanceled();
         var environment = CommandEnvironment.environment(commandPath.get());
         environment.putAll(env);
         var builder = CommandEnvironment.command(command, cwd, environment).withRedirectErrorStream(true);

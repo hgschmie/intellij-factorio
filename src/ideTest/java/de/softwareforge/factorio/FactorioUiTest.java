@@ -32,8 +32,14 @@ public class FactorioUiTest extends HeavyPlatformTestCase {
         assertEquals("/custom/tools:/usr/bin:/bin",settings.commandPath);
         assertFalse(ui.isModified());
         settings.commandPath="";ui.reset();
+        field(component,"Author name:").setText("Test Author");
+        field(component,"Author email:").setText("author@example.com");
+        assertEquals("",settings.publishAuthorName);ui.apply();
+        assertEquals("Test Author",settings.publishAuthorName);
+        assertEquals("author@example.com",settings.publishAuthorEmail);
+        ui.reset();assertEquals("Test Author",field(component,"Author name:").getText());
         assertEquals(5,children(component,TextFieldWithBrowseButton.class).size());
-        render(component,"settings.png",760,690);
+        render(component,"settings.png",760,850);
         for(var browse:children(component,TextFieldWithBrowseButton.class)) {
             assertTrue("Browse button is missing",children(browse,AbstractButton.class).stream().anyMatch(Component::isVisible));
             assertTrue("Single-line field stretched vertically",browse.getHeight()<=browse.getPreferredSize().height+2);
