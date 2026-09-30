@@ -78,6 +78,11 @@ and filtered game libraries, explicit dependency packages, source roots and
 Factorio libraries/dependencies through the plugin settings instead. No generic
 project-wide LSP4IJ settings are forwarded to these servers.
 
+The native EmmyLua2 parser also receives Lua 5.2 for attached Factorio mod files
+through its independent `languageLevelProvider` extension (patched build 121+).
+This enables legacy `global` member names only for the known Factorio runtime;
+unrelated files with no supplied language level retain strict Lua 5.5 parsing.
+
 **Current limitation:** native configuration merges objects, replaces scalars
 with later values, and appends arrays. The plugin overlay is applied last, but
 cannot replace user arrays. Do not set `workspace.workspaceRoots`,

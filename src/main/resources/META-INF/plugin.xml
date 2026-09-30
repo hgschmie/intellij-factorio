@@ -29,6 +29,7 @@
   </extensions>
   <extensions defaultExtensionNs="com.cppcxy.Intellij-EmmyLua">
     <serverProvider implementation="de.softwareforge.factorio.FactorioServerManager$Routing"/>
+    <languageLevelProvider implementation="de.softwareforge.factorio.FactorioLuaLanguageLevel"/>
   </extensions>
   <actions>
     <group id="SoftwareforgeFactorio" text="Factorio" popup="true" icon="de.softwareforge.factorio.FactorioIcons.FACTORIO">

@@ -65,6 +65,9 @@ val verifyIdeDependencies = tasks.register("verifyIdeDependencies") {
         check(emmyDir.resolve("lib").listFiles().orEmpty().filter { it.extension == "jar" }.any { jar ->
             ZipFile(jar).use { it.getEntry("com/cppcxy/ide/lsp/EmmyLuaServerProvider.class") != null }
         }) { "EmmyLua2 is missing the file-routing hook. Rebuild work/patched-build." }
+        check(emmyDir.resolve("lib").listFiles().orEmpty().filter { it.extension == "jar" }.any { jar ->
+            ZipFile(jar).use { it.getEntry("com/tang/intellij/lua/lang/LuaLanguageLevelProvider.class") != null }
+        }) { "EmmyLua2 is missing the language-level hook. Install/prepare patched build 121 or later." }
     }
 }
 val toolkitRevision = providers.exec {
