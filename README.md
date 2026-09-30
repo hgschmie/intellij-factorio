@@ -56,7 +56,7 @@ branch `work/patched-build`, commit `54818f2` or later) and the patched LSP4IJ Z
 `../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-factorio-patched.zip`,
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
-`aarch64` fix (the local `0.25.1-115-IDEA262-patched-modules` build is tested).
+`aarch64` fix (the local `0.25.1-119-IDEA262-patched-modules` build is tested).
 
 Choose **Factorio Mod** in New Project or New Module. This is a separate
 wizard entry alongside Lua. Enter the mod's name, title, author and target
@@ -100,6 +100,12 @@ Module-root `info.json` files use the bundled FMTK schema for JSON validation,
 completion, and documentation, including packaging options. No `$schema` field
 is required. Nested locale/scenario metadata is not assigned the mod schema.
 
+EmmyLua2’s **Editor → Code Style → Lua** page configures tab size, tabs versus
+spaces, and editor indentation for the selected scheme (all Lua files). LSP
+formatting uses tab size as its indentation width; other formatter options remain
+in `.luafmt.toml`/`luafmt.toml`. EditorConfig and detected file indents can override
+the scheme defaults.
+
 Locale `.cfg` files have native syntax highlighting for sections, keys, comments,
 placeholders, rich-text tags, and newline escapes. Customize colors under
 **Editor → Color Scheme → Factorio Locale**. Highlighting works without a running
@@ -108,7 +114,7 @@ Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
 Legacy active-mod settings remain usable until that root is attached as a module.
 
 The development build now uses EmmyLua2
-`0.25.1-115-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
+`0.25.1-119-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
 short imports and named cross-mod imports across attached roots. Build it with
 `../upstream/Intellij-EmmyLua2/scripts/build-module-patch.sh` first. `emmy-analyzer.lock`
 pins the server source revision; build and isolated-profile preparation check
