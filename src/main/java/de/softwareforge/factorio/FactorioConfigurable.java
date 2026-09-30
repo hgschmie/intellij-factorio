@@ -18,6 +18,7 @@ public final class FactorioConfigurable implements Configurable {
     private final JComponent panel;
     private final ComboBox<String> mode=new ComboBox<>(new String[]{"AUTO","ENABLED","DISABLED"});
     private final TextFieldWithBrowseButton node,factorio,docs,cli,config;
+    private final JBTextField commandPath = new JBTextField();
     private final FactorioForms.Dependencies dependencies;
     // All overrides stay staged until the parent Settings dialog is applied.
     private final DefaultTableModel model=new DefaultTableModel(new Object[]{"Module","Mod folder","Override dependencies","Dependencies","Override package config","Package config"},0) {
@@ -46,6 +47,9 @@ public final class FactorioConfigurable implements Configurable {
         var form=new FactorioForms.Form();
         form.section("Toolchain");
         form.row("Node",node);form.row("Factorio",factorio);form.row("API docs",docs);form.row("FMTK CLI",cli);
+        commandPath.getEmptyText().setText("Use IntelliJ shell PATH");
+        commandPath.setToolTipText("Complete PATH for toolkit commands and hooks. Use absolute directories separated by " + java.io.File.pathSeparator + "; no shell expansion.");
+        form.row("Command PATH", commandPath);
         form.section("Project Defaults");
         form.row("Services",FactorioForms.left(mode));
         form.row("Dependencies",dependencies);
@@ -114,10 +118,11 @@ public final class FactorioConfigurable implements Configurable {
     }
     @Override public String getDisplayName(){return "Factorio Modding Tool Kit";}
     @Override public JComponent createComponent(){reset();return panel;}
-    private String state(){return PathsAndMods.JSON.toJson(List.of(mode.getSelectedItem(),node.getText(),factorio.getText(),docs.getText(),cli.getText(),config.getText(),dependencies.getText(),libraryIgnoreDir,libraryIgnoreGlobs,model.getDataVector()));}
+    private String state(){return PathsAndMods.JSON.toJson(List.of(mode.getSelectedItem(),node.getText(),commandPath.getText(),factorio.getText(),docs.getText(),cli.getText(),config.getText(),dependencies.getText(),libraryIgnoreDir,libraryIgnoreGlobs,model.getDataVector()));}
     @Override public boolean isModified(){return !initial.equals(state());}
     @Override public void apply(){
         var s=FactorioSettings.get(project);s.serviceMode=(String)mode.getSelectedItem();s.enabled="ENABLED".equals(s.serviceMode);
+        s.commandPath=commandPath.getText().trim();
         s.node=node.getText().trim();s.factorio=factorio.getText().trim();s.apiDocs=docs.getText().trim();s.cli=cli.getText().trim();s.packageConfig=config.getText().trim();s.dependencies=dependencies.getText();
         s.libraryIgnoreDir=libraryIgnoreDir;s.libraryIgnoreGlobs=libraryIgnoreGlobs;
         for(int i=0;i<mods.size();i++){
@@ -127,7 +132,7 @@ public final class FactorioConfigurable implements Configurable {
         initial=state();FactorioModules.get(project).schedule();
     }
     @Override public void reset(){
-        var s=FactorioSettings.get(project);mode.setSelectedItem(s.serviceMode);node.setText(s.node);factorio.setText(s.factorio);docs.setText(s.apiDocs);cli.setText(s.cli);config.setText(s.packageConfig);dependencies.setText(s.dependencies);
+        var s=FactorioSettings.get(project);mode.setSelectedItem(s.serviceMode);commandPath.setText(s.commandPath);node.setText(s.node);factorio.setText(s.factorio);docs.setText(s.apiDocs);cli.setText(s.cli);config.setText(s.packageConfig);dependencies.setText(s.dependencies);
         libraryIgnoreDir=s.libraryIgnoreDir;libraryIgnoreGlobs=s.libraryIgnoreGlobs;
         table.clearSelection();mods=FactorioModules.get(project).mods();model.setRowCount(0);
         for(var mod:mods){var module=FactorioModules.get(project).module(mod);var m=module==null?new FactorioModuleSettings.Data():FactorioModuleSettings.get(module);model.addRow(new Object[]{mod.module(),mod.root().toString(),m.overrideDependencies,m.dependencies,m.overridePackageConfig,m.packageConfig});}

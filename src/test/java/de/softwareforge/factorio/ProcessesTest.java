@@ -30,6 +30,22 @@ class ProcessesTest {
         var error=assertThrows(java.io.IOException.class,()->runner.run(List.of("/bin/sh","-c","echo \"$FACTORIO_UPLOAD_API_KEY\"; exit 7"),root,Map.of("FACTORIO_UPLOAD_API_KEY","fake-secret"),indicator(),log::append));
         assertFalse(log.toString().contains("fake-secret"));assertTrue(log.toString().contains("[redacted]"));assertTrue(error.getMessage().contains("exit 7"));
     }
+    @Test void commandPathControlsExecutableLookupAndChildTools() throws Exception {
+        Path tools = Files.createDirectories(root.resolve("custom tools"));
+        Path launcher = tools.resolve("fmtk-test-launcher");
+        Path signer = tools.resolve("fmtk-test-signer");
+        Files.writeString(launcher, "#!/bin/sh\nfmtk-test-signer\n");
+        Files.writeString(signer, "#!/bin/sh\necho found-custom-signer\n");
+        assertTrue(launcher.toFile().setExecutable(true));
+        assertTrue(signer.toFile().setExecutable(true));
+        var env = CommandEnvironment.environment(tools.toString());
+        assertEquals(tools.toString(), env.get("PATH"));
+        var process = CommandEnvironment.command(List.of("fmtk-test-launcher"), root, env).createProcess();
+        assertTrue(process.waitFor(5, TimeUnit.SECONDS));
+        assertEquals(0, process.exitValue());
+        assertEquals("found-custom-signer", new String(process.getInputStream().readAllBytes()).trim());
+        assertEquals(com.intellij.util.EnvironmentUtil.getEnvironmentMap(), CommandEnvironment.environment(""));
+    }
     @Test void cancellationStopsOwnedChild() throws Exception {
         var runner=new Processes();var indicator=indicator();
         Path pid=root.resolve("child.pid");

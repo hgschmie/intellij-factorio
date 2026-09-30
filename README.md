@@ -174,3 +174,19 @@ the analyzer binary for language-service tests without replacing the isolated
 IDE installation. See
 [acceptance status](docs/ACCEPTANCE.md) before treating this development build as
 ready for regular use.
+
+### Command PATH
+
+Settings → Tools → Factorio Modding Tool Kit → **Command PATH** overrides the
+complete executable search path for toolkit commands, release previews, and
+child processes such as Git, GPG, and package hooks. Leave it empty to use
+IntelliJ's resolved shell environment. For Homebrew on Apple Silicon, for example:
+
+```text
+/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+```
+
+Use absolute directories separated by `:` (`;` on Windows). The value is literal:
+`$PATH` and `~` are not expanded. Explicit Node and Factorio executable paths still
+take precedence. **Check Factorio Toolchain** reports Git and GPG lookup paths.
+This setting does not change the language-server or debugger launch environment.

@@ -38,6 +38,7 @@ public final class FactorioActions {
             background(p,"Check Factorio Toolchain",Toolkit.root(p),(indicator,log)->{
                 var s=FactorioSettings.get(p);
                 Processes.get(p).run(List.of(s.node,"--version"),Toolkit.root(p),Map.of(),indicator,log);
+                Processes.get(p).run(List.of(s.node,"-e", CommandEnvironment.TOOL_PATHS),Toolkit.root(p),Map.of(),indicator,log);
                 // FMTK exposes its version in help; its "version" command edits a mod.
                 Processes.get(p).run(Toolkit.command(p,"--help"),Toolkit.root(p),Map.of(),indicator,log);
                 Processes.get(p).run(List.of(s.factorio,"--version"),Toolkit.root(p),Map.of(),indicator,log);
@@ -93,7 +94,7 @@ public final class FactorioActions {
             if(command.equals("upload")) { String zip=Messages.showInputDialog(p,"Absolute path of ZIP to upload","Upload Mod ZIP",null); if(zip==null||zip.isBlank())return; args.add(zip); }
             background(p,"FMTK "+command,mod,(indicator,log)->{
                 if(Set.of("publish","upload","details").contains(command)) {
-                    String summary=ReleaseSummary.create(mod,command,config);
+                    String summary=ReleaseSummary.create(mod,command,config,FactorioSettings.get(p).commandPath);
                     int[] decision={Messages.CANCEL};
                     ApplicationManager.getApplication().invokeAndWait(()->decision[0]=Messages.showOkCancelDialog(p,summary,"Publish Mod","Continue","Cancel",Messages.getWarningIcon()));
                     if(decision[0]!=Messages.OK)throw new ProcessCanceledException();

@@ -24,6 +24,14 @@ public class FactorioUiTest extends HeavyPlatformTestCase {
         ui.reset();assertFalse(ui.isModified());assertEquals(oldNode,node.getText());
         var config=field(component,"Package config:");config.setText("/project/package.json");
         ui.apply();assertEquals("/project/package.json",settings.packageConfig);assertFalse(ui.isModified());
+        var path = field(component,"Command PATH:");
+        path.setText("/custom/tools:/usr/bin:/bin");
+        assertTrue(ui.isModified());assertEquals("",settings.commandPath);
+        ui.reset();assertEquals("",path.getText());
+        path.setText("/custom/tools:/usr/bin:/bin");ui.apply();
+        assertEquals("/custom/tools:/usr/bin:/bin",settings.commandPath);
+        assertFalse(ui.isModified());
+        settings.commandPath="";ui.reset();
         assertEquals(5,children(component,TextFieldWithBrowseButton.class).size());
         render(component,"settings.png",760,690);
         for(var browse:children(component,TextFieldWithBrowseButton.class)) {
