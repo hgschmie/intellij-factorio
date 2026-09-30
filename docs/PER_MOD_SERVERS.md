@@ -7,7 +7,7 @@ that fixes short and named module imports.
 
 ## Dependencies and installation
 
-Requires the pinned patched LSP4IJ 0.21.1-SNAPSHOT build and the patched EmmyLua2 client containing
+Requires the pinned official LSP4IJ nightly 0.21.1-20260930-013028 and the patched EmmyLua2 client containing
 `EmmyLuaServerProvider` and `EmmyLuaServerRouting`. In
 `../upstream/Intellij-EmmyLua2`, the contribution branch is
 `fix/file-language-server-routing` (`547e03e`), merged into
@@ -162,7 +162,7 @@ to verify their new fields. Ordinary dependency edits do not trigger a full
 reindex or a server restart. Save changes and restart the language services if stale types
 persist. The earlier rapid-open/edit ordering limitation also remains.
 
-The validated runtime is macOS arm64, IDEA 262, patched LSP4IJ 0.21.1-SNAPSHOT and the pinned
+The validated runtime is macOS arm64, IDEA 262, official LSP4IJ nightly 0.21.1-20260930-013028 and the pinned
 EmmyLua 0.25.1 development build. Other operating systems need runtime validation.
 
 The previous Plugin Verifier run (0.2.8-dev) reported **Compatible** against the exact patched dependencies

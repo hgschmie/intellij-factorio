@@ -1,7 +1,7 @@
 # Factorio Modding Tool Kit for IntelliJ
 
 Java integration under `de.softwareforge.factorio`. Development release 0.3.4-dev.
-Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ 0.21.1-SNAPSHOT.
+Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and official LSP4IJ nightly 0.21.1-20260930-013028.
 LuaLS and profiling are not supported.
 
 ## Build
@@ -52,8 +52,8 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 ## Install and configure
 
 Install the patched EmmyLua2 build containing the file-routing extension (work
-branch `work/patched-build`, commit `54818f2` or later) and the patched LSP4IJ ZIP
-`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-factorio-patched.zip`,
+branch `work/patched-build`, commit `54818f2` or later) and the official LSP4IJ nightly ZIP
+`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-20260930-013028.zip`,
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
 `aarch64` fix (the local `0.25.1-119-IDEA262-patched-modules` build is tested).

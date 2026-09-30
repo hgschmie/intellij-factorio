@@ -1,42 +1,46 @@
 #!/bin/bash
+# Historical entry point: prepare the pinned official plugin; no local source build is needed.
 set -euo pipefail
 PLUGIN_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORKSPACE="$(dirname "$PLUGIN_ROOT")"
-SOURCE="$WORKSPACE/upstream/lsp4ij"
-CHECKOUT="$SOURCE/build/checkouts/patched"
-mkdir -p "$SOURCE/build/logs" "$WORKSPACE/dev/tmp" "$WORKSPACE/dev/build-home"
-exec > >(tee "$SOURCE/build/logs/factorio-build-$(date +%Y%m%d-%H%M%S).log") 2>&1
-if [ ! -d "$CHECKOUT" ]; then
-  git -C "$SOURCE" worktree add "$CHECKOUT" work/factorio-build
-fi
-EXPECTED="$(cat "$PLUGIN_ROOT/lsp4ij.lock")"
-if [ "$(git -C "$CHECKOUT" rev-parse HEAD)" != "$EXPECTED" ] || [ -n "$(git -C "$CHECKOUT" status --porcelain --untracked-files=no)" ]; then
-  echo "LSP4IJ build checkout must match lsp4ij.lock without tracked edits." >&2
-  exit 1
-fi
-IDEA="${FMTK_IDEA_PATH:-/Users/henning/Applications/IntelliJ IDEA.app}"
-export GRADLE_USER_HOME="$WORKSPACE/dev/cache/gradle"
-export JAVA_HOME="${FMTK_GRADLE_JAVA_HOME:-/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home}"
-export JAVA_TOOL_OPTIONS="-Duser.home=$WORKSPACE/dev/build-home -Djava.io.tmpdir=$WORKSPACE/dev/tmp"
-export TMPDIR="$WORKSPACE/dev/tmp"
-cd "$CHECKOUT"
-bash gradlew --no-daemon --no-configuration-cache \
-  "-PideaPath=$IDEA" -PplatformVersion=2026.2 -PbuildJavaVersion=25 \
-  -PpluginVersion=0.21.1-SNAPSHOT-factorio-patched -PpluginSinceBuild=262 \
-  "-Dorg.gradle.java.installations.paths=$IDEA/Contents/jbr/Contents/Home" \
-  test --tests '*DAPBreakpointHandlerBaseTest' buildPlugin
-python3 - "$CHECKOUT" "$WORKSPACE/dev/plugins" "$EXPECTED" "$SOURCE/build/distributions" <<'PREPARE'
+mkdir -p "$PLUGIN_ROOT/build/logs" "$WORKSPACE/dev/tmp"
+python3 - "$PLUGIN_ROOT" "$WORKSPACE" <<'PY'
 from pathlib import Path
-import shutil,sys,zipfile
-checkout,plugins,revision,dist=Path(sys.argv[1]),Path(sys.argv[2]),sys.argv[3],Path(sys.argv[4])
-archive=checkout/'build/distributions/lsp4ij-0.21.1-SNAPSHOT-factorio-patched.zip'
-dist.mkdir(parents=True,exist_ok=True)
-shutil.copy2(archive,dist/archive.name)
-# This is the shared build dependency, not an installed user IDE profile.
-target=plugins/'lsp4ij'
-if target.exists():shutil.rmtree(target)
-with zipfile.ZipFile(archive) as z:z.extractall(plugins)
-(target/'source.lock').write_text(revision+'\n')
-print('Prepared LSP4IJ:',target)
-print('Installable ZIP:',dist/archive.name)
-PREPARE
+from zipfile import ZipFile
+import hashlib, io, json, shutil, subprocess, sys, tempfile
+import xml.etree.ElementTree as ET
+plugin, workspace = map(Path, sys.argv[1:])
+lock = plugin / 'lsp4ij.lock'
+pin = json.loads(lock.read_text())
+archive = workspace / 'upstream/lsp4ij/build/distributions' / ('lsp4ij-' + pin['version'] + '.zip')
+archive.parent.mkdir(parents=True, exist_ok=True)
+if not archive.exists() or hashlib.sha256(archive.read_bytes()).hexdigest() != pin['sha256']:
+    with tempfile.TemporaryDirectory(dir=workspace / 'dev/tmp') as tmp:
+        download = Path(tmp) / 'lsp4ij.zip'
+        subprocess.run(['curl', '-fL', '--retry', '2', '--max-time', '120', pin['url'], '-o', str(download)], check=True)
+        if hashlib.sha256(download.read_bytes()).hexdigest() != pin['sha256']:
+            raise SystemExit('LSP4IJ archive checksum mismatch')
+        shutil.move(download, archive)
+plugins = workspace / 'dev/plugins'
+plugins.mkdir(parents=True, exist_ok=True)
+with tempfile.TemporaryDirectory(dir=workspace / 'dev/tmp') as tmp:
+    with ZipFile(archive) as z:
+        descriptors = []
+        for name in z.namelist():
+            if name.endswith('.jar'):
+                with ZipFile(io.BytesIO(z.read(name))) as jar:
+                    if 'META-INF/plugin.xml' in jar.namelist():
+                        descriptors.append(ET.fromstring(jar.read('META-INF/plugin.xml')))
+        assert len(descriptors) == 1
+        assert descriptors[0].findtext('id') == 'com.redhat.devtools.lsp4ij'
+        assert descriptors[0].findtext('version') == pin['version']
+    subprocess.run(['/usr/bin/unzip', '-q', str(archive), '-d', tmp], check=True)
+    prepared = Path(tmp) / 'lsp4ij'
+    (prepared / 'artifact.lock').write_text(lock.read_text())
+    target = plugins / 'lsp4ij'
+    if target.exists():
+        shutil.rmtree(target)
+    shutil.move(str(prepared), target)
+print('Prepared official LSP4IJ:', target)
+print('Verified installable ZIP:', archive)
+PY

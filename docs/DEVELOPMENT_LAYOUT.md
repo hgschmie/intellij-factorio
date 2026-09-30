@@ -11,7 +11,7 @@ old profiles and unused artifacts. Do not redirect new validation logs there.
 | `upstream/Intellij-EmmyLua2/` | EmmyLua2 source, distribution ZIPs in `build/distributions/` |
 | `upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2/` | Extracted, verified development dependency used by Factorio builds/tests |
 | `upstream/lsp4ij/` | Upstream LSP4IJ repository and PR branch |
-| `dev/plugins/lsp4ij/` | Pinned source-built LSP4IJ dependency used to compile and test |
+| `dev/plugins/lsp4ij/` | Checksum-pinned official LSP4IJ nightly dependency used to compile and test |
 | `dev/cache/{gradle,cargo,npm,...}/` | Shared reusable caches |
 | `dev/build-home/` | Isolated Java/build-tool home |
 | `dev/tmp/` | Shared process temporary files |
@@ -61,9 +61,16 @@ or the historical `spike/ide/`; it copied LSP4IJ and reusable protocol/module
 inputs from those historical locations. Historical acceptance notes retain their
 original paths and describe the old layout.
 
-LSP4IJ's local `work/factorio-build` branch is checked out in the isolated Git
-worktree `upstream/lsp4ij/build/checkouts/patched`. Its build tooling adjustments
-are separate from `fix/dap-clear-last-breakpoint-per-source`. Run
-`intellij-factorio/scripts/build-lsp4ij.sh` to rebuild the pinned revision and
-refresh `dev/plugins/lsp4ij`. Installable ZIPs are copied to
-`upstream/lsp4ij/build/distributions/`; no regular IDE profile is changed.
+LSP4IJ's breakpoint fix is now upstream (`6ed15ae6`, with test follow-up
+`4887361f`). The `work/factorio-build` worktree at
+`upstream/lsp4ij/build/checkouts/patched` has been rebased onto that upstream
+revision, retaining only local build-tooling adjustments as a fallback. Active
+builds use the unmodified official nightly `0.21.1-20260930-013028` instead.
+
+Run `intellij-factorio/scripts/build-lsp4ij.sh` (historical script name) to download
+and prepare the official archive. `lsp4ij.lock` records its version, channel, URL
+and SHA-256; the script verifies the hash, plugin ID and version before replacing
+`dev/plugins/lsp4ij`. Gradle checks its `artifact.lock` against the repository pin.
+Archives remain in `upstream/lsp4ij/build/distributions/`. Stable Marketplace
+0.21.0 predates the fix; use the pinned nightly until a stable release includes it.
+No regular IDE profile is changed by preparing the build dependency.

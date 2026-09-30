@@ -89,3 +89,19 @@ to avoid reusing cached test results. Logs, XML results and the mutation driver
 are in `upstream/lsp4ij/build/checkouts/patched/build/issue-1316-review/`.
 No production change or new regression test was needed; the existing test detects
 both reported failure modes. Published ZIPs and dependency pins are unchanged.
+
+## Official upstream dependency (September 29, 2026)
+
+Upstream accepted the fix as `6ed15ae6` and its portability test as `4887361f`.
+The local development worktree was rebased onto upstream, dropping the separate
+production patch. Only build tooling differs from upstream in that fallback tree.
+Active integration builds now use the unmodified Marketplace nightly
+`0.21.1-20260930-013028`, pinned by archive SHA-256 in `lsp4ij.lock`.
+The earlier source-built ZIP instructions above are historical.
+
+Validation against that official binary: all 13 Factorio platform tests and all
+12 EmmyLua2 tests pass. The 32 Factorio unit tests also pass. The Factorio breakpoint regression exercises same-file
+retention, cross-file removal, final-breakpoint removal, re-registration and
+temporary unregistration through the actual LSP4IJ handler. `buildPlugin` also
+succeeds. This verifies automated integration; live IDE debugging was not
+repeated for this dependency update.

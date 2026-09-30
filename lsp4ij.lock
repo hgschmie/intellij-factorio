@@ -1,1 +1,6 @@
-4745d824aab8257fa43de32459fdd583259f5bbe
+{
+  "version": "0.21.1-20260930-013028",
+  "channel": "nightly",
+  "url": "https://plugins.jetbrains.com/files/23257/1182917/lsp4ij-0.21.1-20260930-013028.zip",
+  "sha256": "baaa546fe59a448b0d0f743214e278e55057f9fe121455ee313cc627c373b98c"
+}

@@ -48,7 +48,7 @@ intellijPlatform {
 }
 val verifyIdeDependencies = tasks.register("verifyIdeDependencies") {
     group = "verification"
-    description = "Check the prepared IDE/plugin dependencies and their source pins."
+    description = "Check the prepared IDE/plugin dependencies and their pins."
     val lspPin = file("lsp4ij.lock")
     val emmyPin = file("emmy-analyzer.lock")
     doLast {
@@ -57,10 +57,10 @@ val verifyIdeDependencies = tasks.register("verifyIdeDependencies") {
         check(emmyDir.isDirectory) { "EmmyLua2 missing: $emmyDir. Run its scripts/build-module-patch.sh or set -PemmyPath." }
         fun checkPin(expected: File, actual: File) {
             check(actual.isFile && actual.readText().trim() == expected.readText().trim()) {
-                "Dependency source pin mismatch: $actual must match $expected. Rebuild the pinned dependency."
+                "Dependency pin mismatch: $actual must match $expected. Prepare the pinned dependency again."
             }
         }
-        checkPin(lspPin, lsp4ijDir.resolve("source.lock"))
+        checkPin(lspPin, lsp4ijDir.resolve("artifact.lock"))
         checkPin(emmyPin, emmyDir.resolve("server/darwin-arm64/analyzer.lock"))
         check(emmyDir.resolve("lib").listFiles().orEmpty().filter { it.extension == "jar" }.any { jar ->
             ZipFile(jar).use { it.getEntry("com/cppcxy/ide/lsp/EmmyLuaServerProvider.class") != null }
@@ -176,7 +176,7 @@ if (providers.gradleProperty("platformTests").isPresent) {
     }
 }
 
-// Verify against the same patched dependencies used to compile and test, not Marketplace releases.
+// Verify against the exact prepared dependencies used to compile and test.
 val prepareVerifierDependencies = tasks.register<Sync>("prepareVerifierDependencies") {
     into(layout.buildDirectory.dir("verifier-home/loaded-plugins"))
     from(emmyDir) { into("IntelliJ-EmmyLua2") }
