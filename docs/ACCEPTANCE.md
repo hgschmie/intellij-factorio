@@ -353,3 +353,62 @@ Neither IDE installation was changed, and actual IDE UI/debug acceptance was
 not rerun. The earlier completion-display and rapid-open/edit limitations remain.
 Only macOS arm64 includes the local analyzer patch; other servers in the
 EmmyLua2 package are upstream 0.25.1 binaries.
+
+## Separate runtime attribute read/write types — 2026-09-30
+
+Implemented and validated on macOS arm64 with Factorio 2.1.20. FMTK's optional
+`docs --target emmylua` emits complementary `@field (read)` / `@field (write)`
+definitions. The plugin requests that format and includes its target/revision in
+the definition cache key. Existing FMTK output remains the default.
+
+The analyzer keeps getter inference separate from setter checking, including
+nilability, inherited/generic fields, assigned callback parameters, table input
+context, completion, hover, and definition navigation. Writes invalidate prior
+getter narrowing without replacing the getter type with the assigned value.
+Read-only/write-only restrictions and directional index operators are deferred.
+
+Source revisions and review branches:
+
+- Toolkit development `63181fb`, review `fix/asymmetric-api-attributes` at
+  `fe2636b` (based on `upstream/next`). The review worktree is
+  `upstream/vscode-factoriomod-debug-worktrees/asymmetric-api-attributes`.
+- Analyzer development `b7b7045a`, review `fix/asymmetric-field-types` at
+  `384d9d35`, stacked on `fix/index-metamethod-presentation`. The review worktree
+  is `upstream/emmylua-analyzer-rust-worktrees/asymmetric-field-types`.
+- EmmyLua2 build `0.25.1-127-IDEA262-patched-modules`, packaging commit `1ca4499`.
+  Shared build paths now also work from the linked patched-build worktree.
+
+Validation:
+
+- FMTK typecheck, changed-file lint, and two CLI generation tests passed.
+- Analyzer development: 1,127 analysis tests, 239 LSP tests (one pre-existing
+  ignored test), and 191 parser tests passed. Nine focused tests also passed on
+  the independent analyzer review branch.
+- The packaged analyzer passed `python3 scripts/test-asymmetric-api.py` against
+  all 17 asymmetric attributes in the installed API: getter assertions before
+  and after writes, valid setter input, deliberately invalid assignments, burner
+  hover, and getter-member completion after assigning a string identifier.
+- Factorio plugin: 35 unit tests and the complete 17-test IntelliJ platform suite
+  passed, including `testAsymmetricApiAttributes`, regeneration, per-mod services,
+  and navigation using copies of real mods. EmmyLua2's 22 plugin tests passed.
+- Platform command: `bash scripts/build.sh
+  -Porg.jetbrains.intellij.platform.useCacheRedirector=false -PplatformTests
+  -PrealMods=/Users/henning/factorio/mods_21 test buildPlugin`.
+- An initial platform run lacked the existing real-mod test input; a later run
+  caught a hover assertion that assumed one alias rendering. The final full run
+  passed after supplying the fixture and accepting equivalent named/expanded
+  write types.
+
+Evidence is in `build/logs/asymmetric-*.log` and
+`build/test-work/asymmetric-api/results.json`; analyzer suite logs are in its
+active development worktree's `build/` directory. The platform test uses isolated
+IDE processes. No interactive desktop acceptance or regular-profile installation
+was performed. Only the macOS arm64 bundled server includes these patches.
+
+Installable archives:
+
+- `intellij-factorio/build/distributions/intellij-factorio-0.3.5-dev.zip`
+- `upstream/Intellij-EmmyLua2-worktrees/patched-build/build/distributions/IntelliJ-EmmyLua2-0.25.1-127-IDEA262-patched-modules.zip`
+
+Install both matching archives and regenerate the Factorio API definitions to
+use the feature in an existing IDE installation.

@@ -56,7 +56,7 @@ branch `work/patched-build`, commit `54818f2` or later) and the official LSP4IJ 
 `../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-20260930-013028.zip`,
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
-`aarch64` fix (the local `0.25.1-126-IDEA262-patched-modules` build is tested).
+`aarch64` fix (the local `0.25.1-127-IDEA262-patched-modules` build is tested).
 
 Choose **Factorio Mod** in New Project or New Module. This is a separate
 wizard entry alongside Lua. Enter the mod's name, title, author and target
@@ -110,13 +110,21 @@ Locale `.cfg` files have native syntax highlighting for sections, keys, comments
 placeholders, rich-text tags, and newline escapes. Customize colors under
 **Editor → Color Scheme → Factorio Locale**. Highlighting works without a running
 language server; FMTK continues to provide diagnostics and navigation.
+Runtime attributes with different getter/setter types now retain both types.
+For example, assigning `"coal"` to `LuaBurner.currently_burning` is valid, while a
+subsequent read is still `ItemIDAndQualityIDPair?`. Hover displays Read and Write
+types separately. The plugin requests FMTK's opt-in `--target emmylua` output;
+regeneration automatically uses a separate cache from older definitions. This
+requires the patched macOS arm64 analyzer below. Read-only/write-only diagnostics
+and directional index operators are outside this feature.
+
 Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
 Legacy active-mod settings remain usable until that root is attached as a module.
 
 The development build now uses EmmyLua2
-`0.25.1-126-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
+`0.25.1-127-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
 short imports and named cross-mod imports across attached roots. Build it with
-`../upstream/Intellij-EmmyLua2/scripts/build-module-patch.sh` first. `emmy-analyzer.lock`
+`../upstream/Intellij-EmmyLua2-worktrees/patched-build/scripts/build-module-patch.sh` first. `emmy-analyzer.lock`
 pins the server source revision; build and isolated-profile preparation check
 that pin. Other platform binaries use upstream 0.25.1 without the local resolver patch.
 See [acceptance status](docs/ACCEPTANCE.md) for client completion limitations.

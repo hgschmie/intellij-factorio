@@ -11,6 +11,9 @@ import java.util.function.Consumer;
 
 public final class Definitions {
     private Definitions() {}
+    static final String API_TARGET = "emmylua";
+    // Include the annotation contract in the cache even with a user-supplied CLI.
+    static final String API_FORMAT = "asymmetric-fields-v1";
     public static Path cache(Project project) {
         return PathManager.getSystemDir().resolve("softwareforge-factorio").resolve(Integer.toHexString(Toolkit.root(project).toString().hashCode()));
     }
@@ -25,12 +28,13 @@ public final class Definitions {
         Path runtime = docs.resolve("runtime-api.json"), prototypes = docs.resolve("prototype-api.json");
         if (!Files.isRegularFile(runtime) || !Files.isRegularFile(prototypes)) throw new IllegalArgumentException("Select a directory containing runtime-api.json and prototype-api.json in Factorio settings");
         var digest = MessageDigest.getInstance("SHA-256");
+        digest.update((API_TARGET+":"+API_FORMAT).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         digest.update(Files.readAllBytes(runtime)); digest.update(Files.readAllBytes(prototypes)); digest.update(Files.readAllBytes(Toolkit.cli(project)));
         Path generated = cache.resolve("api-" + HexFormat.of().formatHex(digest.digest()).substring(0,24));
         String version = PathsAndMods.read(runtime).get("application_version").getAsString();
         if (!Files.isRegularFile(generated.resolve("complete"))) {
             Path staging = Files.createTempDirectory(cache,"api-staging-");
-            Processes.get(project).run(Toolkit.command(project, "docs", staging.toString(), "--docs", runtime.toString(), "--protos", prototypes.toString(), "--docbase", "https://lua-api.factorio.com/" + version), root, Map.of(), indicator, log);
+            Processes.get(project).run(Toolkit.command(project, "docs", staging.toString(), "--target", API_TARGET, "--docs", runtime.toString(), "--protos", prototypes.toString(), "--docbase", "https://lua-api.factorio.com/" + version), root, Map.of(), indicator, log);
             Files.writeString(staging.resolve("complete"), version);
             Files.move(staging, generated, StandardCopyOption.ATOMIC_MOVE);
         }

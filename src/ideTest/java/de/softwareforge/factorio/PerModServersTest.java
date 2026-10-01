@@ -382,6 +382,45 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         }
     }
 
+    public void testAsymmetricApiAttributes() throws Exception {
+        Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
+        org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));
+        Path root=mod("asymmetric","state"), control=root.resolve("control.lua");
+        Files.writeString(control,"---@param burner LuaBurner\nlocal function probe(burner)\n  burner.currently_burning = 'coal'\n  local burning = burner.currently_burning\n  if burning then\n    local name = burning.name\n  end\n  burner.currently_burning = function() end\nend\n");
+        attach(List.of(root));
+        var settings=FactorioSettings.get(getProject());
+        settings.serviceMode="ENABLED"; settings.apiDocs=docs.toString();
+        await(CompletableFuture.runAsync(() -> {
+            try { Definitions.generate(getProject(),new com.intellij.openapi.progress.EmptyProgressIndicator(),message -> {}); }
+            catch(Exception e) { throw new CompletionException(e); }
+        }));
+        var item=server(FactorioServerManager.get(getProject()).luaServer(control));
+        var document=new TextDocumentIdentifier(control.toUri().toString());
+        eventually(() -> {
+            try { return diagnostics(item,control).contains("assign-type-mismatch"); }
+            catch(Exception e) { return false; }
+        });
+        String hover=String.valueOf(await(item.getServer().getTextDocumentService().hover(new HoverParams(document,new Position(3,32)))));
+        for(String expected:List.of("Read:","Write:","ItemIDAndQualityIDPair")) assertTrue(hover,hover.contains(expected));
+        assertTrue(hover,hover.contains("ItemWithQualityID") || (hover.contains("LuaItemPrototype") && hover.contains("string")));
+        String completion=String.valueOf(await(item.getServer().getTextDocumentService().completion(new CompletionParams(document,new Position(5,25)))));
+        assertTrue(completion,completion.contains("quality"));
+        String readDefinition=definitions(item,control,3,32),writeDefinition=definitions(item,control,2,18);
+        assertTrue(readDefinition,readDefinition.contains("LuaBurner.lua"));
+        assertTrue(writeDefinition,writeDefinition.contains("LuaBurner.lua"));
+        assertFalse(readDefinition.equals(writeDefinition));
+        var params=new DocumentDiagnosticParams(); params.setTextDocument(document);
+        var report=await(item.getServer().getTextDocumentService().diagnostic(params)).getLeft();
+        var mismatches=report.getItems().stream().filter(d -> d.getCode()!=null && "assign-type-mismatch".equals(d.getCode().getLeft())).toList();
+        assertEquals(mismatches.toString(),1,mismatches.size());
+        assertEquals(7,mismatches.getFirst().getRange().getStart().getLine());
+        // Regeneration reuses the new-format cache and still configures the same mod.
+        await(CompletableFuture.runAsync(() -> {
+            try { Definitions.generate(getProject(),new com.intellij.openapi.progress.EmptyProgressIndicator(),message -> {}); }
+            catch(Exception e) { throw new CompletionException(e); }
+        }));
+    }
+
     public void testReportedNavigationWithCopiesOfActualMods() throws Exception {
         String originalPath=System.getProperty("factorio.test.realMods","");
         org.junit.Assume.assumeTrue("Pass -PrealMods to test copies of the reported mods",!originalPath.isBlank());
