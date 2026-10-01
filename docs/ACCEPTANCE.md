@@ -565,8 +565,9 @@ Evidence is under `build/logs/nullable-index-*`,
 `build/reports/nullable-index-platform-results/`,
 `build/reports/nullable-index-artifacts.json`, and
 `build/test-work/table-index-package/`. EmmyLua2 build/test logs are in its worktree's
-`build/logs/`. No regular IDE profile or user mod files were modified; live IDE
-acceptance awaits installation.
+`build/logs/`. Automated checks did not modify the regular IDE profile or user
+mod files. On 2026-10-01, the user confirmed that the rebuilt patch works in
+their running IntelliJ instance, completing live IDE acceptance.
 
 Install both archives, retained beside previous releases:
 
