@@ -405,9 +405,14 @@ active development worktree's `build/` directory. The platform test uses isolate
 IDE processes. No interactive desktop acceptance or regular-profile installation
 was performed. Only the macOS arm64 bundled server includes these patches.
 
+The Factorio plugin version is `0.4.0-dev` for this feature, which requires the
+matching patched EmmyLua2 build below. The version-only change passed
+`buildPlugin`, and the packaged plugin descriptor was verified as `0.4.0-dev`.
+The build log is `build/logs/version-0.4.0-dev-package.log`.
+
 Installable archives:
 
-- `intellij-factorio/build/distributions/intellij-factorio-0.3.5-dev.zip`
+- `intellij-factorio/build/distributions/intellij-factorio-0.4.0-dev.zip`
 - `upstream/Intellij-EmmyLua2-worktrees/patched-build/build/distributions/IntelliJ-EmmyLua2-0.25.1-127-IDEA262-patched-modules.zip`
 
 Install both matching archives and regenerate the Factorio API definitions to
