@@ -4,6 +4,10 @@ import com.google.gson.*;
 import com.intellij.execution.configurations.*;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
+import com.intellij.execution.ExecutionManager;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.components.BaseState;
 import com.intellij.openapi.components.StoredProperty;
@@ -160,11 +164,21 @@ public final class FactorioDebug {
         @Override public boolean isDebuggableFile(VirtualFile file, Project project) { return FactorioSettings.servicesEnabled(project) && "lua".equals(file.getExtension()); }
     }
     public static final class Descriptor extends DebugAdapterDescriptor {
+        private static final Key<Object> RESTART_DATA = Key.create("factorio.dap.restartData");
         private final DAPRunConfigurationOptions settings;
         private final String configurationName;
+        private final FactorioDapRestart restart = new FactorioDapRestart();
+        private final Object restartData;
         private FactorioDebugProcessHandler handler;
         private FactorioDapLog dapLog;
-        public Descriptor(DAPRunConfigurationOptions options, ExecutionEnvironment environment, DescriptorFactory factory) { super(options,environment,factory.getServerDefinition()); settings=options; configurationName=environment.getRunProfile().getName(); }
+        public Descriptor(DAPRunConfigurationOptions options, ExecutionEnvironment environment, DescriptorFactory factory) {
+            super(options,environment,factory.getServerDefinition());
+            settings=options;
+            configurationName=environment.getRunProfile().getName();
+            restartData=environment.getUserData(RESTART_DATA);
+            // Ephemeral launch data must not survive a later manual rerun or be persisted.
+            environment.putUserData(RESTART_DATA,null);
+        }
         private synchronized FactorioDapLog fileLog(DAPDebugProcess process, ServerTrace trace) {
             if(trace==ServerTrace.off || !(settings instanceof Options options) || !options.getDapLogToFile()) return null;
             if(dapLog==null) dapLog=new FactorioDapLog(options::logDirectory,configurationName,
@@ -175,6 +189,7 @@ public final class FactorioDebug {
         private synchronized void closeFileLog() { if(dapLog!=null) dapLog.close(); }
         @Override public ProcessHandler startServer() throws com.intellij.execution.ExecutionException {
             handler = new FactorioDebugProcessHandler(new GeneralCommandLine(settings.getCommand(),"--dap").withWorkDirectory(settings.getWorkingDirectory()).withCharset(java.nio.charset.StandardCharsets.UTF_8));
+            handler.onStopRequested(restart::cancel);
             com.intellij.execution.process.ProcessTerminatedListener.attach(handler);
             return handler;
         }
@@ -199,14 +214,31 @@ public final class FactorioDebug {
                     try { super.dispose(); } finally { if(parent==null) closeFileLog(); }
                 }
                 @Override public void terminate() {
+                    disconnect(false);
+                }
+                private void disconnect(boolean restarting) {
                     if (!stopping.compareAndSet(false, true)) return;
                     var server = getDebugProtocolServer();
                     if (server == null) { dispose(); return; }
                     // This configuration launches Factorio; Stop must terminate the game.
                     var args = new org.eclipse.lsp4j.debug.DisconnectArguments();
                     args.setTerminateDebuggee(true);
+                    if (restarting) args.setRestart(true);
                     server.disconnect(args).orTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
                             .whenCompleteAsync((ignored, failure) -> dispose());
+                }
+                @Override public void terminated(org.eclipse.lsp4j.debug.TerminatedEventArguments args) {
+                    if (parent==null && handler!=null && FactorioDapRestart.isRequested(args.getRestart())) {
+                        if (restart.request(args.getRestart())) {
+                            process.print("Factorio requested a restart. Waiting for the game to exit...",
+                                    com.intellij.execution.ui.ConsoleViewContentType.SYSTEM_OUTPUT);
+                            restartAfterExit(process);
+                            disconnect(true);
+                        }
+                        // Duplicate events and events arriving after Stop must not launch again.
+                        return;
+                    }
+                    super.terminated(args);
                 }
             };
             // The IDE's Stop action can destroy the process before DAPDebugProcess.stop.
@@ -215,7 +247,40 @@ public final class FactorioDebug {
         }
         @Override public Map<String,Object> getDapParameters() {
             var type = new com.google.gson.reflect.TypeToken<Map<String,Object>>(){}.getType();
-            return PathsAndMods.JSON.fromJson(settings.getLaunchConfiguration(),type);
+            Map<String,Object> parameters=PathsAndMods.JSON.fromJson(settings.getLaunchConfiguration(),type);
+            if (restartData!=null) parameters.put("__restart",restartData);
+            return parameters;
+        }
+        private void restartAfterExit(DAPDebugProcess process) {
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                // Wait for the process handler as well as the OS process: IDEA must finish
+                // the old session and Factorio must release its write-data lock first.
+                if (!handler.waitFor(15_000)) {
+                    restart.cancel();
+                    process.print("Factorio did not exit within 15 seconds; automatic restart cancelled.",
+                            com.intellij.execution.ui.ConsoleViewContentType.ERROR_OUTPUT);
+                    handler.destroyProcess();
+                    return;
+                }
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    if (environment.getProject().isDisposed() || !environment.getProject().isOpen()) {
+                        restart.cancel();
+                        return;
+                    }
+                    var content=process.getSession().getRunContentDescriptor();
+                    if (com.intellij.openapi.util.Disposer.isDisposed(content)) { restart.cancel(); return; }
+                    Object data=restart.take();
+                    if (data==null) return;
+                    var next=restartEnvironment(environment,content,data);
+                    ExecutionManager.getInstance(environment.getProject()).restartRunProfile(next);
+                });
+            });
+        }
+        private static ExecutionEnvironment restartEnvironment(ExecutionEnvironment previous,
+                com.intellij.execution.ui.RunContentDescriptor content,Object data) {
+            var next=new ExecutionEnvironmentBuilder(previous).contentToReuse(content).build();
+            next.putUserData(RESTART_DATA,data);
+            return next;
         }
         @Override public FileType getFileType() { return FileTypeManager.getInstance().getFileTypeByExtension("lua"); }
         @Override public boolean isDebuggableFile(VirtualFile file, Project project) { return FactorioSettings.servicesEnabled(project) && "lua".equals(file.getExtension()); }

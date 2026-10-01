@@ -1,6 +1,6 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.4.1-dev.
+Java integration under `de.softwareforge.factorio`. Development release 0.4.2-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and official LSP4IJ nightly 0.21.1-20260930-013028.
 LuaLS and profiling are not supported.
 
@@ -137,6 +137,12 @@ module is selected automatically for new configurations). Set the Factorio execu
 directory, save ZIP, config.ini and working directory. For testing, configure a
 separate Factorio write-data directory. Use **Debug** and set Factorio Lua
 breakpoints in the gutter. The debugger talks directly to `factorio --dap`.
+
+When Factorio requests a restart after mod or startup-setting changes, the plugin
+waits for the old process to exit and starts a new debug session automatically.
+It passes the game's restart data back unchanged and reinstalls IDE breakpoints.
+The IDE's **Stop** action cancels a pending restart; a normal game exit does not
+restart it. With file tracing enabled, the replacement session gets a new log.
 
 Enable **DAP logging** in the Factorio run configuration for verbose protocol
 traces in the debug console. **Save DAP log to file** redirects protocol traces

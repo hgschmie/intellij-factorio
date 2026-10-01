@@ -472,3 +472,59 @@ fixture must use a separate write-data directory. These checks did not install
 into or alter the regular IDE profile, and did not exercise an interactive IDE
 debug session. This feature bumps the plugin to `0.4.1-dev`; its archive is
 `build/distributions/intellij-factorio-0.4.1-dev.zip`.
+
+## Game-requested debugger restart (2026-09-30)
+
+Factorio 2.1.20 sends `terminated.body.restart.relaunchArgs` after applying a
+changed mod selection, then exits. LSP4IJ 0.21.1's default `DAPClient.terminated`
+ignores the restart field. The Factorio descriptor now handles that event,
+waits up to 15 seconds for the old process handler to finish, and asks IntelliJ
+to restart the run profile on the EDT. The next launch receives the original
+restart value as `__restart`, following the
+[DAP terminated-event contract](https://github.com/microsoft/debug-adapter-protocol/blob/main/debugAdapterProtocol.json).
+This is session-only data, consumed from the execution environment without
+editing or persisting the run configuration. No upstream patch is required.
+
+Duplicate events cannot launch multiple replacements. Stop cancels a pending
+restart synchronously; normal termination, project disposal, closed debug tabs,
+and a process that fails to exit do not launch a replacement. The new session
+performs initialization and breakpoint registration again, and gets its own DAP
+log when file tracing is enabled.
+
+Validation:
+
+- The real game's restart event was captured after the user toggled the test
+  mod in an isolated Factorio instance. Its unmodified payload was replayed in
+  a new native `factorio --dap` connection: initialization/launch completed and
+  disconnect exited with code 0. Evidence: `build/test-work/restart-probe/evidence/`
+  and `build/logs/restart-relaunch.log`. A first replay under the restricted
+  process sandbox crashed in macOS graphics initialization; the replay succeeded
+  with normal app runtime access.
+- The IntelliJ platform regression runs the real run-profile runner, LSP4IJ
+  clients and breakpoint registration against a controllable adapter. It checks
+  two successive automatic restarts (including immediate process exit without a
+  disconnect response), opaque payload transfer, duplicate events, restored
+  breakpoints, normal quit, a clean manual rerun, and Stop during pending restart.
+  It and the existing three configuration UI tests and breakpoint regression
+  passed: five tests total. Results: `build/reports/restart-platform-results/`.
+  The test keeps background progress tasks asynchronous, as in a running IDE;
+  IntelliJ's default synchronous headless behavior deadlocks LSP4IJ startup.
+- Unit coverage exercises restart values, single-use payload consumption,
+  duplicate suppression, and cancellation before/after the request.
+- `test buildPlugin` passed all 47 unit/protocol tests, including the opt-in
+  real-game test's two launches, breakpoint hits, variable inspection, evaluation,
+  stepping and clean disconnects. Preserved XML: `build/reports/restart-unit-results/`.
+
+Repeat the platform checks with:
+
+```sh
+bash scripts/build.sh -Porg.jetbrains.intellij.platform.useCacheRedirector=false \
+  -PplatformTests test --tests de.softwareforge.factorio.FactorioRestartTest \
+  --tests de.softwareforge.factorio.FactorioBreakpointTest \
+  --tests de.softwareforge.factorio.FactorioUiTest
+```
+
+The user installed `0.4.2-dev` and confirmed that changing the mod configuration
+in the game now restarts Factorio with the debugger in their running IDE.
+This completes interactive acceptance alongside the protocol and platform tests.
+The build is `build/distributions/intellij-factorio-0.4.2-dev.zip`.

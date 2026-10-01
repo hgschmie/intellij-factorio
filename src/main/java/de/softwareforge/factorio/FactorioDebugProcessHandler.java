@@ -8,13 +8,17 @@ import java.util.concurrent.TimeUnit;
 /** Gives LSP4IJ's asynchronous disconnect time to finish before IDE process teardown. */
 final class FactorioDebugProcessHandler extends OSProcessHandler {
     private volatile Runnable disconnect = () -> {};
+    private volatile Runnable stopRequested = () -> {};
     FactorioDebugProcessHandler(GeneralCommandLine command) throws ExecutionException {
         super(command);
     }
 
     void onStop(Runnable disconnect) { this.disconnect = disconnect; }
+    void onStopRequested(Runnable action) { this.stopRequested = action; }
 
     @Override protected void doDestroyProcess() {
+        // Cancel an adapter-requested restart immediately, before asynchronous cleanup.
+        stopRequested.run();
         // The default OSProcessHandler kills the process tree immediately. Keep stdin
         // open while the DAP client sends disconnect; never block the UI waiting for it.
         executeTask(() -> {
