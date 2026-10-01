@@ -528,3 +528,51 @@ The user installed `0.4.2-dev` and confirmed that changing the mod configuration
 in the game now restarts Factorio with the debugger in their running IDE.
 This completes interactive acceptance alongside the protocol and platform tests.
 The build is `build/distributions/intellij-factorio-0.4.2-dev.zip`.
+
+
+## Nullable dictionary lookups, 0.5.0-dev (2026-10-01)
+
+This minor development release pins analyzer `772ec76d` and uses patched EmmyLua2
+`0.25.1-128-IDEA262-patched-modules`. The independent analyzer change is
+`fix/nullable-table-index` (`3548b7f5`), merged into `work/intellij-modules`.
+Set `"strict": {"tableIndex": true}` in the mod's `.luarc.json` or `.emmyrc.json`
+to treat missing dictionary entries as `nil`. The option is off by default.
+No managed configuration override or annotation change is required. Required
+named fields, explicit `__index` function returns, and iteration value types
+remain unchanged. No production glue with the read/write patch was needed;
+combined regression coverage lives on the analyzer work branch.
+
+Validation:
+
+- Independent analyzer: 1,101 analysis, 213 LSP, 191 parser tests passed.
+  Combined analyzer: 1,139 analysis, 239 LSP, 191 parser tests passed. Each LSP
+  suite has one existing ignored test. These source checks preceded packaging.
+- EmmyLua2 release packaging and all 22 plugin tests passed. The ZIP's descriptor,
+  analyzer source pin, executable hash, and Unix server modes (`0755`) were
+  verified. System unzip preserved executable permission without correction.
+- Factorio `test buildPlugin` passed: 46 unit tests passed, with the opt-in
+  real-game DAP test skipped (47 total). Existing native module configuration/VFS
+  reload, asymmetric API attributes, and Lua language-level platform tests all
+  passed: three platform tests against the newly prepared dependency.
+- A real stdio LSP probe ran the extracted release analyzer with FMTK's actual
+  `mods.lua` annotation and a module-local `.luarc.json`. With `tableIndex` off,
+  `mods["nullius"]` retained `string` and the original `unnecessary-if` warning.
+  With it on, hover reported `string?` and that warning disappeared. The required
+  field positive control still warned in both cases.
+
+Evidence is under `build/logs/nullable-index-*`,
+`build/reports/nullable-index-unit-results/`,
+`build/reports/nullable-index-platform-results/`,
+`build/reports/nullable-index-artifacts.json`, and
+`build/test-work/table-index-package/`. EmmyLua2 build/test logs are in its worktree's
+`build/logs/`. No regular IDE profile or user mod files were modified; live IDE
+acceptance awaits installation.
+
+Install both archives, retained beside previous releases:
+
+- `build/distributions/intellij-factorio-0.5.0-dev.zip`
+- `../upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.25.1-128-IDEA262-patched-modules.zip`
+
+The EmmyLua2 packaging script now also copies and verifies worktree-built ZIPs in
+that main-repository distribution folder. Only the macOS arm64 analyzer carries
+the local patches; other platform binaries remain upstream 0.25.1.
