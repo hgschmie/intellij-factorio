@@ -6,6 +6,8 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.components.BaseState;
+import com.intellij.openapi.components.StoredProperty;
+import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.fileTypes.*;
 import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.openapi.project.Project;
@@ -18,6 +20,7 @@ import com.redhat.devtools.lsp4ij.dap.*;
 import com.redhat.devtools.lsp4ij.dap.breakpoints.*;
 import com.redhat.devtools.lsp4ij.dap.configurations.*;
 import com.redhat.devtools.lsp4ij.dap.descriptors.*;
+import com.redhat.devtools.lsp4ij.settings.ServerTrace;
 import java.nio.file.*;
 import java.util.*;
 import javax.swing.*;
@@ -32,9 +35,25 @@ public final class FactorioDebug {
         public Factory(ConfigurationType type) { super(type); }
         @Override public String getId() { return "Factorio"; }
         @Override public RunConfiguration createTemplateConfiguration(Project project) { return new Configuration(project,this,"Factorio"); }
-        @Override public Class<? extends BaseState> getOptionsClass() { return DAPRunConfigurationOptions.class; }
+        @Override public Class<? extends BaseState> getOptionsClass() { return Options.class; }
+    }
+    public static final class Options extends DAPRunConfigurationOptions {
+        private final StoredProperty<Boolean> dapLogToFile = property(false).provideDelegate(this,"dapLogToFile");
+        private final StoredProperty<String> dapLogDirectory = string("").provideDelegate(this,"dapLogDirectory");
+        public boolean getDapLogToFile() { return dapLogToFile.getValue(this); }
+        public void setDapLogToFile(boolean value) { dapLogToFile.setValue(this,value); }
+        public String getDapLogDirectory() { return Objects.toString(dapLogDirectory.getValue(this),""); }
+        public void setDapLogDirectory(String value) { dapLogDirectory.setValue(this,value); }
+        static Path defaultLogDirectory() { return Path.of(PathManager.getLogPath(),"factorio","dap"); }
+        Path logDirectory() {
+            if(getDapLogDirectory().isBlank()) return defaultLogDirectory();
+            Path directory=Path.of(getDapLogDirectory());
+            if(directory.isAbsolute()) return directory;
+            return Path.of(Objects.toString(getWorkingDirectory(),".")).resolve(directory).toAbsolutePath().normalize();
+        }
     }
     public static final class Configuration extends DAPRunConfiguration {
+        @Override public Options getOptions() { return (Options)super.getOptions(); }
         private String modModule="";
         @Override public void writeExternal(org.jdom.Element e){ super.writeExternal(e);e.setAttribute("factorioModule",modModule); }
         @Override public void readExternal(org.jdom.Element e) throws com.intellij.openapi.util.InvalidDataException { super.readExternal(e);modModule=e.getAttributeValue("factorioModule",""); }
@@ -64,7 +83,9 @@ public final class FactorioDebug {
     }
     public static final class Editor extends SettingsEditor<DAPRunConfiguration> {
         private final JComponent panel;
-        private final TextFieldWithBrowseButton executable,cwd,save,mods,config;
+        private final TextFieldWithBrowseButton executable,cwd,save,mods,config,logDirectory;
+        private final JCheckBox trace=new com.intellij.ui.components.JBCheckBox("Enable DAP logging");
+        private final JCheckBox logToFile=new com.intellij.ui.components.JBCheckBox("Save DAP log to file");
         private final com.intellij.ui.components.JBTextArea extra = new com.intellij.ui.components.JBTextArea(3,36);
         private final com.intellij.openapi.ui.ComboBox<String> module=new com.intellij.openapi.ui.ComboBox<>();
         private final Project project;
@@ -75,6 +96,12 @@ public final class FactorioDebug {
             save=FactorioForms.path(project,"Select Save ZIP",false,"Optional");
             mods=FactorioForms.path(project,"Select Mod Directory",true,"");
             config=FactorioForms.path(project,"Select Factorio Configuration",false,"Optional config.ini");
+            logDirectory=FactorioForms.path(project,"Select DAP Log Output Folder",true,Options.defaultLogDirectory().toString());
+            trace.setToolTipText("Verbose protocol messages in the debug console, or only in a file when saving is enabled. Applies to the next session.");
+            logToFile.setToolTipText("Save full DAP messages as JSON Lines in a new file for each session; normal console output remains visible.");
+            logDirectory.setToolTipText("Leave blank for "+Options.defaultLogDirectory()+". Relative paths use the working directory.");
+            trace.addActionListener(e -> updateLoggingControls());
+            logToFile.addActionListener(e -> updateLoggingControls());
             module.addItem("");FactorioModules.get(project).mods().forEach(m->module.addItem(m.module()));
             module.addActionListener(e->FactorioModules.get(project).mods().stream().filter(m->m.module().equals(module.getSelectedItem())).findFirst().ifPresent(m->cwd.setText(m.root().toString())));
             var form=new FactorioForms.Form();
@@ -82,10 +109,23 @@ public final class FactorioDebug {
             form.row("Working directory",cwd);form.row("Save ZIP",save);form.row("Mod directory",mods);form.row("Config file",config);
             extra.setToolTipText("One argument per line");
             form.row("Additional arguments",new com.intellij.ui.components.JBScrollPane(extra));
+            form.section("DAP logging");
+            form.full(trace);form.full(logToFile);form.row("Output folder",logDirectory);
+            updateLoggingControls();
             panel=form.topAligned();
+        }
+        private void updateLoggingControls() {
+            logToFile.setEnabled(trace.isSelected());
+            logDirectory.setEnabled(trace.isSelected() && logToFile.isSelected());
         }
         @Override protected JComponent createEditor() { return panel; }
         @Override protected void resetEditorFrom(DAPRunConfiguration c) {
+            trace.setSelected(c.getServerTrace()!=ServerTrace.off);
+            if(c instanceof Configuration own) {
+                logToFile.setSelected(own.getOptions().getDapLogToFile());
+                logDirectory.setText(own.getOptions().getDapLogDirectory());
+            }
+            updateLoggingControls();
             if(c instanceof Configuration own){ if(!own.modModule.isBlank() && java.util.stream.IntStream.range(0,module.getItemCount()).noneMatch(i->module.getItemAt(i).equals(own.modModule))) module.addItem(own.modModule); module.setSelectedItem(own.modModule); }
             executable.setText(c.getCommand()); cwd.setText(c.getWorkingDirectory()); save.setText(""); mods.setText(""); config.setText("");
             List<String> extras = new ArrayList<>();
@@ -100,6 +140,11 @@ public final class FactorioDebug {
             extra.setText(String.join("\n",extras));
         }
         @Override protected void applyEditorTo(DAPRunConfiguration c) {
+            c.setServerTrace(trace.isSelected()?ServerTrace.verbose:ServerTrace.off);
+            if(c instanceof Configuration own) {
+                own.getOptions().setDapLogToFile(logToFile.isSelected());
+                own.getOptions().setDapLogDirectory(logDirectory.getText().trim());
+            }
             if(c instanceof Configuration own) own.modModule=Objects.toString(module.getSelectedItem(),"");
             c.setServerId(ID); c.setCommand(executable.getText().trim()); c.setWorkingDirectory(cwd.getText().trim()); c.setDebugMode(DebugMode.LAUNCH);
             JsonObject launch=new JsonObject(); launch.addProperty("request","launch"); launch.addProperty("followSymlinks",true); launch.addProperty("hookDebugConsole",true);
@@ -116,8 +161,18 @@ public final class FactorioDebug {
     }
     public static final class Descriptor extends DebugAdapterDescriptor {
         private final DAPRunConfigurationOptions settings;
+        private final String configurationName;
         private FactorioDebugProcessHandler handler;
-        public Descriptor(DAPRunConfigurationOptions options, ExecutionEnvironment environment, DescriptorFactory factory) { super(options,environment,factory.getServerDefinition()); settings=options; }
+        private FactorioDapLog dapLog;
+        public Descriptor(DAPRunConfigurationOptions options, ExecutionEnvironment environment, DescriptorFactory factory) { super(options,environment,factory.getServerDefinition()); settings=options; configurationName=environment.getRunProfile().getName(); }
+        private synchronized FactorioDapLog fileLog(DAPDebugProcess process, ServerTrace trace) {
+            if(trace==ServerTrace.off || !(settings instanceof Options options) || !options.getDapLogToFile()) return null;
+            if(dapLog==null) dapLog=new FactorioDapLog(options::logDirectory,configurationName,
+                path -> process.print("DAP log: "+path,com.intellij.execution.ui.ConsoleViewContentType.SYSTEM_OUTPUT),
+                failure -> process.print("DAP file logging disabled: "+failure.getMessage(),com.intellij.execution.ui.ConsoleViewContentType.ERROR_OUTPUT));
+            return dapLog;
+        }
+        private synchronized void closeFileLog() { if(dapLog!=null) dapLog.close(); }
         @Override public ProcessHandler startServer() throws com.intellij.execution.ExecutionException {
             handler = new FactorioDebugProcessHandler(new GeneralCommandLine(settings.getCommand(),"--dap").withWorkDirectory(settings.getWorkingDirectory()).withCharset(java.nio.charset.StandardCharsets.UTF_8));
             com.intellij.execution.process.ProcessTerminatedListener.attach(handler);
@@ -126,6 +181,23 @@ public final class FactorioDebug {
         @Override public com.redhat.devtools.lsp4ij.dap.client.DAPClient createClient(DAPDebugProcess process, Map<String,Object> parameters, boolean debug, DebugMode mode, com.redhat.devtools.lsp4ij.settings.ServerTrace trace, com.redhat.devtools.lsp4ij.dap.client.DAPClient parent) {
             var client = new com.redhat.devtools.lsp4ij.dap.client.DAPClient(process, parameters, debug, mode, trace, parent) {
                 private final java.util.concurrent.atomic.AtomicBoolean stopping = new java.util.concurrent.atomic.AtomicBoolean();
+                @Override protected org.eclipse.lsp4j.jsonrpc.Launcher<? extends org.eclipse.lsp4j.debug.services.IDebugProtocolServer> createLauncher(
+                        java.util.function.UnaryOperator<org.eclipse.lsp4j.jsonrpc.MessageConsumer> wrapper,
+                        java.io.InputStream in,java.io.OutputStream out,java.util.concurrent.ExecutorService executor) {
+                    var log=fileLog(process,trace);
+                    return super.createLauncher(FactorioDapLog.route(log,wrapper,
+                        error -> process.print(error,com.intellij.execution.ui.ConsoleViewContentType.ERROR_OUTPUT)),in,out,executor);
+                }
+                @Override public java.util.concurrent.CompletableFuture<Void> connectToServer(com.intellij.openapi.progress.ProgressIndicator indicator) {
+                    try {
+                        return super.connectToServer(indicator).whenComplete((ignored,failure) -> {
+                            if(failure!=null && parent==null) closeFileLog();
+                        });
+                    } catch(RuntimeException failure) { if(parent==null) closeFileLog(); throw failure; }
+                }
+                @Override public void dispose() {
+                    try { super.dispose(); } finally { if(parent==null) closeFileLog(); }
+                }
                 @Override public void terminate() {
                     if (!stopping.compareAndSet(false, true)) return;
                     var server = getDebugProtocolServer();

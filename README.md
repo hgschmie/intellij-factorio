@@ -1,6 +1,6 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.4.0-dev.
+Java integration under `de.softwareforge.factorio`. Development release 0.4.1-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and official LSP4IJ nightly 0.21.1-20260930-013028.
 LuaLS and profiling are not supported.
 
@@ -137,6 +137,24 @@ module is selected automatically for new configurations). Set the Factorio execu
 directory, save ZIP, config.ini and working directory. For testing, configure a
 separate Factorio write-data directory. Use **Debug** and set Factorio Lua
 breakpoints in the gutter. The debugger talks directly to `factorio --dap`.
+
+Enable **DAP logging** in the Factorio run configuration for verbose protocol
+traces in the debug console. **Save DAP log to file** redirects protocol traces
+exclusively to a separate UTF-8 `.jsonl` for each session, leaving normal game
+output and debugger errors visible in the console. Choose an **Output folder**,
+or leave it blank to use `factorio/dap` under IntelliJ's log directory (shown in
+the field). Relative paths use the run configuration's working directory. The console reports the
+created file's full path. Changes apply to the next session.
+
+Each line contains a compact DAP message envelope, with its sequence number,
+type, command/event and full payload. Requests, responses and events include
+evaluation results and game output; newlines within strings remain JSON-escaped.
+Console-only tracing keeps LSP4IJ's human-readable verbose format.
+Separate process stderr and IDE console messages are not included.
+Earlier files are retained; delete them
+when no longer needed. A logging failure is reported in the console and does not
+stop debugging or switch protocol tracing back to the console. The generic
+LSP4IJ Debug Adapter Protocol settings page does not control this per-run setting.
 
 ## Mod release actions
 

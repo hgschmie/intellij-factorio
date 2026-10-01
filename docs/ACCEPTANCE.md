@@ -417,3 +417,58 @@ Installable archives:
 
 Install both matching archives and regenerate the Factorio API definitions to
 use the feature in an existing IDE installation.
+
+## DAP tracing controls (2026-09-30)
+
+Factorio run configurations now persist verbose console tracing, optional
+DAP-only file logging, and an output folder. A bounded background writer creates
+a unique UTF-8 `.jsonl` file for every session. Each line is a compact DAP
+envelope with sequence IDs, command/event, and payload, serialized with LSP4J's
+DAP serializer. Console-only tracing remains human-readable and verbose.
+Logging failures disable only file logging.
+When saving to file, protocol traces are excluded from the console; normal game
+output and debugger errors remain visible. File failures do not enable console
+tracing as a fallback.
+The default folder is `factorio/dap` beneath IntelliJ's log directory; the debug
+console reports the actual filename. No LSP4IJ patch or dependency update is needed.
+
+Validation:
+
+- 42 unit tests passed; the opt-in real-game test is skipped in the normal suite.
+  Coverage includes both message directions, console-only/file-only trace routing,
+  continued protocol output/error delivery, numeric envelope IDs, successful and
+  failed responses, escaped multiline strings, UTF-8 payloads, concurrent sessions,
+  ordered draining, startup disposal, file
+  creation/write failures and queue overflow.
+- Three IntelliJ UI tests and the existing breakpoint regression test passed.
+  Logging controls were checked for enabled states, staging, XML persistence,
+  cloning and legacy defaults. The rendered form was visually inspected at
+  `build/reports/ui/run-configuration.png`.
+- The opt-in Java/LSP4J protocol test launched Factorio twice using the disposable
+  fixture, hit a breakpoint, read scopes/variables, evaluated `count + 1`, stepped
+  in/out/over, and disconnected. Both sessions exited successfully and produced
+  distinct files containing bidirectional requests/responses and stopped events.
+  Every line parsed as compact JSON, response `request_seq` values matched request
+  `seq` values, and output/evaluation payloads were preserved;
+  no protocol traces reached the console, and DAP output delivery remained active.
+- `test buildPlugin` passed. An initial sandboxed run failed three existing
+  process-management tests because macOS process inspection was denied; the suite
+  passed with that access enabled.
+
+Preserved results are in `build/reports/dap-jsonl-results/` and
+`build/reports/dap-platform-results/`; actual game traces are under
+`build/test-work/dap-protocol/`. Build invocation logs are in `build/logs/`.
+To repeat the opt-in protocol test, prepare the fixture through `scripts/protocol.py`,
+then run:
+
+```sh
+FACTORIO_DAP_FIXTURE="$PWD/build/test-work/protocol/fixture" \
+  bash scripts/build.sh -Porg.jetbrains.intellij.platform.useCacheRedirector=false \
+  test --tests 'de.softwareforge.factorio.FactorioDap*'
+```
+
+`FACTORIO_EXECUTABLE` optionally overrides the macOS Factorio executable. The
+fixture must use a separate write-data directory. These checks did not install
+into or alter the regular IDE profile, and did not exercise an interactive IDE
+debug session. This feature bumps the plugin to `0.4.1-dev`; its archive is
+`build/distributions/intellij-factorio-0.4.1-dev.zip`.

@@ -58,12 +58,39 @@ public class FactorioUiTest extends HeavyPlatformTestCase {
         var configuration=new FactorioDebug.Configuration(getProject(),new FactorioDebug.Factory(type),"UI test");
         configuration.setLaunchConfiguration("{\"request\":\"launch\",\"factorioArgs\":[\"--load-game\",\"/save with spaces.zip\",\"--mod-directory\",\"/mods\",\"--config\",\"/config.ini\",\"--disable-audio\"]}");
         var editor=new FactorioDebug.Editor(getProject());editor.resetEditorFrom(configuration);
-        var component=editor.createEditor();assertEquals(5,children(component,TextFieldWithBrowseButton.class).size());
+        var component=editor.createEditor();assertEquals(6,children(component,TextFieldWithBrowseButton.class).size());
         assertEquals("/save with spaces.zip",field(component,"Save ZIP:").getText());
         editor.applyEditorTo(configuration);
         assertTrue(configuration.getLaunchConfiguration().contains("/save with spaces.zip"));
         assertTrue(configuration.getLaunchConfiguration().contains("--disable-audio"));
-        render(component,"run-configuration.png",760,460);
+        var trace=children(component,JCheckBox.class).stream().filter(c -> c.getText().equals("Enable DAP logging")).findFirst().orElseThrow();
+        var saveLog=children(component,JCheckBox.class).stream().filter(c -> c.getText().equals("Save DAP log to file")).findFirst().orElseThrow();
+        var directory=field(component,"Output folder:");
+        assertFalse(trace.isSelected());assertFalse(saveLog.isEnabled());assertFalse(directory.isEnabled());
+        trace.doClick();assertTrue(saveLog.isEnabled());assertFalse(directory.isEnabled());
+        saveLog.doClick();assertTrue(directory.isEnabled());
+        directory.setText(Path.of(System.getProperty("factorio.test.work"),"dap-ui").toString());
+        assertEquals(com.redhat.devtools.lsp4ij.settings.ServerTrace.off,configuration.getServerTrace());
+        editor.applyEditorTo(configuration);
+        assertEquals(com.redhat.devtools.lsp4ij.settings.ServerTrace.verbose,configuration.getServerTrace());
+        assertTrue(configuration.getOptions().getDapLogToFile());
+        var xml=new org.jdom.Element("configuration");configuration.writeExternal(xml);
+        var restored=new FactorioDebug.Configuration(getProject(),new FactorioDebug.Factory(type),"Restored");restored.readExternal(xml);
+        assertEquals(configuration.getOptions().getDapLogDirectory(),restored.getOptions().getDapLogDirectory());
+        assertEquals(configuration.getServerTrace(),restored.getServerTrace());
+        assertTrue(restored.getOptions().getDapLogToFile());
+        var copy=(FactorioDebug.Configuration)restored.clone();
+        assertEquals(restored.getOptions().getDapLogDirectory(),copy.getOptions().getDapLogDirectory());
+        assertTrue(copy.getOptions().getDapLogToFile());
+        editor.resetEditorFrom(restored);assertTrue(trace.isSelected());assertTrue(saveLog.isSelected());
+        render(component,"run-configuration.png",760,620);
+        trace.doClick();assertFalse(saveLog.isEnabled());assertFalse(directory.isEnabled());
+        editor.applyEditorTo(restored);assertEquals(com.redhat.devtools.lsp4ij.settings.ServerTrace.off,restored.getServerTrace());
+        // A pre-feature configuration and default folder need no migration.
+        restored.readExternal(new org.jdom.Element("configuration"));
+        assertEquals(com.redhat.devtools.lsp4ij.settings.ServerTrace.off,restored.getServerTrace());
+        assertFalse(restored.getOptions().getDapLogToFile());
+        assertEquals(FactorioDebug.Options.defaultLogDirectory(),restored.getOptions().logDirectory());
     }
     public void testFactorioIconsAndWizard() throws Exception {
         assertEquals(16,FactorioIcons.FACTORIO.getIconWidth());assertEquals(16,FactorioIcons.FACTORIO.getIconHeight());
