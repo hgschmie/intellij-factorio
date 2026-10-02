@@ -1,6 +1,6 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.5.0-dev.
+Java integration under `de.softwareforge.factorio`. Development release 0.5.1-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and official LSP4IJ nightly 0.21.1-20260930-013028.
 LuaLS and profiling are not supported.
 
@@ -56,7 +56,7 @@ branch `work/patched-build`, commit `54818f2` or later) and the official LSP4IJ 
 `../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-20260930-013028.zip`,
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
-`aarch64` fix (the local `0.25.1-128-IDEA262-patched-modules` build is tested).
+`aarch64` fix (the local `0.25.1-129-IDEA262-patched-modules` build is tested).
 
 Choose **Factorio Mod** in New Project or New Module. This is a separate
 wizard entry alongside Lua. Enter the mod's name, title, author and target
@@ -124,13 +124,19 @@ Dictionary lookups can account for missing keys with the new optional
 `mods["nullius"]` then has type `string?`, and testing it no longer produces an
 incorrect "always truthy" warning. Required named fields and iteration values
 keep their declared types. This option is off by default and requires patched
-EmmyLua2 build 128 on macOS arm64; install it alongside Factorio `0.5.0-dev`.
+EmmyLua2 build 128 on macOS arm64; install it alongside Factorio `0.5.1-dev`.
+
+Optional dictionary keys now retain their possible value type. For example,
+`procinfos[processor.unit_number]` is `ProcInfo?` when the key is `uint64?`,
+including when `strict.tableIndex` is disabled. Patched EmmyLua2 build 129 also
+resolves literal and generic key aliases and avoids repeated checks for large
+matching aliases.
 
 Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
 Legacy active-mod settings remain usable until that root is attached as a module.
 
 The development build now uses EmmyLua2
-`0.25.1-128-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
+`0.25.1-129-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
 short imports and named cross-mod imports across attached roots. Build it with
 `../upstream/Intellij-EmmyLua2-worktrees/patched-build/scripts/build-module-patch.sh` first. `emmy-analyzer.lock`
 pins the server source revision; build and isolated-profile preparation check

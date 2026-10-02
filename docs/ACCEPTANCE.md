@@ -577,3 +577,54 @@ Install both archives, retained beside previous releases:
 The EmmyLua2 packaging script now also copies and verifies worktree-built ZIPs in
 that main-repository distribution folder. Only the macOS arm64 analyzer carries
 the local patches; other platform binaries remain upstream 0.25.1.
+
+## Optional dictionary keys, 0.5.1-dev (2026-10-01)
+
+This patch release pins analyzer `e7ffd3b5` and uses patched EmmyLua2
+`0.25.1-129-IDEA262-patched-modules`. The independent branch
+`fix/optional-dictionary-keys` contains signed commits `e3d5b79e` and `8dcd6c95`;
+the latter addresses the review findings. Signed merge `e7ffd3b5` integrates
+them into `work/intellij-modules` with strict/read-write compatibility coverage.
+
+Indexing `table<uint64, ProcInfo>` with `uint64?` now yields `ProcInfo?`, avoiding
+the false always-falsy warning on the following guard. The fix works with
+`strict.tableIndex` off or on. Literal and instantiated generic aliases retain
+their key types, and exact matching key aliases reuse a lookup while preserving
+nil branches. Required named-field overrides remain intact. The original bug
+predates `strict.tableIndex`; this release does not change that option's default.
+
+Validation:
+
+- Independent analyzer: 1,106 analysis, 213 LSP and 191 parser tests passed.
+  Combined work branch: 1,157 analysis, 239 LSP and 191 parser tests passed.
+  Each LSP suite retains one ignored test. Fifteen focused regression tests
+  cover alias forms, required fields, recursive aliases and large key unions.
+  The 8,192-member matching-alias cases take about 6 ms in debug tests instead
+  of seconds; these are not release-server latency measurements.
+- EmmyLua2 release packaging and all 22 plugin tests passed. Archive versions,
+  source pins, binary hashes and executable modes (`0755`) were verified;
+  system extraction preserves the executable bit without a repair step.
+- Factorio `test buildPlugin` passed: 46 unit tests passed and one opt-in game
+  test was skipped. The native module configuration/VFS reload, asymmetric API
+  attributes and Lua language-level platform tests all passed (three tests).
+- A stdio LSP probe exercised the packaged release server with both strict flag
+  values. The original optional-key hover is `ProcInfo?`, its guard has no false
+  warning, and guarded hover retains `ProcInfo`. Asserted keys retain the existing
+  strict-option behavior. Optional literal and generic alias cases both yield
+  `string?` without false warnings. The required-field positive control still
+  warns in both cases.
+
+Evidence: `build/logs/optional-key-*`,
+`build/reports/optional-key-unit-results/`,
+`build/reports/optional-key-platform-results/`,
+`build/reports/optional-key-artifacts.json`, and
+`build/test-work/optional-key-package/`. EmmyLua2 build/test logs are in its
+worktree's `build/logs/`; analyzer logs are in each analyzer worktree's `build/`.
+
+Install both archives from the usual distribution folders:
+
+- `build/distributions/intellij-factorio-0.5.1-dev.zip`
+- `../upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.25.1-129-IDEA262-patched-modules.zip`
+
+Only the macOS arm64 analyzer contains local patches. No regular IDE profile or
+user mod files were modified. Manual IDE acceptance remains pending.
