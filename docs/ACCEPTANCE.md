@@ -628,3 +628,54 @@ Install both archives from the usual distribution folders:
 
 Only the macOS arm64 analyzer contains local patches. No regular IDE profile or
 user mod files were modified. Manual IDE acceptance remains pending.
+
+## Imported function calls in assignment targets, 0.5.2-dev (2026-10-02)
+
+This patch release pins analyzer `a7ea9de6` and uses EmmyLua2
+`0.25.1-130-IDEA262-patched-modules`. The independent analyzer fix is signed
+`3ac513d3` on `fix/duplicate-field-index-calls`, based on upstream main `aaaca684`;
+it was merged into `work/intellij-modules` without conflicts or compatibility glue.
+
+The upstream duplicate-field checker mistook calls in assignment targets, such as
+`inventory[tools.createItemIdentifier(item)] = item`, for overwrites of the imported
+function. The check now compares the reference with the complete assignment
+target. References in its key or prefix are reads, and direct writes still warn.
+This reproduces in both official analyzer 0.25.1 and our previous build 129.
+
+Validation:
+
+- Two new analyzer tests cover eight read-only expressions and five genuine
+  redefinitions. The read-only test fails before the fix. Cases include dot and
+  bracket syntax, function-valued keys/right-hand sides, multiple assignments,
+  calls returning assignment prefixes, and function declarations.
+- Independent analyzer: 1,093 analysis, 213 LSP, 191 parser tests passed.
+  Combined work branch: 1,159 analysis, 239 LSP, 191 parser tests passed.
+  Each LSP suite retains one existing ignored test. Formatting and whitespace
+  checks passed.
+- EmmyLua2: all 22 plugin tests and release packaging passed.
+- Factorio: `test buildPlugin` passed, with 46 unit tests passing and one opt-in
+  game test skipped. The three native module configuration/VFS reload,
+  asymmetric API attributes and Lua language-level platform tests passed.
+- The packaged release server passed a stdio LSP check: the inline call and
+  temporary-key variant produce no duplicate diagnostic; direct reassignment
+  still reports `duplicate-set-field` on the assigned member.
+- Archive plugin IDs/versions, analyzer pin, binary hashes and `0755` Unix server
+  permissions were verified. The main-repository and worktree Emmy ZIPs match.
+
+Evidence is in `build/logs/duplicate-field-*`,
+`build/reports/duplicate-field-unit-results/`,
+`build/reports/duplicate-field-platform-results/`,
+`build/reports/duplicate-field-artifacts.json`, and
+`build/test-work/duplicate-index-call-package/`. The before-fix and official-server
+comparisons are in `build/test-work/duplicate-index-call/` and
+`build/test-work/duplicate-index-call-upstream/`, with matching protocol logs under
+`build/logs/`. Analyzer and EmmyLua2 build/test logs remain in their worktrees.
+
+Install both archives, retained beside previous releases:
+
+- `build/distributions/intellij-factorio-0.5.2-dev.zip`
+- `../upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.25.1-130-IDEA262-patched-modules.zip`
+
+Only macOS arm64 includes the analyzer patch. The official LSP4IJ dependency is
+unchanged. No regular IDE profile or user mod files were modified; manual IDE
+acceptance remains pending.
