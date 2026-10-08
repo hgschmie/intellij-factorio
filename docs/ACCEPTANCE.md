@@ -742,5 +742,6 @@ Install all three archives from their usual distribution directories:
 - `../upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.25.1-131-IDEA262-patched-modules.zip`
 - `../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-factorio-formatting-patched.zip`
 
-No user mod files or regular IDE profile were modified. Live acceptance in the
-user's current project remains pending.
+Automated checks did not modify user mod files or the regular IDE profile.
+On 2026-10-07, the user confirmed that formatting works in their running IDE,
+completing live acceptance of this release.
