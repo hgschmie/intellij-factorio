@@ -745,3 +745,51 @@ Install all three archives from their usual distribution directories:
 Automated checks did not modify user mod files or the regular IDE profile.
 On 2026-10-07, the user confirmed that formatting works in their running IDE,
 completing live acceptance of this release.
+
+## Reviewed formatting selection, 0.5.4-dev (2026-10-08)
+
+This patch release updates LSP4IJ to
+`0.21.1-SNAPSHOT-factorio-formatting-patched2` and rebuilds EmmyLua2 as
+`0.25.1-132-IDEA262-patched-modules`. Factorio's ownership guard and the analyzer
+and toolkit source pins are unchanged.
+
+The review of [LSP4IJ PR #1688](https://github.com/redhat-developer/lsp4ij/pull/1688)
+requested a shared matching predicate and an explicit null check for the PSI
+file's virtual file. Signed follow-up `4ef6aa5c` implements both; its filter is
+non-null, and the processor path supplies an accepting predicate. It adds a
+nonphysical-file test and checks that an explicit rejecting filter stays effective.
+The follow-up was pushed to `fix/file-scoped-formatting`, merged with signed
+`8b9b8abb` into `work/factorio-build`, and packaged by `d96484ea`.
+
+All 19 selected LSP4IJ tests pass on both the independent and development
+branches, including five file-enablement regressions, existing formatting,
+server lifecycle, breakpoint handling and read/write usage tests. These checks
+use the installed IDEA 262 SDK. The broader suite's previously documented
+baseline comparison was not repeated for this refactoring.
+
+EmmyLua2's 22 plugin tests passed. Factorio's unit suite passed 46 tests with
+one opt-in real-game test skipped; all ten selected platform tests passed,
+including two-mod formatting with `.luafmt.toml`, module/service isolation and
+reload, API typing, breakpoint removal and debugger restart. All three archives'
+IDs, versions and pins were verified. The analyzer bytes are unchanged from
+build 131; Unix server modes remain `0755`, and the shared/worktree EmmyLua2
+archives match.
+
+Logs and reports use the `file-scoped-review-*` prefix under each repository's
+`build/`. Factorio's release evidence includes
+`build/reports/file-scoped-review-unit-results/`,
+`build/reports/file-scoped-review-platform-results/`, and
+`build/reports/file-scoped-review-artifacts.json`. The updated PR's Windows CI
+and archive build passed; Linux CI still failed before compilation while trying
+to provision JetBrains Runtime 21. Its log is retained in the LSP4IJ fix worktree
+at `build/logs/pr-1688/review-ubuntu.log`.
+
+Rebuilt archives, retained beside the previous release:
+
+- `build/distributions/intellij-factorio-0.5.4-dev.zip`
+- `../upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.25.1-132-IDEA262-patched-modules.zip`
+- `../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-factorio-formatting-patched2.zip`
+
+No regular IDE profile or user mod files were modified. The user accepted the
+original formatting feature in 0.5.3-dev; these rebuilt packages have automated
+validation only so far.

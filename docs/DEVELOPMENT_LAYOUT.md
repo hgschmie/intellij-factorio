@@ -62,11 +62,12 @@ inputs from those historical locations. Historical acceptance notes retain their
 original paths and describe the old layout.
 
 LSP4IJ's breakpoint fix is upstream (`6ed15ae6`, with test follow-up `4887361f`).
-The independent `fix/file-scoped-formatting` branch (`a0b68b10`) is based on
+The independent `fix/file-scoped-formatting` branch (`4ef6aa5c`) is based on
 upstream main `4796cf99` and checks file enablement in server-selection helpers.
+The review follow-up shares the predicate and explicitly rejects missing virtual files.
 It is merged into `work/factorio-build` at
 `upstream/lsp4ij/build/checkouts/patched`, alongside local build-tooling changes.
-Active builds use `0.21.1-SNAPSHOT-factorio-formatting-patched` from that worktree.
+Active builds use `0.21.1-SNAPSHOT-factorio-formatting-patched2` from that worktree.
 
 Run `intellij-factorio/scripts/build-lsp4ij.sh` to prepare the pinned archive.
 For a local build, `lsp4ij.lock` records the version, source revision and SHA-256;

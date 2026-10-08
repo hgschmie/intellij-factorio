@@ -1,8 +1,8 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.5.3-dev.
+Java integration under `de.softwareforge.factorio`. Development release 0.5.4-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
-`0.21.1-SNAPSHOT-factorio-formatting-patched`.
+`0.21.1-SNAPSHOT-factorio-formatting-patched2`.
 LuaLS and profiling are not supported.
 
 ## Build
@@ -54,10 +54,10 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 Install the patched EmmyLua2 build containing the file-routing extension (work
 branch `work/patched-build`, commit `54818f2` or later) and the patched LSP4IJ ZIP
-`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-factorio-formatting-patched.zip`,
+`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-factorio-formatting-patched2.zip`,
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
-`aarch64` fix (the local `0.25.1-131-IDEA262-patched-modules` build is tested).
+`aarch64` fix (the local `0.25.1-132-IDEA262-patched-modules` build is tested).
 
 Choose **Factorio Mod** in New Project or New Module. This is a separate
 wizard entry alongside Lua. Enter the mod's name, title, author and target
@@ -147,7 +147,7 @@ Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
 Legacy active-mod settings remain usable until that root is attached as a module.
 
 The development build now uses EmmyLua2
-`0.25.1-131-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
+`0.25.1-132-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
 short imports and named cross-mod imports across attached roots. Build it with
 `../upstream/Intellij-EmmyLua2-worktrees/patched-build/scripts/build-module-patch.sh` first. `emmy-analyzer.lock`
 pins the server source revision; build and isolated-profile preparation check

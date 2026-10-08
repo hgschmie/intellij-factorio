@@ -7,13 +7,13 @@ that fixes short and named module imports.
 
 ## Dependencies and installation
 
-The current release uses LSP4IJ `0.21.1-SNAPSHOT-factorio-formatting-patched`
-and EmmyLua2 `0.25.1-131-IDEA262-patched-modules`, which provides
+The current release uses LSP4IJ `0.21.1-SNAPSHOT-factorio-formatting-patched2`
+and EmmyLua2 `0.25.1-132-IDEA262-patched-modules`, which provides
 `EmmyLuaServerProvider` and `EmmyLuaServerRouting`.
 The active EmmyLua2 branch is `work/patched-build`; see its `PATCHED_BUILD.md`.
 
 Install those ZIPs from each upstream repository's `build/distributions/` and
-`build/distributions/intellij-factorio-0.5.3-dev.zip`, then restart IDEA.
+`build/distributions/intellij-factorio-0.5.4-dev.zip`, then restart IDEA.
 The LSP4IJ breakpoint-removal fix is documented in
 [BREAKPOINT_REMOVAL.md](BREAKPOINT_REMOVAL.md). The formatting fix requires no
 analyzer changes; the analyzer remains pinned by `emmy-analyzer.lock`.

@@ -1,6 +1,6 @@
 {
-  "version": "0.21.1-SNAPSHOT-factorio-formatting-patched",
+  "version": "0.21.1-SNAPSHOT-factorio-formatting-patched2",
   "channel": "local",
-  "sourceRevision": "bce37200b9d3b8675801cc6553136c1e746396eb",
-  "sha256": "97031a984acdee8603520efbbac6eb2151b320cbe16ab1562fb59184c1002f3e"
+  "sourceRevision": "d96484ea330c31a46df0251ab8e86dd0c7312d84",
+  "sha256": "a8dd1d4dc507b98ed8e37c0b207b4415fa86959851bbf074fbc53acaa217db73"
 }
