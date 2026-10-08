@@ -7,19 +7,16 @@ that fixes short and named module imports.
 
 ## Dependencies and installation
 
-Requires the pinned official LSP4IJ nightly 0.21.1-20260930-013028 and the patched EmmyLua2 client containing
-`EmmyLuaServerProvider` and `EmmyLuaServerRouting`. In
-`../upstream/Intellij-EmmyLua2`, the contribution branch is
-`fix/file-language-server-routing` (`547e03e`), merged into
-`work/patched-build` (`54818f2`; subsequent local validation `a924dd9`).
-The distribution retains version `0.25.1-115-IDEA262-patched-modules`, so an older
-ZIP with that same version must be replaced by the newly built ZIP.
+The current release uses LSP4IJ `0.21.1-SNAPSHOT-factorio-formatting-patched`
+and EmmyLua2 `0.25.1-131-IDEA262-patched-modules`, which provides
+`EmmyLuaServerProvider` and `EmmyLuaServerRouting`.
+The active EmmyLua2 branch is `work/patched-build`; see its `PATCHED_BUILD.md`.
 
-Install that ZIP and `build/distributions/intellij-factorio-0.2.8-dev.zip`, then
-restart IDEA. Use the LSP4IJ ZIP from `upstream/lsp4ij/build/distributions/`;
-its breakpoint-removal fix is documented in [BREAKPOINT_REMOVAL.md](BREAKPOINT_REMOVAL.md).
-No additional analyzer source changes are required.
-The analyzer remains pinned by `emmy-analyzer.lock`.
+Install those ZIPs from each upstream repository's `build/distributions/` and
+`build/distributions/intellij-factorio-0.5.3-dev.zip`, then restart IDEA.
+The LSP4IJ breakpoint-removal fix is documented in
+[BREAKPOINT_REMOVAL.md](BREAKPOINT_REMOVAL.md). The formatting fix requires no
+analyzer changes; the analyzer remains pinned by `emmy-analyzer.lock`.
 
 ## Ownership and lifecycle
 
@@ -39,6 +36,12 @@ explicit dependency. Unsaved dependency text is forwarded to other running
 consumers, and closed there after save. Each instance receives filesystem
 watches bounded to its own roots. Diagnostics are displayed only by the editor
 owner. EmmyLua custom gutter requests use the same file-routing hook.
+
+Whole-file and selection formatting also respect editor ownership. Factorio's
+formatting feature rejects files belonging to another scope, including with the
+previous official LSP4IJ nightly. The patched LSP4IJ additionally checks client
+file enablement in `hasAny` and `processLanguageServers`, so these shared helpers
+cannot select a server merely because its filename/language mapping matches.
 
 Lua files outside managed scopes retain the default EmmyLua server. On scope
 changes its existing document connections are dropped so it cannot keep indexing

@@ -1,7 +1,8 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.5.2-dev.
-Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and official LSP4IJ nightly 0.21.1-20260930-013028.
+Java integration under `de.softwareforge.factorio`. Development release 0.5.3-dev.
+Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
+`0.21.1-SNAPSHOT-factorio-formatting-patched`.
 LuaLS and profiling are not supported.
 
 ## Build
@@ -52,11 +53,11 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 ## Install and configure
 
 Install the patched EmmyLua2 build containing the file-routing extension (work
-branch `work/patched-build`, commit `54818f2` or later) and the official LSP4IJ nightly ZIP
-`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-20260930-013028.zip`,
+branch `work/patched-build`, commit `54818f2` or later) and the patched LSP4IJ ZIP
+`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-factorio-formatting-patched.zip`,
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
-`aarch64` fix (the local `0.25.1-130-IDEA262-patched-modules` build is tested).
+`aarch64` fix (the local `0.25.1-131-IDEA262-patched-modules` build is tested).
 
 Choose **Factorio Mod** in New Project or New Module. This is a separate
 wizard entry alongside Lua. Enter the mod's name, title, author and target
@@ -106,6 +107,11 @@ formatting uses tab size as its indentation width; other formatter options remai
 in `.luafmt.toml`/`luafmt.toml`. EditorConfig and detected file indents can override
 the scheme defaults.
 
+Whole-file and selection formatting now use the server that owns the file's mod.
+Factorio guards its formatting feature against selection of another mod's server;
+the separate LSP4IJ fix applies file enablement to its shared selection helpers.
+This corrects silent formatting failures with several module servers running.
+
 Locale `.cfg` files have native syntax highlighting for sections, keys, comments,
 placeholders, rich-text tags, and newline escapes. Customize colors under
 **Editor → Color Scheme → Factorio Locale**. Highlighting works without a running
@@ -124,7 +130,7 @@ Dictionary lookups can account for missing keys with the new optional
 `mods["nullius"]` then has type `string?`, and testing it no longer produces an
 incorrect "always truthy" warning. Required named fields and iteration values
 keep their declared types. This option is off by default and requires patched
-EmmyLua2 build 128 on macOS arm64; install it alongside Factorio `0.5.2-dev`.
+EmmyLua2 build 128 or later on macOS arm64.
 
 Optional dictionary keys now retain their possible value type. For example,
 `procinfos[processor.unit_number]` is `ProcInfo?` when the key is `uint64?`,
@@ -141,7 +147,7 @@ Use **Regenerate Factorio API Definitions** after correcting toolchain settings.
 Legacy active-mod settings remain usable until that root is attached as a module.
 
 The development build now uses EmmyLua2
-`0.25.1-130-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
+`0.25.1-131-IDEA262-patched-modules`, whose macOS arm64 server fixes colliding
 short imports and named cross-mod imports across attached roots. Build it with
 `../upstream/Intellij-EmmyLua2-worktrees/patched-build/scripts/build-module-patch.sh` first. `emmy-analyzer.lock`
 pins the server source revision; build and isolated-profile preparation check

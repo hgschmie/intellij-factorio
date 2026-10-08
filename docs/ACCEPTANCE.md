@@ -679,3 +679,68 @@ Install both archives, retained beside previous releases:
 Only macOS arm64 includes the analyzer patch. The official LSP4IJ dependency is
 unchanged. No regular IDE profile or user mod files were modified; manual IDE
 acceptance remains pending.
+
+## Formatting with multiple module servers, 0.5.3-dev (2026-10-07)
+
+Reformat could select another mod's EmmyLua server because LSP4IJ's started-server
+selection checked the shared Lua mapping without checking file enablement. That
+server did not index the requested file and returned no edits. This is independent
+of our upstream DAP breakpoint contribution; the formatter-selection code predates
+it. Module-local `.luafmt.toml` works when the owning server receives the request.
+
+Factorio now enforces module ownership in its formatting feature as well as its
+client features. LSP4IJ's separate `fix/file-scoped-formatting` branch contains
+signed commit `a0b68b10`, based directly on upstream main `4796cf99`. It adds the
+file-enablement check to `hasAny` and `processLanguageServers` and includes four
+regression tests. Signed merge `9191439a` integrates it into `work/factorio-build`;
+work-only build commit `bce37200` packages the IDEA 262 version.
+
+The release pins `0.21.1-SNAPSHOT-factorio-formatting-patched` by source revision
+and ZIP checksum in `lsp4ij.lock`. `scripts/build-lsp4ij.sh` prepares that local
+build and retains support for official archives pinned by URL/checksum. EmmyLua2
+build 131 is rebuilt against it; analyzer pin `a7ea9de6` is unchanged.
+
+Validation:
+
+- All four independent LSP4IJ regression tests fail before the fix and pass
+  after it: both shared helpers, whole-file formatting, and selected-range
+  formatting. Tests include two servers with identical mappings but different
+  file owners, plus changes to file enablement.
+- The broader LSP4IJ comparison ran 66 tests: 29 failures without the fix,
+  25 with it. All 25 remaining failures are the same pre-existing typing and
+  automatic indentation failures on the local IDEA 262 SDK; no new failures.
+  The release's 18 selected tests pass, covering the fix, existing formatting,
+  server lifecycle, DAP breakpoints and upstream read/write usage handling.
+- Factorio's new real-server test passes with the previous official LSP4IJ
+  nightly, proving the local guard independently. Both mods honor their
+  `.luafmt.toml` for whole-file and selection formatting; selection formatting
+  leaves the unselected line unchanged.
+- EmmyLua2's 22 plugin tests pass. Factorio's 46 unit tests pass, with one
+  opt-in game test skipped. Ten self-contained IntelliJ platform tests pass:
+  formatting, registry thread/lifecycle handling, independent Lua/locale
+  servers, unsaved dependencies, native configuration/VFS reload, API isolation,
+  asymmetric API attributes, Lua language level, breakpoint removal and restart.
+  An initial broader run also selected the optional real-mod navigation test
+  without `-PrealMods`; its missing-prerequisite assumption was reported as a
+  failure by the platform harness. The release selection excludes that test.
+- All three archive plugin IDs and versions were verified. LSP4IJ's SHA-256
+  matches its source pin; the toolkit metadata and analyzer pin match the lock
+  files. EmmyLua2's worktree/shared archives and prepared server bytes match,
+  with Unix executable permissions preserved as `0755`.
+
+Evidence: `build/logs/file-scoped-*`, `build/reports/file-scoped-unit-results/`,
+`build/reports/file-scoped-platform-results/`,
+`build/reports/file-scoped-official-factorio/`, and
+`build/reports/file-scoped-artifacts.json`. Independent LSP4IJ comparison results
+are in its fix worktree's `build/reports/file-scoped-comparison.json`; release
+tests/build logs are in its build worktree. EmmyLua2 logs are
+`build/logs/file-scoped-131-{tests,build}.log` in its worktree.
+
+Install all three archives from their usual distribution directories:
+
+- `build/distributions/intellij-factorio-0.5.3-dev.zip`
+- `../upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.25.1-131-IDEA262-patched-modules.zip`
+- `../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-factorio-formatting-patched.zip`
+
+No user mod files or regular IDE profile were modified. Live acceptance in the
+user's current project remains pending.

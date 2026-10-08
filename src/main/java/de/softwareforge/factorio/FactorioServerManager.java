@@ -296,6 +296,14 @@ public final class FactorioServerManager implements Disposable {
         private boolean ready;
         Features(Definition definition) {
             this.definition=definition;
+            // LSP4IJ formatting can select a server through its feature rather than
+            // the normal file-aware accessor. Keep that path inside this mod too.
+            setFormattingFeature(new LSPFormattingFeature() {
+                @Override public boolean isEnabled(com.intellij.psi.PsiFile file) {
+                    return file.getVirtualFile() != null && Features.this.isEnabled(file.getVirtualFile())
+                        && super.isEnabled(file);
+                }
+            });
             setWorkspaceFolderFeature(new LSPWorkspaceFolderFeature() {
                 @Override protected WorkspaceFolderStrategy createStrategy() {
                     return new WorkspaceFolderStrategy() {

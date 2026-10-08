@@ -89,6 +89,55 @@ public class PerModServersTest extends HeavyPlatformTestCase {
     private String completions(LanguageServerItem item, Path path) throws Exception {
         return String.valueOf(await(item.getServer().getTextDocumentService().completion(new CompletionParams(new TextDocumentIdentifier(path.toUri().toString()),new Position(1,21)))));
     }
+    public void testFormattingStaysWithinEachMod() throws Exception {
+        Path a=mod("alpha","alphaValue"), b=mod("beta","betaValue");
+        for(Path root:List.of(a,b)) {
+            Files.writeString(root.resolve("format.lua"),"local  text = \"hello\"\n\n\nreturn   text\n");
+            Files.writeString(root.resolve(".luafmt.toml"),"[output]\nquote_style = \"Single\"\n[layout]\nmax_blank_lines = 1\n");
+        }
+        attach(List.of(a,b));
+        // Finish queued project/module startup while automatic services are disabled,
+        // before installing the explicit test scopes below.
+        for (int n=0;n<60;n++) { PlatformTestUtil.dispatchAllEventsInIdeEventQueue(); Thread.sleep(20); }
+        FactorioSettings.get(getProject()).serviceMode="ENABLED";
+        var manager=FactorioServerManager.get(getProject());
+        manager.configure(List.of(scope(a,List.of()),scope(b,List.of())));
+        var as=server(manager.luaServer(a.resolve("format.lua")));
+        var al=as.keepAlive();
+        var bs=server(manager.luaServer(b.resolve("format.lua")));
+        var bl=bs.keepAlive();
+        var editors=com.intellij.openapi.fileEditor.FileEditorManager.getInstance(getProject());
+        try {
+            for(Path root:List.of(a,b)) {
+                var vf=file(root.resolve("format.lua"));
+                var psi=Objects.requireNonNull(PsiManager.getInstance(getProject()).findFile(vf));
+                var own=root.equals(a) ? as : bs;
+                var other=root.equals(a) ? bs : as;
+                assertTrue(own.getClientFeatures().getFormattingFeature().isEnabled(psi));
+                assertFalse("Other mod must not format this file",other.getClientFeatures().getFormattingFeature().isEnabled(psi));
+                await(LanguageServiceAccessor.getInstance(getProject()).getLanguageServers(psi,null,null));
+                editors.openFile(vf,true);
+                var document=Objects.requireNonNull(FileDocumentManager.getInstance().getDocument(vf));
+                com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(getProject(), () -> {
+                    com.intellij.psi.codeStyle.CodeStyleManager.getInstance(getProject()).reformat(psi);
+                });
+                eventually(() -> document.getText().contains("'hello'"));
+                assertEquals("local text = 'hello'\n\nreturn text\n",document.getText());
+                // A selection must use the same owner and leave the following line alone.
+                com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(getProject(), () -> {
+                    document.setText("local  text = \"range\"\nreturn   text\n");
+                    com.intellij.psi.PsiDocumentManager.getInstance(getProject()).commitDocument(document);
+                    com.intellij.psi.codeStyle.CodeStyleManager.getInstance(getProject()).reformatText(psi,0,document.getLineEndOffset(0));
+                });
+                eventually(() -> document.getText().equals("local text = 'range'\nreturn   text\n"));
+                editors.closeFile(vf);
+            }
+        } finally {
+            for (var opened : editors.getOpenFiles()) editors.closeFile(opened);
+            al.dispose(); bl.dispose();
+        }
+    }
+
     public void testBackgroundRegistryLifecycleRunsOnEdt() throws Exception {
         Path root=mod("alpha","alphaValue");
         attach(List.of(root));

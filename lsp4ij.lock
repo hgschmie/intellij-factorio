@@ -1,6 +1,6 @@
 {
-  "version": "0.21.1-20260930-013028",
-  "channel": "nightly",
-  "url": "https://plugins.jetbrains.com/files/23257/1182917/lsp4ij-0.21.1-20260930-013028.zip",
-  "sha256": "baaa546fe59a448b0d0f743214e278e55057f9fe121455ee313cc627c373b98c"
+  "version": "0.21.1-SNAPSHOT-factorio-formatting-patched",
+  "channel": "local",
+  "sourceRevision": "bce37200b9d3b8675801cc6553136c1e746396eb",
+  "sha256": "97031a984acdee8603520efbbac6eb2151b320cbe16ab1562fb59184c1002f3e"
 }
