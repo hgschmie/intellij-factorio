@@ -66,7 +66,7 @@ public final class FactorioDebug {
             setCommand(FactorioSettings.get(project).factorio); setWorkingDirectory(project.getBasePath());
             var detected=FactorioModules.get(project).mods();
             if(detected.size()==1){modModule=detected.getFirst().module();setWorkingDirectory(detected.getFirst().root().toString());}
-            setDebugMode(DebugMode.LAUNCH); setLaunchConfiguration("{\"request\":\"launch\",\"factorioArgs\":[],\"followSymlinks\":true,\"hookDebugConsole\":true}");
+            setDebugMode(DebugMode.LAUNCH); setLaunchConfiguration("{\"request\":\"launch\",\"factorioArgs\":[],\"followSymlinks\":true,\"hookDebugConsole\":false}");
         }
         @Override public SettingsEditor<? extends RunConfiguration> getConfigurationEditor() { return new Editor(getProject()); }
         @Override public RunProfileState getState(com.intellij.execution.Executor executor, ExecutionEnvironment environment) {
@@ -151,7 +151,7 @@ public final class FactorioDebug {
             }
             if(c instanceof Configuration own) own.modModule=Objects.toString(module.getSelectedItem(),"");
             c.setServerId(ID); c.setCommand(executable.getText().trim()); c.setWorkingDirectory(cwd.getText().trim()); c.setDebugMode(DebugMode.LAUNCH);
-            JsonObject launch=new JsonObject(); launch.addProperty("request","launch"); launch.addProperty("followSymlinks",true); launch.addProperty("hookDebugConsole",true);
+            JsonObject launch=new JsonObject(); launch.addProperty("request","launch"); launch.addProperty("followSymlinks",true); launch.addProperty("hookDebugConsole",false);
             JsonArray args=new JsonArray();
             for(var pair:List.of(Map.entry("--load-game",save),Map.entry("--mod-directory",mods),Map.entry("--config",config))) if(!pair.getValue().getText().isBlank()) { args.add(pair.getKey()); args.add(pair.getValue().getText().trim()); }
             extra.getText().lines().filter(s->!s.isBlank()).forEach(args::add); launch.add("factorioArgs",args); c.setLaunchConfiguration(launch.toString());
@@ -204,7 +204,8 @@ public final class FactorioDebug {
                         java.util.function.UnaryOperator<org.eclipse.lsp4j.jsonrpc.MessageConsumer> wrapper,
                         java.io.InputStream in,java.io.OutputStream out,java.util.concurrent.ExecutorService executor) {
                     var log=fileLog(process,trace);
-                    var delegate = super.createLauncher(FactorioDapLog.route(log,wrapper,
+                    var delegate = super.createLauncher(FactorioDapLog.route(log,trace,
+                        text -> process.print(text,com.intellij.execution.ui.ConsoleViewContentType.SYSTEM_OUTPUT),
                         error -> process.print(error,com.intellij.execution.ui.ConsoleViewContentType.ERROR_OUTPUT)),in,out,executor);
                     return new org.eclipse.lsp4j.jsonrpc.Launcher<org.eclipse.lsp4j.debug.services.IDebugProtocolServer>() {
                         @Override public org.eclipse.lsp4j.debug.services.IDebugProtocolServer getRemoteProxy() { return delegate.getRemoteProxy(); }
@@ -225,6 +226,11 @@ public final class FactorioDebug {
                             return listening;
                         }
                     };
+                }
+                @Override public java.util.concurrent.CompletableFuture<org.eclipse.lsp4j.debug.EvaluateResponse> evaluate(
+                        String expression, Integer frameId, String context) {
+                    return super.evaluate(expression,frameId,context).exceptionallyCompose(failure ->
+                            java.util.concurrent.CompletableFuture.failedFuture(FactorioDapErrors.detailed(failure)));
                 }
                 @Override public java.util.concurrent.CompletableFuture<Void> connectToServer(com.intellij.openapi.progress.ProgressIndicator indicator) {
                     try {
@@ -271,11 +277,15 @@ public final class FactorioDebug {
             };
             // The IDE's Stop action can destroy the process before DAPDebugProcess.stop.
             if (parent == null && handler != null) handler.onStop(client::terminate);
+            if (parent == null) FactorioRepl.install(process);
             return client;
         }
         @Override public Map<String,Object> getDapParameters() {
             var type = new com.google.gson.reflect.TypeToken<Map<String,Object>>(){}.getType();
             Map<String,Object> parameters=PathsAndMods.JSON.fromJson(settings.getLaunchConfiguration(),type);
+            // Also correct saved launch configurations from releases that forced this on.
+            // Evaluation errors must return to the caller, without a nested exception stop.
+            parameters.put("hookDebugConsole",false);
             if (restartData!=null) parameters.put("__restart",restartData);
             return parameters;
         }

@@ -40,12 +40,8 @@ class FactorioDapProtocolTest {
                     @Override public void output(OutputEventArguments event) {rawOutput.add(event.getOutput());}
                     @Override public void terminated(TerminatedEventArguments event) {shutdown.get().terminated(false);}
                 };
-                var consoleTrace=new TracingMessageConsumer();
                 var launcher=DSPLauncher.createClientLauncher(client,process.getInputStream(),process.getOutputStream(),executor,
-                    FactorioDapLog.route(log,consumer -> message -> {
-                        console.add(consoleTrace.log(message,consumer,ServerTrace.verbose));
-                        consumer.consume(message);
-                    },error -> fail("Unexpected protocol error: "+error)));
+                    FactorioDapLog.route(log,ServerTrace.verbose,console::add,error -> fail("Unexpected protocol error: "+error)));
                 listening=launcher.startListening();var server=launcher.getRemoteProxy();
                 var initialize=new InitializeRequestArguments();initialize.setAdapterID("factorio");initialize.setClientID("factorio-plugin-test");
                 initialize.setLinesStartAt1(true);initialize.setColumnsStartAt1(true);initialize.setPathFormat("path");
@@ -55,7 +51,7 @@ class FactorioDapProtocolTest {
                         () -> process.toHandle().destroy()));
                 var launch=server.launch(Map.of("factorioArgs",List.of("--config",fixture.resolve("config.ini").toString(),
                     "--mod-directory",fixture.resolve("mods").toString(),"--load-game",fixture.resolve("probe.zip").toString(),"--disable-audio"),
-                    "followSymlinks",true,"hookDebugConsole",true));
+                    "followSymlinks",true,"hookDebugConsole",false));
                 await(initialized);
                 Path control=fixture.resolve("mods/fmtk-probe/control.lua");
                 var lines=Files.readAllLines(control);
@@ -64,7 +60,7 @@ class FactorioDapProtocolTest {
                 var breakpoint=new SourceBreakpoint();breakpoint.setLine(line);
                 var set=new SetBreakpointsArguments();set.setSource(source);set.setBreakpoints(new SourceBreakpoint[]{breakpoint});
                 await(server.setBreakpoints(set));
-                var exceptions=new SetExceptionBreakpointsArguments();exceptions.setFilters(new String[0]);await(server.setExceptionBreakpoints(exceptions));
+                var exceptions=new SetExceptionBreakpointsArguments();exceptions.setFilters(new String[]{"unhandled","pcall","xpcall"});await(server.setExceptionBreakpoints(exceptions));
                 await(server.configurationDone(new ConfigurationDoneArguments()));await(launch);
                 var stop=stopped.poll(90,TimeUnit.SECONDS);assertNotNull(stop,"Breakpoint was not hit");int thread=stop.getThreadId();
                 var stackArgs=new StackTraceArguments();stackArgs.setThreadId(thread);
@@ -78,6 +74,22 @@ class FactorioDapProtocolTest {
                 }
                 var evaluate=new EvaluateArguments();evaluate.setExpression("count + 1");evaluate.setFrameId(frame);evaluate.setContext("watch");
                 assertEquals("42",await(server.evaluate(evaluate)).getResult());
+                evaluate.setContext("repl");
+                for (String expression:List.of("error('REPL probe failure')","surface.get_tile(nil)","missing_value.field","local =")) {
+                    evaluate.setExpression(expression);
+                    var failure=assertThrows(java.util.concurrent.ExecutionException.class,() -> await(server.evaluate(evaluate)));
+                    assertNotEquals("error",FactorioDapErrors.message(failure.getCause()));
+                    assertTrue(stopped.isEmpty(),"Evaluation must not cause a nested exception stop");
+                    var afterError=await(server.stackTrace(stackArgs)).getStackFrames();
+                    assertEquals(stack.getStackFrames().length,afterError.length);
+                    assertEquals(frame,afterError[0].getId());
+                    assertEquals(stack.getStackFrames()[0].getLine(),afterError[0].getLine());
+                }
+                evaluate.setExpression("nested.inner.value = 99");await(server.evaluate(evaluate));
+                evaluate.setExpression("nested.inner.value");assertEquals("99",await(server.evaluate(evaluate)).getResult());
+                evaluate.setExpression("nested");var table=await(server.evaluate(evaluate));assertTrue(table.getVariablesReference()>0);
+                var members=new VariablesArguments();members.setVariablesReference(table.getVariablesReference());
+                assertTrue(Arrays.stream(await(server.variables(members)).getVariables()).anyMatch(v -> v.getName().equals("\"inner\"")));
                 var into=new StepInArguments();into.setThreadId(thread);await(server.stepIn(into));assertNotNull(stopped.poll(30,TimeUnit.SECONDS));
                 var out=new StepOutArguments();out.setThreadId(thread);await(server.stepOut(out));assertNotNull(stopped.poll(30,TimeUnit.SECONDS));
                 var next=new NextArguments();next.setThreadId(thread);await(server.next(next));assertNotNull(stopped.poll(30,TimeUnit.SECONDS));

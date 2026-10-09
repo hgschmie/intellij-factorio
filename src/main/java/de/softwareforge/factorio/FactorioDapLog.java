@@ -3,6 +3,9 @@ package de.softwareforge.factorio;
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer;
 import org.eclipse.lsp4j.jsonrpc.debug.json.DebugMessageJsonHandler;
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage;
+import org.eclipse.lsp4j.jsonrpc.debug.messages.DebugResponseMessage;
+import com.redhat.devtools.lsp4ij.console.explorer.TracingMessageConsumer;
+import com.redhat.devtools.lsp4ij.settings.ServerTrace;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -54,26 +57,24 @@ final class FactorioDapLog implements AutoCloseable {
     }
 
     /** File mode replaces console tracing, even if writing fails. Normal DAP delivery is unchanged. */
-    static UnaryOperator<MessageConsumer> route(FactorioDapLog log,UnaryOperator<MessageConsumer> consoleWrapper,
-                                                Consumer<String> reportProtocolError) {
-        return log==null?consoleWrapper:log.wrap(reportProtocolError);
-    }
-
-    private UnaryOperator<MessageConsumer> wrap(Consumer<String> reportProtocolError) {
+    static UnaryOperator<MessageConsumer> route(FactorioDapLog log,ServerTrace trace,
+                                                Consumer<String> printTrace,Consumer<String> reportProtocolError) {
         // The DAP serializer preserves seq/request_seq and command/event/body, unlike
         // generic JSON-RPC serialization or LSP4IJ's human-readable trace formatter.
         var json=new DebugMessageJsonHandler(Map.of(),builder -> builder.disableHtmlEscaping());
+        var tracing=log==null && trace!=ServerTrace.off?new TracingMessageConsumer():null;
         return consumer -> message -> {
-            if(!failed.get() && !closed) {
+            if(log!=null && !log.failed.get() && !log.closed) {
                 try {
-                    synchronized(json) { append(json.serialize(message)+"\n"); }
-                } catch(RuntimeException failure) { fail(failure); }
-            }
+                    synchronized(json) { log.append(json.serialize(message)+"\n"); }
+                } catch(RuntimeException failure) { log.fail(failure); }
+            } else if(tracing!=null) printTrace.accept(tracing.log(message,consumer,trace));
             consumer.consume(message);
-            // The replaced LSP4IJ wrapper also displays failed responses independently of its trace.
-            if(message instanceof ResponseMessage response && response.getError()!=null) {
-                String error=response.getError().getMessage();
-                if(error!=null && !error.isBlank()) reportProtocolError.accept(error);
+            // Evaluation failures belong next to the watch, hover or REPL expression.
+            // Keep all failures in the trace, and retain console reporting for other requests.
+            if(message instanceof ResponseMessage response && response.getError()!=null
+                    && !(message instanceof DebugResponseMessage dap && "evaluate".equals(dap.getMethod()))) {
+                reportProtocolError.accept(FactorioDapErrors.message(response.getError()));
             }
         };
     }

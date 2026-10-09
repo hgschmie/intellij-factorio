@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 /** Factorio --dap reserves stdout for protocol frames, regardless of chunk boundaries. */
 final class FactorioDebugConsole extends DAPConsoleView {
     FactorioDebugConsole(Project project) {
-        super(project, GlobalSearchScope.allScope(project), false, true);
+        super(project, GlobalSearchScope.allScope(project), true, true);
     }
 
     @Override public void print(@NotNull String text, @NotNull ConsoleViewContentType type) {

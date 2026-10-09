@@ -10,7 +10,7 @@ try:
         results.append(run)
         try:
             run['capabilities'] = peer.request('initialize', {'clientID': 'fmtk-spike', 'adapterID': 'factorio', 'linesStartAt1': True, 'columnsStartAt1': True, 'pathFormat': 'path', 'supportsVariableType': True, 'supportsVariablePaging': True})
-            launch = peer.start_request('launch', {'factorioArgs': ['--config', str(fixture / 'config.ini'), '--mod-directory', str(fixture / 'mods'), '--load-game', str(fixture / 'probe.zip')], 'followSymlinks': True, 'hookDebugConsole': True})
+            launch = peer.start_request('launch', {'factorioArgs': ['--config', str(fixture / 'config.ini'), '--mod-directory', str(fixture / 'mods'), '--load-game', str(fixture / 'probe.zip')], 'followSymlinks': True, 'hookDebugConsole': False})
             peer.wait_event('initialized', timeout=60)
             control = fixture / 'mods/fmtk-probe/control.lua'
             line = next(i for i, text in enumerate(control.read_text().splitlines(), 1) if '-- BREAKPOINT' in text)

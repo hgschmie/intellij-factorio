@@ -1,6 +1,7 @@
 package de.softwareforge.factorio;
 
 import com.google.gson.JsonParser;
+import com.redhat.devtools.lsp4ij.settings.ServerTrace;
 import org.eclipse.lsp4j.jsonrpc.*;
 import org.eclipse.lsp4j.jsonrpc.debug.messages.*;
 import org.eclipse.lsp4j.jsonrpc.json.*;
@@ -23,9 +24,8 @@ class FactorioDapLogTest {
     @Test void fileModeCapturesBothDirectionsWithoutConsoleTracesAndPreservesDelivery() throws Exception {
         var path=new CompletableFuture<Path>();var errors=new CopyOnWriteArrayList<Exception>();
         var log=new FactorioDapLog(this::uncheckedDirectory,"../Factorio / test",path::complete,errors::add);
-        var delivered=new ArrayList<Message>();var console=new ArrayList<Message>();var protocolErrors=new ArrayList<String>();
-        UnaryOperator<MessageConsumer> wrapped=FactorioDapLog.route(log,
-            next -> message -> {console.add(message);next.consume(message);},protocolErrors::add);
+        var delivered=new ArrayList<Message>();var console=new ArrayList<String>();var protocolErrors=new ArrayList<String>();
+        UnaryOperator<MessageConsumer> wrapped=FactorioDapLog.route(log,ServerTrace.verbose,console::add,protocolErrors::add);
         var outgoing=wrapped.apply(new StreamMessageConsumer(new MessageJsonHandler(Map.of())) {
             @Override public void consume(Message message) { delivered.add(message); }
         });
@@ -43,7 +43,7 @@ class FactorioDapLogTest {
             outgoing.consume(request);incoming.consume(response);incoming.consume(event);incoming.consume(failure);
             finish(log);
             assertEquals(List.of(request,response,event,failure),delivered);assertTrue(console.isEmpty());
-            assertEquals(List.of("Evaluation failed"),protocolErrors);
+            assertTrue(protocolErrors.isEmpty(),"Evaluation errors must only appear at the expression");
             var lines=Files.readAllLines(path.get());assertEquals(4,lines.size());
             var messages=lines.stream().map(line -> JsonParser.parseString(line).getAsJsonObject()).toList();
             for(int i=0;i<lines.size();i++) {
@@ -71,9 +71,9 @@ class FactorioDapLogTest {
             assertFalse(path.get().getFileName().toString().contains("/"));
         } finally {finish(log);}
     }
-    @Test void consoleModeRetainsExistingTraceWrapper() {
+    @Test void consoleModeRetainsHumanReadableTracing() {
         var trace=new AtomicInteger();var delivered=new AtomicInteger();
-        var consumer=FactorioDapLog.route(null,next -> message -> {trace.incrementAndGet();next.consume(message);},
+        var consumer=FactorioDapLog.route(null,ServerTrace.verbose,text -> trace.incrementAndGet(),
             error -> fail(error)).apply(message -> delivered.incrementAndGet());
         consumer.consume(new NotificationMessage());
         assertEquals(1,trace.get());assertEquals(1,delivered.get());
@@ -104,7 +104,7 @@ class FactorioDapLogTest {
         log.completion().get(5,TimeUnit.SECONDS);
         var delivered=new AtomicInteger();
         var console=new AtomicInteger();
-        var consumer=FactorioDapLog.route(log,next -> message -> {console.incrementAndGet();next.consume(message);},
+        var consumer=FactorioDapLog.route(log,ServerTrace.verbose,text -> console.incrementAndGet(),
             error -> fail(error)).apply(message -> delivered.incrementAndGet());
         consumer.consume(new NotificationMessage());consumer.consume(new NotificationMessage());
         finish(log);assertEquals(2,delivered.get());assertEquals(1,errors.size());assertEquals(0,console.get());

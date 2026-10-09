@@ -31,7 +31,7 @@ with zipfile.ZipFile(root/f'intellij-factorio/build/distributions/intellij-facto
 workspace=fixture/'.idea/workspace.xml'
 if not workspace.exists():workspace.write_text(f'<project version="4"><component name="FactorioToolkit"><option name="enabled" value="true"/><option name="activeMod" value="{fixture}/mods/fmtk-probe"/><option name="dependencies" value="{fixture}/mods/LogisticTrainNetwork"/></component></project>')
 x=ET.Element('component',name='ProjectRunConfigurationManager');c=ET.SubElement(x,'configuration',default='false',name='Factorio Plugin Probe',type='SoftwareforgeFactorio',factoryName='Factorio')
-launch={'request':'launch','factorioArgs':['--config',str(fixture/'config.ini'),'--mod-directory',str(fixture/'mods'),'--load-game',str(fixture/'probe.zip')],'followSymlinks':True,'hookDebugConsole':True}
+launch={'request':'launch','factorioArgs':['--config',str(fixture/'config.ini'),'--mod-directory',str(fixture/'mods'),'--load-game',str(fixture/'probe.zip')],'followSymlinks':True,'hookDebugConsole':False}
 for key,value in {'serverId':'softwareforge.factorio.debug','serverName':'Factorio','command':'/Applications/factorio.app/Contents/MacOS/factorio','commandLine':'/Applications/factorio.app/Contents/MacOS/factorio','workingDirectory':str(fixture),'launchConfiguration':json.dumps(launch)}.items():ET.SubElement(c,'option',name=key,value=value)
 ET.SubElement(c,'method',v='2');ET.ElementTree(x).write(fixture/'.idea/runConfigurations/Factorio.xml',encoding='unicode')
 print('Prepared isolated IDE:',profile)

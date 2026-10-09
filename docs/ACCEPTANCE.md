@@ -900,3 +900,64 @@ Evidence: `build/logs/fde-branding-build.log`, `build/test-work/branding/`, and
 `build/reports/fde-branding-*`. Installable archive:
 `build/distributions/intellij-factorio-0.5.6-dev.zip`.
 No runtime dependency pins or user IDE profiles were changed.
+
+## Lua debug REPL and evaluation errors, 0.6.0-dev (2026-10-09)
+
+The user's red, bare `error` lines were failed watch evaluations, not shutdown
+failures. Factorio returns `message: "error"` with the useful Lua diagnostic in
+`body.error.format`. FDE now decodes that detail (including format variables) for
+watch, hover and interactive evaluation failures. Evaluation errors stay next to
+the expression; other failed DAP requests and genuine game stderr still appear in
+the game console. File traces preserve the original DAP envelopes and error body.
+Console-only traces retain the existing human-readable format.
+
+Nested evaluation exception stops were caused by FDE forcing
+`hookDebugConsole: true`. Factorio documents that flag as enabling error hooks
+inside REPL evaluation; both Factorio and VS Code default it to false. FDE now
+sends false, including for previously saved launch configurations. No synthetic
+continue or step-out requests are needed, and evaluation context remains `repl`.
+Normal game exception filters are unchanged.
+
+Added a **Lua REPL** debugger tab using IntelliJ's expression history editor and
+value tree. Enter/Evaluate sends an expression or statement with the currently
+selected DAP frame. Results are expandable, including nested tables and Factorio
+objects. The game console is read-only so input cannot corrupt protocol stdin.
+One REPL evaluation runs at a time; up to 100 results are retained while paused.
+Resuming/stepping/stopping expires the results and ignores late responses;
+command history is retained. This release requires a suspended Lua frame and has
+no REPL completion: Factorio 2.1.21 does not advertise `supportsCompletionsRequest`.
+No upstream dependency changes were needed.
+
+Validation:
+
+- 50 unit/native tests passed, including two isolated Factorio 2.1.21 sessions.
+  With all three exception filters enabled, Lua errors, an invalid native API
+  argument, a nil member and a syntax error returned failed evaluation responses
+  without a nested stop or changed stack/frame/line. Assignment persisted, table
+  results expanded, stepping worked, and both sessions terminated with Goodbye
+  and exit code 0.
+- 11 IntelliJ platform tests passed: three new REPL tests plus seven shutdown
+  cases and the existing restart test. REPL tests cover file/console/no tracing,
+  selection of the correct frame and `repl` context, command history, nested
+  expansion, detailed watch errors, old saved launch options, preserved stderr,
+  duplicate submission prevention and late responses after resuming.
+- The first sandbox-only unit run hit the existing macOS `sysctl` restriction in
+  process tests; the runtime-enabled run passed. The first native run exposed a
+  test assertion expecting unquoted member names; Factorio returns `"inner"`.
+  Corrected that assertion and reran successfully.
+
+Evidence: `build/logs/dap-repl-*`, `build/reports/dap-repl-native/`,
+`build/reports/dap-repl-platform/`, and native session protocol traces under
+`build/test-work/dap-protocol/session-767838598632461332/`.
+Archive: `build/distributions/intellij-factorio-0.6.0-dev.zip`.
+
+Live UI validation also passed in the isolated IntelliJ IDEA 2026.2.3 profile.
+Enter evaluated `nested`; expanding its table and `inner` child displayed `value`
+as 41. `surface.get_tile(nil)` showed the full red diagnostic beside that REPL
+entry while the game stayed at control.lua:13, without extra exception frames.
+Keyboard history selected prior commands and Enter ran the recalled expression.
+The final layout has a Lua REPL tab beside Console. Stop logged Goodbye, successful
+disconnect and exit code 0; the isolated IDE was then closed. No new IDE ERROR
+records were logged. Screenshots are in `build/reports/dap-repl-ui/`. The three
+REPL platform tests were rerun successfully after the tab placement refinement.
+The regular IDE profile and user mod sources were not changed.

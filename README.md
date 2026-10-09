@@ -1,7 +1,7 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.5.6-dev.
+`de.softwareforge.factorio`. Development release 0.6.0-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
 `0.21.1-SNAPSHOT-factorio-formatting-patched2`.
 LuaLS and profiling are not supported.
@@ -182,10 +182,26 @@ It passes the game's restart data back unchanged and reinstalls IDE breakpoints.
 The IDE's **Stop** action cancels a pending restart; a normal game exit does not
 restart it. With file tracing enabled, the replacement session gets a new log.
 
+The Debug tool window's **Lua REPL** tab evaluates Lua in the selected paused
+stack frame. Enter an expression or statement and press **Enter** or **Evaluate**.
+Use the input's history dropdown to recall commands (also retained across sessions).
+Results appear as expandable trees using the same runtime values as the Variables
+view. Errors appear next to the submitted expression; failed watches and hovers
+report their detailed error without extra bare `error` lines in the game console.
+The regular **Console** tab remains the game's output.
+
+Evaluation errors return without entering nested exception frames. This matches
+Factorio and VS Code's default `hookDebugConsole: false`; FDE also applies it to
+existing saved run configurations. Normal game exception breakpoints still work.
+The REPL requires a paused Lua frame and permits one evaluation at a time. It keeps
+up to 100 results; resuming, stepping or stopping clears them because the game's
+variable references expire. History is retained. Factorio currently does not
+advertise DAP completion support, so this version has no REPL completion.
+
 Enable **DAP logging** in the Factorio run configuration for verbose protocol
 traces in the debug console. **Save DAP log to file** redirects protocol traces
 exclusively to a separate UTF-8 `.jsonl` for each session, leaving normal game
-output and debugger errors visible in the console. Choose an **Output folder**,
+output and non-evaluation debugger errors visible in the console. Choose an **Output folder**,
 or leave it blank to use `factorio/dap` under IntelliJ's log directory (shown in
 the field). Relative paths use the run configuration's working directory. The console reports the
 created file's full path. Changes apply to the next session.
