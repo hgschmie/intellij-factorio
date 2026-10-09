@@ -195,37 +195,64 @@ public final class FactorioDebug {
         }
         @Override public com.redhat.devtools.lsp4ij.dap.client.DAPClient createClient(DAPDebugProcess process, Map<String,Object> parameters, boolean debug, DebugMode mode, com.redhat.devtools.lsp4ij.settings.ServerTrace trace, com.redhat.devtools.lsp4ij.dap.client.DAPClient parent) {
             var client = new com.redhat.devtools.lsp4ij.dap.client.DAPClient(process, parameters, debug, mode, trace, parent) {
-                private final java.util.concurrent.atomic.AtomicBoolean stopping = new java.util.concurrent.atomic.AtomicBoolean();
+                private final java.util.concurrent.atomic.AtomicBoolean disposing = new java.util.concurrent.atomic.AtomicBoolean();
+                private final java.util.concurrent.CompletableFuture<Void> protocolClosed = new java.util.concurrent.CompletableFuture<>();
+                private volatile boolean listeningStarted;
+                private final FactorioDapShutdown shutdown = new FactorioDapShutdown(this::getDebugProtocolServer,
+                        this::isSupportsTerminateRequest, () -> { if (handler != null) handler.stopAdapter(); else dispose(); });
                 @Override protected org.eclipse.lsp4j.jsonrpc.Launcher<? extends org.eclipse.lsp4j.debug.services.IDebugProtocolServer> createLauncher(
                         java.util.function.UnaryOperator<org.eclipse.lsp4j.jsonrpc.MessageConsumer> wrapper,
                         java.io.InputStream in,java.io.OutputStream out,java.util.concurrent.ExecutorService executor) {
                     var log=fileLog(process,trace);
-                    return super.createLauncher(FactorioDapLog.route(log,wrapper,
+                    var delegate = super.createLauncher(FactorioDapLog.route(log,wrapper,
                         error -> process.print(error,com.intellij.execution.ui.ConsoleViewContentType.ERROR_OUTPUT)),in,out,executor);
+                    return new org.eclipse.lsp4j.jsonrpc.Launcher<org.eclipse.lsp4j.debug.services.IDebugProtocolServer>() {
+                        @Override public org.eclipse.lsp4j.debug.services.IDebugProtocolServer getRemoteProxy() { return delegate.getRemoteProxy(); }
+                        @Override public org.eclipse.lsp4j.jsonrpc.RemoteEndpoint getRemoteEndpoint() { return delegate.getRemoteEndpoint(); }
+                        @Override public java.util.concurrent.Future<Void> startListening() {
+                            var listening = delegate.startListening();
+                            listeningStarted = true;
+                            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                                try { listening.get(); }
+                                catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); }
+                                catch (java.util.concurrent.ExecutionException | java.util.concurrent.CancellationException closed) { /* Transport ended. */ }
+                                finally {
+                                    if (handler == null || !handler.getProcess().isAlive()) shutdown.exited();
+                                    protocolClosed.complete(null);
+                                    dispose();
+                                }
+                            });
+                            return listening;
+                        }
+                    };
                 }
                 @Override public java.util.concurrent.CompletableFuture<Void> connectToServer(com.intellij.openapi.progress.ProgressIndicator indicator) {
                     try {
                         return super.connectToServer(indicator).whenComplete((ignored,failure) -> {
-                            if(failure!=null && parent==null) closeFileLog();
+                            if(failure!=null) dispose();
                         });
-                    } catch(RuntimeException failure) { if(parent==null) closeFileLog(); throw failure; }
+                    } catch(RuntimeException failure) { dispose(); throw failure; }
                 }
                 @Override public void dispose() {
+                    if (!disposing.compareAndSet(false, true)) return;
+                    if (parent != null || handler == null) { releaseClient(); return; }
+                    if (handler.getProcess().isAlive()) shutdown.stop();
+                    ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                        // waitFor includes IntelliJ's stdout readers. The DAP parser must
+                        // then consume their final messages before its pipes are closed.
+                        handler.waitFor(15_000);
+                        shutdown.exited();
+                        try { if (listeningStarted) protocolClosed.get(5, java.util.concurrent.TimeUnit.SECONDS); }
+                        catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); }
+                        catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException closed) { /* Bounded cleanup. */ }
+                        finally { releaseClient(); }
+                    });
+                }
+                private void releaseClient() {
                     try { super.dispose(); } finally { if(parent==null) closeFileLog(); }
                 }
                 @Override public void terminate() {
-                    disconnect(false);
-                }
-                private void disconnect(boolean restarting) {
-                    if (!stopping.compareAndSet(false, true)) return;
-                    var server = getDebugProtocolServer();
-                    if (server == null) { dispose(); return; }
-                    // This configuration launches Factorio; Stop must terminate the game.
-                    var args = new org.eclipse.lsp4j.debug.DisconnectArguments();
-                    args.setTerminateDebuggee(true);
-                    if (restarting) args.setRestart(true);
-                    server.disconnect(args).orTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
-                            .whenCompleteAsync((ignored, failure) -> dispose());
+                    shutdown.stop();
                 }
                 @Override public void terminated(org.eclipse.lsp4j.debug.TerminatedEventArguments args) {
                     if (parent==null && handler!=null && FactorioDapRestart.isRequested(args.getRestart())) {
@@ -233,11 +260,12 @@ public final class FactorioDebug {
                             process.print("Factorio requested a restart. Waiting for the game to exit...",
                                     com.intellij.execution.ui.ConsoleViewContentType.SYSTEM_OUTPUT);
                             restartAfterExit(process);
-                            disconnect(true);
-                        }
+                            shutdown.terminated(true);
+                        } else shutdown.terminated(false);
                         // Duplicate events and events arriving after Stop must not launch again.
                         return;
                     }
+                    shutdown.terminated(false);
                     super.terminated(args);
                 }
             };

@@ -793,3 +793,68 @@ Rebuilt archives, retained beside the previous release:
 No regular IDE profile or user mod files were modified. The user accepted the
 original formatting feature in 0.5.3-dev; these rebuilt packages have automated
 validation only so far.
+
+## Graceful debugger shutdown, 0.5.5-dev (2026-10-08)
+
+Stop previously sent `disconnect` immediately and disposed the client when that
+request completed. Disposal closed Factorio's stdin and the DAP reader while the
+game could still be shutting down. The IDE log contained repeated `Pipe closed`
+errors from late stdout. The user reported game crashes when stopping at a
+breakpoint; the precise native crash mechanism was not established.
+
+The Factorio client now follows the sequence used by VS Code: send `terminate`
+when supported, wait for `terminated`, then send `disconnect`. A successful
+terminate response is only an acknowledgement; it does not close the transport.
+Factorio does not advertise `supportTerminateDebuggee`, so that optional
+disconnect argument is omitted, as it is in VS Code. Game-requested restarts
+still use `disconnect(restart=true)` and retain the existing relaunch payload.
+Stop cancels pending restarts, including a restart event arriving during Stop.
+
+Client disposal waits for process termination, IntelliJ's output readers, and
+the DAP parser to finish, preserving final protocol events and file logs. On
+macOS/Linux, adapter cleanup sends SIGTERM through `ProcessHandle.destroy()`;
+unlike `Process.destroy()`, this does not close the Java stdio streams. Windows
+retains process-tree termination, like VS Code. Recovery remains bounded: five
+seconds for termination, two for disconnect, and five after SIGTERM before a
+forced process-tree kill. These automatic timeouts are our recovery policy;
+VS Code's first terminate request can wait for another user Stop instead.
+
+Sources compared against the installed VS Code 1.141.0 revision:
+
+- [Stop request selection](https://github.com/microsoft/vscode/blob/2a59476c9bfcb90b3ddc372c36762471b7dfad1c/src/vs/workbench/contrib/debug/browser/debugSession.ts#L426)
+- [Disconnect and adapter shutdown](https://github.com/microsoft/vscode/blob/2a59476c9bfcb90b3ddc372c36762471b7dfad1c/src/vs/workbench/contrib/debug/browser/rawDebugSession.ts#L592)
+- [Executable adapter signals](https://github.com/microsoft/vscode/blob/2a59476c9bfcb90b3ddc372c36762471b7dfad1c/src/vs/workbench/contrib/debug/node/debugAdapter.ts#L344)
+
+Validation uses the actual IntelliJ runner and LSP4IJ client with a controllable
+paused adapter. It covers delayed output after both acknowledgements, stdin
+remaining open, exact terminate/disconnect ordering, unsupported and rejected
+terminate requests, timeouts, SIGTERM recovery, forced fallback, and process exit
+without a terminated event. The existing restart test also covers duplicate
+events, immediate exit, breakpoint restoration and Stop cancelling a restart.
+The unit process test independently checks final stdout and open stdin while
+handling SIGTERM.
+
+Final results: 46 unit tests passed (the opt-in native test skipped in that run),
+all seven new shutdown platform tests passed, and the existing restart platform
+test passed. The new paused-shutdown regression was also run against HEAD's old
+implementation and failed specifically because stdin closed before cleanup;
+the fixed sources were restored before the final passing run and archive build.
+The final platform log contains no `Pipe closed` errors.
+
+The opt-in native protocol test ran two full Factorio 2.1.21 sessions against
+the isolated fixture: breakpoint, variables, evaluation, step into/out/over,
+then the production shutdown coordinator while paused. Both sessions exited
+with code 0, emitted `Goodbye`, and preserved the final `terminated` event in
+their JSON Lines logs. This is protocol and platform-test validation, not a
+manual test of the installed plugin in the user's project. Windows was not run.
+
+Evidence uses `build/logs/dap-shutdown-*`, `build/reports/dap-shutdown-*`,
+`build/test-work/shutdown-baseline/`, and native session
+`build/test-work/dap-protocol/session-5095530084702815587/`.
+The first sandboxed platform JVM aborted before tests; the runtime-access retry
+worked. A unit fixture initially mistook the echoed command for child stdout;
+its readiness check was corrected to accept only stdout events.
+
+Installable archive: `build/distributions/intellij-factorio-0.5.5-dev.zip`.
+LSP4IJ, EmmyLua2, analyzer and toolkit pins are unchanged. No regular IDE profile
+or user mod files were modified.

@@ -1,6 +1,6 @@
 # Factorio Modding Tool Kit for IntelliJ
 
-Java integration under `de.softwareforge.factorio`. Development release 0.5.4-dev.
+Java integration under `de.softwareforge.factorio`. Development release 0.5.5-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
 `0.21.1-SNAPSHOT-factorio-formatting-patched2`.
 LuaLS and profiling are not supported.
@@ -162,6 +162,13 @@ module is selected automatically for new configurations). Set the Factorio execu
 directory, save ZIP, config.ini and working directory. For testing, configure a
 separate Factorio write-data directory. Use **Debug** and set Factorio Lua
 breakpoints in the gutter. The debugger talks directly to `factorio --dap`.
+
+**Stop** first sends Factorio's graceful DAP `terminate` request, then disconnects
+when the game reports that the session has ended. Communication stays open until
+the process exits and its final output has been read. On macOS/Linux, adapter
+cleanup uses `SIGTERM`; a forced kill is reserved for an unresponsive process.
+Recovery is bounded: five seconds for termination, two for disconnect, and five
+after `SIGTERM`. This also applies when stopping at a breakpoint.
 
 When Factorio requests a restart after mod or startup-setting changes, the plugin
 waits for the old process to exit and starts a new debug session automatically.

@@ -32,11 +32,13 @@ class FactorioDapProtocolTest {
             var stopped=new LinkedBlockingQueue<StoppedEventArguments>();
             var console=Collections.synchronizedList(new ArrayList<String>());
             var rawOutput=Collections.synchronizedList(new ArrayList<String>());
+            var shutdown=new java.util.concurrent.atomic.AtomicReference<FactorioDapShutdown>();
             try {
                 var client=new IDebugProtocolClient() {
                     @Override public void initialized() {initialized.complete(null);}
                     @Override public void stopped(StoppedEventArguments event) {stopped.add(event);}
                     @Override public void output(OutputEventArguments event) {rawOutput.add(event.getOutput());}
+                    @Override public void terminated(TerminatedEventArguments event) {shutdown.get().terminated(false);}
                 };
                 var consoleTrace=new TracingMessageConsumer();
                 var launcher=DSPLauncher.createClientLauncher(client,process.getInputStream(),process.getOutputStream(),executor,
@@ -47,7 +49,10 @@ class FactorioDapProtocolTest {
                 listening=launcher.startListening();var server=launcher.getRemoteProxy();
                 var initialize=new InitializeRequestArguments();initialize.setAdapterID("factorio");initialize.setClientID("factorio-plugin-test");
                 initialize.setLinesStartAt1(true);initialize.setColumnsStartAt1(true);initialize.setPathFormat("path");
-                await(server.initialize(initialize));
+                var capabilities=await(server.initialize(initialize));
+                shutdown.set(new FactorioDapShutdown(() -> server,
+                        () -> Boolean.TRUE.equals(capabilities.getSupportsTerminateRequest()),
+                        () -> process.toHandle().destroy()));
                 var launch=server.launch(Map.of("factorioArgs",List.of("--config",fixture.resolve("config.ini").toString(),
                     "--mod-directory",fixture.resolve("mods").toString(),"--load-game",fixture.resolve("probe.zip").toString(),"--disable-audio"),
                     "followSymlinks",true,"hookDebugConsole",true));
@@ -76,8 +81,9 @@ class FactorioDapProtocolTest {
                 var into=new StepInArguments();into.setThreadId(thread);await(server.stepIn(into));assertNotNull(stopped.poll(30,TimeUnit.SECONDS));
                 var out=new StepOutArguments();out.setThreadId(thread);await(server.stepOut(out));assertNotNull(stopped.poll(30,TimeUnit.SECONDS));
                 var next=new NextArguments();next.setThreadId(thread);await(server.next(next));assertNotNull(stopped.poll(30,TimeUnit.SECONDS));
-                var disconnect=new DisconnectArguments();disconnect.setTerminateDebuggee(true);await(server.disconnect(disconnect));
+                shutdown.get().stop();
                 assertTrue(process.waitFor(15,TimeUnit.SECONDS));assertEquals(0,process.exitValue());
+                shutdown.get().exited();
                 listening.get(10,TimeUnit.SECONDS);
                 log.close();await(log.completion());
                 Path file=await(logPath);assertTrue(paths.add(file));
@@ -88,7 +94,7 @@ class FactorioDapProtocolTest {
                     assertTrue(messages.get(i).get("seq").getAsJsonPrimitive().isNumber());
                     assertFalse(messages.get(i).has("jsonrpc"));
                 }
-                for(String method:List.of("initialize","launch","setBreakpoints","configurationDone","stackTrace","scopes","variables","evaluate","stepIn","stepOut","next","disconnect")) {
+                for(String method:List.of("initialize","launch","setBreakpoints","configurationDone","stackTrace","scopes","variables","evaluate","stepIn","stepOut","next","terminate")) {
                     var request=messages.stream().filter(m -> "request".equals(m.get("type").getAsString()) && method.equals(m.get("command").getAsString())).findFirst().orElseThrow();
                     var response=messages.stream().filter(m -> "response".equals(m.get("type").getAsString()) && method.equals(m.get("command").getAsString())).findFirst().orElseThrow();
                     assertEquals(request.get("seq"),response.get("request_seq"),method+" request/response IDs must match");
@@ -96,12 +102,16 @@ class FactorioDapProtocolTest {
                 }
                 assertTrue(console.isEmpty(),"File mode must not emit protocol traces to the console");
                 assertTrue(messages.stream().anyMatch(m -> m.has("event") && "stopped".equals(m.get("event").getAsString())));
+                assertTrue(messages.stream().anyMatch(m -> m.has("event") && "terminated".equals(m.get("event").getAsString())));
+                assertTrue(messages.stream().anyMatch(m -> m.has("command") && "disconnect".equals(m.get("command").getAsString())));
+                assertTrue(rawOutput.stream().anyMatch(text -> text.contains("Goodbye")), "Factorio should finish normal cleanup");
                 var evaluation=messages.stream().filter(m -> m.has("arguments") && m.getAsJsonObject("arguments").has("expression")).findFirst().orElseThrow();
                 assertEquals("count + 1",evaluation.getAsJsonObject("arguments").get("expression").getAsString());
                 assertTrue(messages.stream().anyMatch(m -> m.has("event") && "output".equals(m.get("event").getAsString()) && m.getAsJsonObject("body").has("output")));
                 assertFalse(rawOutput.isEmpty(),"Protocol output events must still reach the client");
                 assertTrue(errors.isEmpty(),errors.toString());
             } finally {
+                if(shutdown.get()!=null) shutdown.get().exited();
                 process.destroyForcibly();process.waitFor(10,TimeUnit.SECONDS);
                 if(listening!=null)listening.cancel(true);executor.shutdownNow();
                 log.close();await(log.completion());

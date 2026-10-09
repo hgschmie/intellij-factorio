@@ -1,12 +1,16 @@
 """Controllable adapter for the real IntelliJ session/restart lifecycle test."""
 import json
 import os
+import signal
 from pathlib import Path
 import sys
 import threading
 import time
 
 root = Path(ROOT)  # supplied by the test's executable bootstrap
+# Acknowledge disconnect but delay exit to test cancellation of a pending restart.
+# VS Code also sends SIGTERM after disconnect; keep this deliberate delay in force.
+signal.signal(signal.SIGTERM, lambda *_: None if (root / 'hold-exit').exists() else os._exit(0))
 counter = root / 'starts'
 cycle = int(counter.read_text()) + 1 if counter.exists() else 1
 counter.write_text(str(cycle))
