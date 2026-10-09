@@ -98,7 +98,7 @@ public final class FactorioActions {
             if(!config.isBlank())env.put("FMTK_CONFIG",config);
             if(command.equals("run")) { String script=Messages.showInputDialog(p,"Script name from info.json package.scripts","Run Package Script",null); if(script==null||script.isBlank())return; args.add(script); }
             if(command.equals("upload")) { String zip=Messages.showInputDialog(p,"Absolute path of ZIP to upload","Upload Mod ZIP",null); if(zip==null||zip.isBlank())return; args.add(zip); }
-            background(p,"FMTK "+command,mod,(indicator,log)->{
+            background(p,"FDE "+command,mod,(indicator,log)->{
                 var settings = FactorioSettings.get(p);
                 try (var publishConfig = command.equals("publish")
                     ? PublishConfig.prepare(config, settings.publishAuthorName, settings.publishAuthorEmail, Definitions.cache(p).resolve("tmp"))

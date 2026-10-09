@@ -1,9 +1,15 @@
-# Factorio Modding Tool Kit for IntelliJ
+# Factorio Development Environment (FDE)
 
-Java integration under `de.softwareforge.factorio`. Development release 0.5.5-dev.
+Factorio mod development for IntelliJ IDEA, implemented in Java under
+`de.softwareforge.factorio`. Development release 0.5.6-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
 `0.21.1-SNAPSHOT-factorio-formatting-patched2`.
 LuaLS and profiling are not supported.
+
+FDE uses [Factorio Modding Tool Kit (FMTK)](https://github.com/justarandomgeek/vscode-factoriomod-debug)
+under the hood for API definitions, locale and changelog language services, and
+mod packaging and publishing. FMTK retains its own CLI name and configuration
+format. FDE is the IntelliJ integration. The Factorio logo is by Wube Software.
 
 ## Build
 
@@ -241,7 +247,7 @@ ready for regular use.
 
 ### Command PATH
 
-Settings → Tools → Factorio Modding Tool Kit → **Command PATH** overrides the
+Settings → Tools → Factorio Development Environment → **Command PATH** overrides the
 complete executable search path for toolkit commands, release previews, and
 child processes such as Git, GPG, and package hooks. Leave it empty to use
 IntelliJ's resolved shell environment. For Homebrew on Apple Silicon, for example:

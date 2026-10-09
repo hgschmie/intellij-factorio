@@ -34,7 +34,8 @@ public final class FactorioConfigurable implements Configurable {
         node=FactorioForms.path(project,"Select Node Executable",false,"");
         factorio=FactorioForms.path(project,"Select Factorio Executable",false,"");
         docs=FactorioForms.path(project,"Select API JSON Folder",true,"Detect from Factorio installation");
-        cli=FactorioForms.path(project,"Select FMTK CLI",false,"Use bundled toolkit");
+        cli=FactorioForms.path(project,"Select Toolkit CLI",false,"Use bundled toolkit");
+        cli.setToolTipText("FDE uses Factorio Modding Tool Kit (FMTK) under the hood. Select an alternative fmtk-cli.js or leave blank to use the bundled version.");
         config=FactorioForms.path(project,"Select Package Configuration",false,"Use mod defaults");
         dependencies=new FactorioForms.Dependencies(project);
         mode.setRenderer(new DefaultListCellRenderer() {
@@ -47,7 +48,7 @@ public final class FactorioConfigurable implements Configurable {
         mode.setToolTipText("Automatic enables language services when Factorio mods are detected");
         var form=new FactorioForms.Form();
         form.section("Toolchain");
-        form.row("Node",node);form.row("Factorio",factorio);form.row("API docs",docs);form.row("FMTK CLI",cli);
+        form.row("Node",node);form.row("Factorio",factorio);form.row("API docs",docs);form.row("Toolkit CLI",cli);
         commandPath.getEmptyText().setText("Use IntelliJ shell PATH");
         commandPath.setToolTipText("Complete PATH for toolkit commands and hooks. Use absolute directories separated by " + java.io.File.pathSeparator + "; no shell expansion.");
         form.row("Command PATH", commandPath);
@@ -58,8 +59,8 @@ public final class FactorioConfigurable implements Configurable {
         var exclusions=new JButton("Edit Exclusions…");exclusions.addActionListener(event -> editExclusions());
         form.row("Data library",FactorioForms.left(exclusions));
         form.section("Publishing");
-        authorName.getEmptyText().setText("Use package configuration or FMTK default");
-        authorEmail.getEmptyText().setText("Use package configuration or FMTK default");
+        authorName.getEmptyText().setText("Use package configuration or toolkit default");
+        authorEmail.getEmptyText().setText("Use package configuration or toolkit default");
         form.row("Author name",authorName);
         form.row("Author email",authorEmail);
         form.section("Mod Modules");
@@ -122,7 +123,7 @@ public final class FactorioConfigurable implements Configurable {
         };
         if(dialog.showAndGet()){libraryIgnoreDir=directories.getText();libraryIgnoreGlobs=globs.getText();}
     }
-    @Override public String getDisplayName(){return "Factorio Modding Tool Kit";}
+    @Override public String getDisplayName(){return "Factorio Development Environment";}
     @Override public JComponent createComponent(){reset();return panel;}
     private String state(){return PathsAndMods.JSON.toJson(List.of(mode.getSelectedItem(),node.getText(),commandPath.getText(),authorName.getText(),authorEmail.getText(),factorio.getText(),docs.getText(),cli.getText(),config.getText(),dependencies.getText(),libraryIgnoreDir,libraryIgnoreGlobs,model.getDataVector()));}
     @Override public boolean isModified(){return !initial.equals(state());}

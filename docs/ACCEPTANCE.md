@@ -858,3 +858,45 @@ its readiness check was corrected to accept only stdout events.
 Installable archive: `build/distributions/intellij-factorio-0.5.5-dev.zip`.
 LSP4IJ, EmmyLua2, analyzer and toolkit pins are unchanged. No regular IDE profile
 or user mod files were modified.
+
+## Factorio Development Environment branding, 0.5.6-dev (2026-10-08)
+
+The IntelliJ plugin is now **Factorio Development Environment (FDE)**. Its plugin
+descriptor, Gradle metadata and settings page use the full name. Toolkit task
+titles and plugin-generated operation/error messages use FDE. The toolkit field
+is labelled **Toolkit CLI**, with a tooltip identifying the bundled engine.
+The plugin description and README credit and link **Factorio Modding Tool Kit
+(FMTK)** for API definitions, language services and packaging/publishing.
+References to the actual FMTK CLI, schemas, configuration formats, environment
+variables and dependency paths retain the upstream name. The plugin ID and
+settings identifiers remain stable so this archive updates the existing plugin.
+
+Added `META-INF/pluginIcon.svg` for the Plugins page. Its explicit 40×40 viewport
+embeds the original 144×144 Factorio thumbnail from
+`/Applications/factorio.app/Contents/data/base/thumbnail.png`, retaining the
+supplied artwork and transparent padding. The image bytes are unchanged; the
+SVG viewport controls display size. This preserves the original raster artwork
+rather than tracing it into vector shapes. The existing 16×16 and 32×32 PNGs
+remain the in-product file/action icons. The logo is credited to Wube Software.
+
+The [JetBrains plugin-logo specification](https://plugins.jetbrains.com/docs/intellij/plugin-icon-file.html)
+requires `META-INF/pluginIcon.svg` and a 40-pixel nominal size; plugin lists and
+details use different display scales. Rendered the new resource with the
+installed IDEA 262 SVG renderer at 40×40, 80×80 and 160×160 and visually inspected
+the results. The 40-pixel rendering has visible bounds x=2..37, y=3..36, preserving
+the required transparent perimeter. The same artwork works on light and dark
+backgrounds, so no duplicate dark-theme resource is needed. The embedded source
+keeps the SVG around 34 KB, larger than JetBrains' ideal 2–3 KB vector logo size.
+
+`test buildPlugin` passed: 46 unit tests passed, one opt-in native game test was
+skipped. Inspected the built JAR inside the distribution ZIP: the plugin name,
+version, settings display name and FMTK acknowledgement match; the plugin logo
+resource is packaged and embeds the original image bytes. The small PNGs and
+toolkit source pin also match the existing assets and lock file. Light/dark
+render previews are in `build/test-work/branding/logo-themes.png`. Manual
+verification in the user's Plugins page has not been performed.
+
+Evidence: `build/logs/fde-branding-build.log`, `build/test-work/branding/`, and
+`build/reports/fde-branding-*`. Installable archive:
+`build/distributions/intellij-factorio-0.5.6-dev.zip`.
+No runtime dependency pins or user IDE profiles were changed.

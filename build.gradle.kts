@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.intellij.platform.grammarkit") version "2.18.1"
 }
 group = "de.softwareforge.factorio"
-version = "0.5.5-dev"
+version = "0.5.6-dev"
 repositories { mavenCentral(); intellijPlatform { defaultRepositories() } }
 // Defaults follow the workspace layout; every external location can be overridden with -P.
 val workspaceDir = projectDir.parentFile
@@ -39,7 +39,7 @@ java { sourceCompatibility = JavaVersion.VERSION_21; targetCompatibility = JavaV
 intellijPlatform {
     pluginConfiguration {
         id = "de.softwareforge.factorio"
-        name = "Factorio Modding Tool Kit"
+        name = "Factorio Development Environment"
         version = project.version.toString()
         ideaVersion { sinceBuild = "262"; untilBuild = "262.*" }
         vendor { name = "Softwareforge" }

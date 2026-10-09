@@ -24,7 +24,7 @@ public final class Processes implements Disposable {
         try { return path.toRealPath(); } catch(IOException e) { return path.toAbsolutePath().normalize(); }
     }
     public void acquire(Path directory) {
-        if (!busy.add(canonical(directory))) throw new IllegalStateException("Another FMTK operation is running for " + directory);
+        if (!busy.add(canonical(directory))) throw new IllegalStateException("Another FDE operation is running for " + directory);
     }
     public void release(Path directory) { busy.remove(canonical(directory)); }
     public String run(List<String> command, Path cwd, Map<String,String> env, ProgressIndicator indicator, Consumer<String> log) throws Exception {
@@ -51,7 +51,7 @@ public final class Processes implements Disposable {
                 indicator.checkCanceled(); process.waitFor(100, TimeUnit.MILLISECONDS);
             }
             reader.get(10, TimeUnit.SECONDS);
-            if (process.exitValue() != 0) throw new IOException("Command failed (exit " + process.exitValue() + "). See FMTK output.\n" + output);
+            if (process.exitValue() != 0) throw new IOException("Command failed (exit " + process.exitValue() + "). See FDE output.\n" + output);
             return output.toString();
         } finally { stop(process); children.remove(process); descendants.remove(process); }
     }

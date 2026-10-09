@@ -1,8 +1,13 @@
 <idea-plugin>
   <id>de.softwareforge.factorio</id>
-  <name>Factorio Modding Tool Kit</name>
+  <name>Factorio Development Environment</name>
   <vendor>Softwareforge</vendor>
-  <description>Factorio mod development with EmmyLua2, locale and changelog services, native debugging, packaging and publishing.</description>
+  <description><![CDATA[
+    <p>Factorio Development Environment (FDE) brings Factorio mod development to IntelliJ IDEA:
+    EmmyLua2 integration, locale and changelog services, native debugging, packaging and publishing.</p>
+    <p>FDE uses <a href="https://github.com/justarandomgeek/vscode-factoriomod-debug">Factorio Modding Tool Kit (FMTK)</a>
+    under the hood for API definitions, locale and changelog language services, and mod tooling.</p>
+  ]]></description>
   <depends>com.intellij.modules.platform</depends>
   <depends optional="true" config-file="factorio-json.xml">com.intellij.modules.json</depends>
   <depends optional="true" config-file="factorio-import.xml">com.intellij.java</depends>
@@ -17,7 +22,7 @@
     <moduleType id="SOFTWAREFORGE_FACTORIO_MOD" implementationClass="de.softwareforge.factorio.FactorioWizard$Type"/>
     <moduleService serviceImplementation="de.softwareforge.factorio.FactorioModuleSettings"/>
     <postStartupActivity implementation="de.softwareforge.factorio.FactorioModules$Startup"/>
-    <projectConfigurable id="de.softwareforge.factorio.settings" displayName="Factorio Modding Tool Kit" instance="de.softwareforge.factorio.FactorioConfigurable"/>
+    <projectConfigurable id="de.softwareforge.factorio.settings" displayName="Factorio Development Environment" instance="de.softwareforge.factorio.FactorioConfigurable"/>
     <completion.contributor language="Lua" implementationClass="de.softwareforge.factorio.FreshLocaleCompletion" order="first, before LSPCompletionContributor"/>
     <toolWindow id="Factorio" anchor="bottom" canCloseContents="true" icon="de.softwareforge.factorio.FactorioIcons.FACTORIO" factoryClass="de.softwareforge.factorio.FactorioOutput$Factory"/>
     <notificationGroup id="Softwareforge Factorio" displayType="BALLOON"/>
