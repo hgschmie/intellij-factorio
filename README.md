@@ -1,7 +1,7 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.6.0-dev.
+`de.softwareforge.factorio`. Development release 0.6.1-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
 `0.21.1-SNAPSHOT-factorio-formatting-patched2`.
 LuaLS and profiling are not supported.
@@ -195,8 +195,22 @@ Factorio and VS Code's default `hookDebugConsole: false`; FDE also applies it to
 existing saved run configurations. Normal game exception breakpoints still work.
 The REPL requires a paused Lua frame and permits one evaluation at a time. It keeps
 up to 100 results; resuming, stepping or stopping clears them because the game's
-variable references expire. History is retained. Factorio currently does not
-advertise DAP completion support, so this version has no REPL completion.
+variable references expire. History is retained.
+
+In the REPL input, use **Code → Code Completion → Basic** (the shortcut depends
+on your keymap), or type a name to get runtime suggestions. Completion reads the
+selected frame's locals, upvalues and globals, including table members such as
+`nested.inner.va`, `storage["creative-mode"].`, and literal numeric indices.
+Locals shadow upvalues and globals. Enter accepts the selected suggestion; press
+Enter again to evaluate. Quoted keys receive their closing quote and bracket.
+Suggestions are refreshed after a REPL evaluation, frame change, resume or step.
+
+Completion uses DAP scopes/variables without evaluating expressions or expanding
+lazy values. Only members exposed by the game's debugger are available: many
+Factorio API methods, nil/annotation-only fields, computed indices and call results
+such as `get_train().` are not completed. At most 1,000 entries from each scope or
+table are inspected; virtual range nodes and metatable lookups are not followed.
+This does not require native DAP completion support or an upstream plugin patch.
 
 Enable **DAP logging** in the Factorio run configuration for verbose protocol
 traces in the debug console. **Save DAP log to file** redirects protocol traces

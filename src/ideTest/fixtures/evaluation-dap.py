@@ -55,7 +55,10 @@ while True:
         body = {'stackFrames': [{'id': 7, 'name': 'paused', 'line': 1, 'column': 1,
                                 'source': {'path': str(root / 'control.lua')}}], 'totalFrames': 1}
     elif command == 'scopes':
-        body = {'scopes': []}
+        body = {'scopes': [{'name': 'Locals', 'variablesReference': 1, 'expensive': False},
+                           {'name': 'Upvals', 'variablesReference': 2, 'expensive': False},
+                           {'name': 'test storage', 'variablesReference': 3, 'expensive': False},
+                           {'name': 'Globals', 'variablesReference': 4, 'expensive': False}]}
     elif command == 'evaluate':
         expression = args['expression']
         if expression == 'bad()':
@@ -70,7 +73,13 @@ while True:
             continue
     elif command == 'variables':
         body = {'variables': [{'name': 'inner', 'value': '{value = 42}', 'type': 'table', 'variablesReference': 22}]}
-        if args['variablesReference'] == 22:
+        if args['variablesReference'] == 1:
+            body = {'variables': [{'name': '[1] nested', 'value': '{...}', 'variablesReference': 21}]}
+        elif args['variablesReference'] in (2, 3, 4):
+            body = {'variables': []}
+        elif args['variablesReference'] == 21:
+            body['variables'].append({'name': '"creative-mode"', 'value': '{...}', 'variablesReference': 22})
+        elif args['variablesReference'] == 22:
             body = {'variables': [{'name': 'value', 'value': '42', 'type': 'number', 'variablesReference': 0}]}
     elif command == 'continue':
         body = {'allThreadsContinued': True}

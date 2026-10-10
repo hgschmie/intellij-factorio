@@ -44,7 +44,10 @@ public class FactorioReplTest extends HeavyPlatformTestCase {
     public void testReplWithConsoleTracing() throws Exception { runRepl(ServerTrace.verbose,false); }
     public void testReplWithoutTracing() throws Exception { runRepl(ServerTrace.off,false); }
 
-    private void runRepl(ServerTrace trace,boolean file) throws Exception {
+    public void testRuntimeCompletion() throws Exception { runRepl(ServerTrace.off,false,true); }
+
+    private void runRepl(ServerTrace trace,boolean file) throws Exception { runRepl(trace,file,false); }
+    private void runRepl(ServerTrace trace,boolean file,boolean completion) throws Exception {
         FactorioSettings.get(getProject()).serviceMode="ENABLED";
         Path dir=Files.createTempDirectory(Files.createDirectories(Path.of(System.getProperty("factorio.test.work"))),"repl-");
         Path fixture=Path.of(System.getProperty("factorio.test.workspace"),"intellij-factorio/src/ideTest/fixtures/evaluation-dap.py");
@@ -71,6 +74,15 @@ public class FactorioReplTest extends HeavyPlatformTestCase {
             assertNotNull(tree);
             var input=ReflectionUtil.getField(FactorioRepl.class,repl,XDebuggerExpressionComboBox.class,"input");
             assertNotNull(input);
+            if (completion) {
+                complete(input,"nes<caret>","nested","nested");
+                complete(input,"nested.in<caret>","inner","nested.inner");
+                complete(input,"nested.inner.va<caret>lue","value","nested.inner.value");
+                complete(input,"nested['cre<caret>","creative-mode","nested['creative-mode']");
+                complete(input,"nested[\"cre<caret>ative-mode\"].value","creative-mode","nested[\"creative-mode\"].value");
+                complete(input,"nested['creative-mode'].va<caret>","value","nested['creative-mode'].value");
+                assertFalse(Files.readString(dir.resolve("requests.jsonl")).contains("\"command\": \"evaluate\""));
+            }
             input.setExpression(XExpressionImpl.fromText("nested"));repl.submit();
             waitUntil(() -> tree.getRoot().getChildCount()==1 && ((XValueNodeImpl)tree.getRoot().getChildAt(0)).getRawValue().contains("inner"));
             var table=(XValueNodeImpl)tree.getRoot().getChildAt(0);
@@ -121,6 +133,26 @@ public class FactorioReplTest extends HeavyPlatformTestCase {
             for (var session:XDebuggerManager.getInstance(getProject()).getDebugSessions()) session.stop();
             waitUntil(() -> XDebuggerManager.getInstance(getProject()).getDebugSessions().length==0);
         }
+    }
+    private void complete(XDebuggerExpressionComboBox input,String source,String suggestion,String expected) throws Exception {
+        int offset=source.indexOf("<caret>");
+        input.setExpression(XExpressionImpl.fromText(""));
+        waitUntil(() -> input.getEditor()!=null && com.intellij.psi.PsiDocumentManager.getInstance(getProject()).getPsiFile(input.getEditor().getDocument())!=null);
+        var editor=input.getEditor();assertNotNull("REPL editor",editor);
+        com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(getProject(),() -> editor.getDocument().setText(source.replace("<caret>","")));
+        editor.getCaretModel().moveToOffset(offset);
+        com.intellij.psi.PsiDocumentManager.getInstance(getProject()).commitAllDocuments();
+        var handler=new com.intellij.codeInsight.completion.CodeCompletionHandlerBase(com.intellij.codeInsight.completion.CompletionType.BASIC,true,false,false);
+        handler.invokeCompletion(getProject(),editor);
+        waitUntil(() -> {
+            var lookup=com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(editor);
+            return lookup!=null && lookup.getItems().stream().anyMatch(i -> i.getLookupString().equals(suggestion));
+        });
+        var lookup=(com.intellij.codeInsight.lookup.impl.LookupImpl)com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(editor);
+        lookup.setCurrentItem(lookup.getItems().stream().filter(i -> i.getLookupString().equals(suggestion)).findFirst().orElseThrow());
+        lookup.finishLookup('\n');
+        assertEquals(expected,input.getExpression().getExpression());
+        assertNull(com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(editor));
     }
     private static void waitUntil(BooleanSupplier condition) throws Exception {
         long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(30);

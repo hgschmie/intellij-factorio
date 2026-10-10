@@ -961,3 +961,62 @@ disconnect and exit code 0; the isolated IDE was then closed. No new IDE ERROR
 records were logged. Screenshots are in `build/reports/dap-repl-ui/`. The three
 REPL platform tests were rerun successfully after the tab placement refinement.
 The regular IDE profile and user mod sources were not changed.
+
+## Runtime REPL completion, 0.6.1-dev (2026-10-09)
+
+The 0.6.0-dev REPL/evaluation work was committed first as signed `43f3748`.
+This feature builds on that clean baseline; no dependency pins or upstream
+repositories changed.
+
+The Lua REPL uses IntelliJ's completion popup on a private plain-text PSI document.
+Invoke Basic Completion (Ctrl+Space in the tested macOS keymap). Suggestions read
+DAP scopes and variables from the selected paused frame, without `evaluate`
+requests. Locals shadow upvalues/globals; later local slots win. Mod storage is
+not flattened into the lexical scope. Simple dot/colon members and literal
+string/integer index chains are supported, including Factorio's `[1] nauvis`
+labels for LuaCustomTable entries. Quoted keys receive closing delimiters, and
+completion in the middle of a name replaces its remaining suffix.
+
+Caches are scoped to one paused frame and discarded on REPL evaluation, frame
+change, resume/step/stop or disposal. Late replies cannot refill a stale popup.
+Requests have a three-second deadline; waiting is cancellable. Failed requests
+can be retried. Enter accepts a popup item before a subsequent Enter evaluates it.
+The existing command history and expandable result tree remain in place.
+
+Limits: up to 1,000 entries per scope/table and 16 path components; no computed
+indices, call results, metatable lookup, virtual debugger nodes or lazy values.
+Factorio 2.1.21 does not advertise DAP completion. Its variable responses expose
+API attributes but omit most API methods; those methods and annotation-only/nil
+fields are not suggested. Adding API/LSP completion remains separate work.
+
+Validation:
+
+- 55 unit/native tests passed, none skipped. New cases cover safe path parsing,
+  escaping, shadowing, storage isolation, cached reads, stale replies, size limits,
+  failed-request retry and lazy/virtual exclusion. Native acceptance launched two
+  real Factorio sessions and completed local names, nested/quoted members, API
+  attributes and `game.surfaces[1].na`; evaluation error, stepping and shutdown
+  checks continued to pass. Initial native probes exposed omitted API methods
+  and labeled numeric keys; expectations/handling were corrected and rerun.
+- Four REPL platform tests passed. The completion test exercises the actual
+  IntelliJ popup and insertion, including middle-of-name and quoted-key edits,
+  while asserting that completion sends no evaluation requests. A follow-up
+  focused test passed after changing it to edit the initialized input document,
+  matching normal typing. The final four-test platform run and build also passed
+  after removing temporary diagnostics (`repl-completion-final-build.log`).
+- Live isolated IDEA 2026.2.3 / Factorio 2.1.21 check passed: `nes` became `nested`
+  on the first Enter with no result added; the next Enter evaluated the table.
+  `nested.in` became `nested.inner`; `nested['in` became `nested['inner']`.
+  After evaluating `nested.added = 42`, fresh completion found `nested.added`.
+  Stop reported Goodbye and exit 0. The app capture did not show the floating
+  lookup window, but actual keyboard selection and resulting text were verified.
+  Temporary diagnostic logging confirmed the returned candidates and was removed.
+  No new IDE ERROR records appeared. The isolated IDE was closed afterward.
+
+Evidence: `build/logs/repl-completion-*`, `build/reports/repl-completion-native/`,
+`build/reports/repl-completion-platform/`, `build/reports/repl-completion-ui/`,
+and native `build/test-work/dap-protocol/session-4033524401562006198/`.
+Archive: `build/distributions/intellij-factorio-0.6.1-dev.zip`.
+
+Final ZIP SHA-256: `7d9f743c192eb5e488f907823c2010560c55879973e183691213c48144de0b16`. Archive metadata reports `0.6.1-dev`;
+the packaged completion classes contain no temporary diagnostic logging.

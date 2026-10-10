@@ -72,6 +72,11 @@ class FactorioDapProtocolTest {
                         assertTrue(await(server.variables(variables)).getVariables().length>0);
                     }
                 }
+                var completion=new FactorioReplCompletion(server,frame,() -> true);
+                for (String expression:List.of("nest", "nested.in", "nested['in", "nested.inner.va", "surface.na", "game.surf", "game.surfaces[1].na")) {
+                    var query=FactorioReplExpression.parse(expression,expression.length());
+                    assertFalse(await(completion.complete(query)).isEmpty(),"Native runtime completion: "+expression);
+                }
                 var evaluate=new EvaluateArguments();evaluate.setExpression("count + 1");evaluate.setFrameId(frame);evaluate.setContext("watch");
                 assertEquals("42",await(server.evaluate(evaluate)).getResult());
                 evaluate.setContext("repl");

@@ -36,6 +36,9 @@ final class FactorioRepl extends JPanel implements Disposable {
     private boolean busy;
     private volatile boolean disposed;
     private volatile long generation;
+    private final java.util.concurrent.atomic.AtomicLong completionGeneration = new java.util.concurrent.atomic.AtomicLong();
+    private volatile FactorioReplCompletion completion;
+    private DAPStackFrame completionFrame;
 
     static void install(DAPDebugProcess process) {
         ApplicationManager.getApplication().invokeLater(() -> {
@@ -57,7 +60,15 @@ final class FactorioRepl extends JPanel implements Disposable {
         super(new BorderLayout(JBUI.scale(6),JBUI.scale(6)));
         session = process.getSession();
         var editors = process.getEditorsProvider();
-        input = new XDebuggerExpressionComboBox(process.getProject(),editors,"factorio.lua.repl",null,true,false);
+        var provider = new FactorioReplCompletionProvider(() -> completion);
+        var replEditors = new com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider() {
+            @Override public com.intellij.openapi.fileTypes.FileType getFileType() { return com.intellij.openapi.fileTypes.PlainTextFileType.INSTANCE; }
+            @Override public com.intellij.openapi.editor.Document createDocument(com.intellij.openapi.project.Project project,
+                    XExpression expression,XSourcePosition position,com.intellij.xdebugger.evaluation.EvaluationMode mode) {
+                return provider.document(project,expression.getExpression());
+            }
+        };
+        input = new XDebuggerExpressionComboBox(process.getProject(),replEditors,"factorio.lua.repl",null,true,false);
         input.fixEditorNotReleasedFalsePositiveException(process.getProject(),this);
         tree = new XDebuggerTree(process.getProject(),editors,null,"XDebugger.ValuePopup",null);
         Disposer.register(this,tree);
@@ -84,13 +95,13 @@ final class FactorioRepl extends JPanel implements Disposable {
         add(bottom,BorderLayout.SOUTH);
         var execute = new com.intellij.openapi.project.DumbAwareAction() {
             @Override public void actionPerformed(@NotNull AnActionEvent event) { submit(); }
-            @Override public void update(@NotNull AnActionEvent event) { event.getPresentation().setEnabled(canEvaluate() && !input.getComboBox().isPopupVisible()); }
+            @Override public void update(@NotNull AnActionEvent event) { event.getPresentation().setEnabled(canEvaluate() && !input.getComboBox().isPopupVisible() && !completionVisible()); }
             @Override public @NotNull ActionUpdateThread getActionUpdateThread() { return ActionUpdateThread.EDT; }
         };
         execute.registerCustomShortcutSet(CustomShortcutSet.fromString("ENTER"),input.getComponent(),this);
         session.addSessionListener(new XDebugSessionListener() {
-            @Override public void sessionPaused() { later(FactorioRepl.this::updateState); }
-            @Override public void stackFrameChanged() { later(FactorioRepl.this::updateState); }
+            @Override public void sessionPaused() { invalidateCompletion();later(FactorioRepl.this::updateState); }
+            @Override public void stackFrameChanged() { invalidateCompletion();later(FactorioRepl.this::updateState); }
             @Override public void beforeSessionResume() { expireResults(); }
             @Override public void sessionResumed() { expireResults(); }
             @Override public void sessionStopped() { expireResults(); }
@@ -100,11 +111,34 @@ final class FactorioRepl extends JPanel implements Disposable {
 
     private boolean canEvaluate() { return !disposed && !busy && session.isSuspended() && session.getCurrentStackFrame() instanceof DAPStackFrame; }
 
+    private boolean completionVisible() {
+        return input.getEditor()!=null && com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(input.getEditor())!=null;
+    }
+
+    private void invalidateCompletion() {
+        completionGeneration.incrementAndGet();
+        completion=null;
+        later(() -> {
+            if (input.getEditor()!=null) {
+                var lookup=com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(input.getEditor());
+                if (lookup!=null) lookup.hideLookup(true);
+            }
+        });
+    }
+
     private void updateState() {
+        if (canEvaluate() && session.getCurrentStackFrame() instanceof DAPStackFrame frame) {
+            if (completion==null || completionFrame!=frame) {
+                long epoch=completionGeneration.incrementAndGet();
+                completionFrame=frame;
+                completion=new FactorioReplCompletion(frame.getClient().getDebugProtocolServer(),frame.getFrameId(),
+                        () -> !disposed && completionGeneration.get()==epoch);
+            }
+        }
         evaluate.setEnabled(canEvaluate());
         input.setSourcePosition(session.getCurrentPosition());
         status.setText(busy ? "Evaluating…" : session.isSuspended()
-                ? "Selected stack frame · Enter to evaluate · History in the dropdown · Expand results to inspect members"
+                ? "Selected stack frame · Code Completion for runtime names · Enter to evaluate · History in the dropdown"
                 : "Pause at a Lua stack frame to evaluate. Command history is retained; results expire when execution resumes.");
     }
 
@@ -114,6 +148,7 @@ final class FactorioRepl extends JPanel implements Disposable {
         if (expression.isBlank()) return;
         var frame = (DAPStackFrame)session.getCurrentStackFrame();
         long epoch = generation;
+        invalidateCompletion();
         busy = true;
         input.saveTextInHistory();
         input.setExpression(XExpressionImpl.fromText(""));
@@ -132,6 +167,7 @@ final class FactorioRepl extends JPanel implements Disposable {
     }
 
     private void expireResults() {
+        invalidateCompletion();
         ++generation; // Invalidate references immediately, even if the UI callback must be queued.
         later(() -> { busy=false;tree.markNodesObsolete();root.clearChildren();updateState(); });
     }
@@ -140,7 +176,7 @@ final class FactorioRepl extends JPanel implements Disposable {
         ApplicationManager.getApplication().invokeLater(() -> { if (!disposed) task.run(); });
     }
 
-    @Override public void dispose() { disposed=true;++generation; }
+    @Override public void dispose() { disposed=true;++generation;completionGeneration.incrementAndGet();completion=null; }
 
     private static final class Result extends XValue {
         private XValue value;
