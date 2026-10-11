@@ -48,7 +48,7 @@ final class FactorioReplCompletionProvider implements TextCompletionProvider {
         if (completion.get()!=engine) return;
         for (var item:items) {
             var variable=item.variable();
-            String value=Objects.requireNonNullElse(variable.getValue(),"").replace('\n',' ');
+            String value=FactorioDebugVariables.preview(variable,FactorioSettings.get(parameters.getOriginalFile().getProject()).hideDebugAddresses).replace('\n',' ');
             if (value.length()>100) value=value.substring(0,97)+"…";
             var element=LookupElementBuilder.create(query.insertion(item.key(),item.numeric()))
                     .withTypeText(Objects.requireNonNullElse(variable.getType(),""))

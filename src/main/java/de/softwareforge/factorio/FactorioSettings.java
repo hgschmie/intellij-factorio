@@ -17,6 +17,7 @@ public final class FactorioSettings implements PersistentStateComponent<Factorio
         public String commandPath = "";
         public String publishAuthorName = "";
         public String publishAuthorEmail = "";
+        public boolean hideDebugAddresses;
         public String activeMod = "";
         public String dependencies = "";
         public String apiDocs = "";

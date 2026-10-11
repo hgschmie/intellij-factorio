@@ -38,6 +38,14 @@ public class FactorioUiTest extends HeavyPlatformTestCase {
         assertEquals("Test Author",settings.publishAuthorName);
         assertEquals("author@example.com",settings.publishAuthorEmail);
         ui.reset();assertEquals("Test Author",field(component,"Author name:").getText());
+        var addresses=children(component,JCheckBox.class).stream().filter(c -> c.getText().equals("Hide memory addresses in debugger values")).findFirst().orElseThrow();
+        assertFalse(addresses.isSelected());addresses.doClick();
+        assertTrue(ui.isModified());assertFalse(settings.hideDebugAddresses);
+        ui.reset();assertFalse(addresses.isSelected());assertFalse(ui.isModified());
+        addresses.doClick();ui.apply();assertTrue(settings.hideDebugAddresses);assertFalse(ui.isModified());
+        ui.reset();assertTrue(addresses.isSelected());
+        var persisted=com.intellij.util.xmlb.XmlSerializer.serialize(settings);
+        assertTrue(com.intellij.util.xmlb.XmlSerializer.deserialize(persisted,FactorioSettings.Data.class).hideDebugAddresses);
         assertEquals(5,children(component,TextFieldWithBrowseButton.class).size());
         render(component,"settings.png",760,850);
         for(var browse:children(component,TextFieldWithBrowseButton.class)) {

@@ -1020,3 +1020,52 @@ Archive: `build/distributions/intellij-factorio-0.6.1-dev.zip`.
 
 Final ZIP SHA-256: `7d9f743c192eb5e488f907823c2010560c55879973e183691213c48144de0b16`. Archive metadata reports `0.6.1-dev`;
 the packaged completion classes contain no temporary diagnostic logging.
+
+## Optional debugger address hiding, 0.6.2-dev (2026-10-09)
+
+Added the project setting **Factorio Development Environment → Debugger → Hide
+memory addresses in debugger values**, default off. It is staged until Apply and
+persisted in project workspace settings. Changes affect newly rendered values,
+including after stepping or re-evaluating; existing tree nodes are not forcibly
+refreshed by the Settings dialog.
+
+`FactorioDebugVariables` uses LSP4IJ's public variable-presentation hook for
+Variables, watches, debug hovers and the Lua REPL. The same formatter supplies
+REPL completion previews. Native reference suffixes such as `[table *0x1234]`,
+`[C function *0x1234]` and `[Lua helper.lua:5 *0x1234]` are shortened while retaining
+the type and function location. Native virtual `[address]` rows are omitted from
+expanded tables. An FDE wrapper filters `variables` responses after protocol
+logging, returning a new response without mutating the original. This applies to
+all debugger trees and leaves other requests delegated to the original server.
+Quoted string keys/values and values typed as strings are preserved, as are
+ordinary hex numbers, variable names and unfamiliar formats. The underlying DAP
+objects, expansion references, expressions and raw trace messages are unchanged.
+No dependency pins or upstream sources changed.
+
+Validation:
+
+- `test buildPlugin` passed: 59 tests passed, one optional native Factorio test
+  skipped. New tests cover native table/function previews, escaped quotes,
+  literal strings, truncated/unrecognized values, virtual address identification,
+  toggling and unchanged protocol data. Response-filter tests also cover empty
+  tables, ordinary/virtual string fields named `[address]`, preserved child
+  references, unchanged request arguments, other requests and error propagation.
+- Eight IntelliJ platform tests passed: five REPL tests and three UI tests.
+  The new enabled-setting case verifies actual REPL/completion presentation,
+  nested expansion with address rows absent at both levels and original address
+  rows remaining in the raw JSONL log. Existing cases verify address rows remain
+  visible when hiding is disabled. The settings test verifies Apply/Reset
+  behavior and XML persistence. The rendered settings page was inspected.
+- The archive reports version `0.6.2-dev` and includes the formatter class.
+  No agent-run live game/UI session was run for this presentation-only feature.
+  The user confirmed the refined behavior in their IDE on 2026-10-10.
+
+Evidence: `build/logs/debug-values-unit.log`,
+`build/logs/debug-values-platform.log`, `build/reports/debug-values-unit/`,
+`build/reports/debug-values-platform/`, and `build/reports/ui/settings.png`.
+The final row-suppression refinement is verified in
+`build/logs/debug-address-rows-unit.log`,
+`build/logs/debug-address-rows-platform.log`, and
+`build/reports/debug-address-rows-{unit,platform}/`.
+Archive: `build/distributions/intellij-factorio-0.6.2-dev.zip`.
+SHA-256: `86af354fcc0dbd086cc35ace3a85bac8fffa08b7d15b20c6ca492cbd4112ae2f`.

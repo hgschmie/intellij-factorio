@@ -166,6 +166,7 @@ public final class FactorioDebug {
     public static final class Descriptor extends DebugAdapterDescriptor {
         private static final Key<Object> RESTART_DATA = Key.create("factorio.dap.restartData");
         private final DAPRunConfigurationOptions settings;
+        private final FactorioDebugVariables variables;
         private final String configurationName;
         private final FactorioDapRestart restart = new FactorioDapRestart();
         private final Object restartData;
@@ -174,6 +175,8 @@ public final class FactorioDebug {
         public Descriptor(DAPRunConfigurationOptions options, ExecutionEnvironment environment, DescriptorFactory factory) {
             super(options,environment,factory.getServerDefinition());
             settings=options;
+            variables=new FactorioDebugVariables(() -> FactorioSettings.get(environment.getProject()).hideDebugAddresses);
+            setVariableSupport(variables);
             configurationName=environment.getRunProfile().getName();
             restartData=environment.getUserData(RESTART_DATA);
             // Ephemeral launch data must not survive a later manual rerun or be persisted.
@@ -207,8 +210,9 @@ public final class FactorioDebug {
                     var delegate = super.createLauncher(FactorioDapLog.route(log,trace,
                         text -> process.print(text,com.intellij.execution.ui.ConsoleViewContentType.SYSTEM_OUTPUT),
                         error -> process.print(error,com.intellij.execution.ui.ConsoleViewContentType.ERROR_OUTPUT)),in,out,executor);
+                    var server=variables.filterServer(delegate.getRemoteProxy());
                     return new org.eclipse.lsp4j.jsonrpc.Launcher<org.eclipse.lsp4j.debug.services.IDebugProtocolServer>() {
-                        @Override public org.eclipse.lsp4j.debug.services.IDebugProtocolServer getRemoteProxy() { return delegate.getRemoteProxy(); }
+                        @Override public org.eclipse.lsp4j.debug.services.IDebugProtocolServer getRemoteProxy() { return server; }
                         @Override public org.eclipse.lsp4j.jsonrpc.RemoteEndpoint getRemoteEndpoint() { return delegate.getRemoteEndpoint(); }
                         @Override public java.util.concurrent.Future<Void> startListening() {
                             var listening = delegate.startListening();

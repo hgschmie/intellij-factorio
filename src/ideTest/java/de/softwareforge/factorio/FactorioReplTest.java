@@ -45,10 +45,15 @@ public class FactorioReplTest extends HeavyPlatformTestCase {
     public void testReplWithoutTracing() throws Exception { runRepl(ServerTrace.off,false); }
 
     public void testRuntimeCompletion() throws Exception { runRepl(ServerTrace.off,false,true); }
+    public void testHiddenAddressesWithRawFileTracing() throws Exception { runRepl(ServerTrace.verbose,true,true,true); }
 
     private void runRepl(ServerTrace trace,boolean file) throws Exception { runRepl(trace,file,false); }
     private void runRepl(ServerTrace trace,boolean file,boolean completion) throws Exception {
+        runRepl(trace,file,completion,false);
+    }
+    private void runRepl(ServerTrace trace,boolean file,boolean completion,boolean hideAddresses) throws Exception {
         FactorioSettings.get(getProject()).serviceMode="ENABLED";
+        FactorioSettings.get(getProject()).hideDebugAddresses=hideAddresses;
         Path dir=Files.createTempDirectory(Files.createDirectories(Path.of(System.getProperty("factorio.test.work"))),"repl-");
         Path fixture=Path.of(System.getProperty("factorio.test.workspace"),"intellij-factorio/src/ideTest/fixtures/evaluation-dap.py");
         Path executable=dir.resolve("adapter");
@@ -86,12 +91,17 @@ public class FactorioReplTest extends HeavyPlatformTestCase {
             input.setExpression(XExpressionImpl.fromText("nested"));repl.submit();
             waitUntil(() -> tree.getRoot().getChildCount()==1 && ((XValueNodeImpl)tree.getRoot().getChildAt(0)).getRawValue().contains("inner"));
             var table=(XValueNodeImpl)tree.getRoot().getChildAt(0);
+            assertEquals(!hideAddresses,table.getRawValue().contains("*0x1234"));
             table.startComputingChildren();
             waitUntil(() -> !table.getLoadedChildren().isEmpty());
-            var inner=(XValueNodeImpl)table.getLoadedChildren().getFirst();
+            assertEquals(hideAddresses?2:3,table.getLoadedChildren().size());
+            assertEquals(!hideAddresses,table.getLoadedChildren().stream().map(XValueNodeImpl.class::cast).anyMatch(n -> n.getName().equals("[address]")));
+            var inner=table.getLoadedChildren().stream().map(XValueNodeImpl.class::cast).filter(n -> n.getName().equals("inner")).findFirst().orElseThrow();
             assertEquals("inner",inner.getName());inner.startComputingChildren();
             waitUntil(() -> !inner.getLoadedChildren().isEmpty());
-            assertEquals("42",((XValueNodeImpl)inner.getLoadedChildren().getFirst()).getRawValue());
+            assertEquals(hideAddresses?1:2,inner.getLoadedChildren().size());
+            assertEquals(!hideAddresses,inner.getLoadedChildren().stream().map(XValueNodeImpl.class::cast).anyMatch(n -> n.getName().equals("[address]")));
+            assertEquals("42",inner.getLoadedChildren().stream().map(XValueNodeImpl.class::cast).filter(n -> n.getName().equals("value")).findFirst().orElseThrow().getRawValue());
             input.setExpression(XExpressionImpl.fromText("bad()"));repl.submit();
             waitUntil(() -> tree.getRoot().getChildCount()==2 && ((XValueNodeImpl)tree.getRoot().getChildAt(1)).getRawValue().contains("invalid argument 3"));
             assertTrue(input.getRecentExpressions().stream().anyMatch(e -> e.getExpression().equals("nested")));
@@ -120,6 +130,12 @@ public class FactorioReplTest extends HeavyPlatformTestCase {
             var stoppedHandler=handler;
             waitUntil(stoppedHandler::isProcessTerminated);
             waitUntil(() -> XDebuggerManager.getInstance(getProject()).getDebugSessions().length==0);
+            if (hideAddresses) {
+                try (var logs=Files.list(dir.resolve("logs"))) {
+                    String raw=Files.readString(logs.findFirst().orElseThrow());
+                    assertTrue(raw.contains("*0x1234"));assertTrue(raw.contains("[address]"));
+                }
+            }
             var requests=Files.readAllLines(dir.resolve("requests.jsonl")).stream().map(line -> JsonParser.parseString(line).getAsJsonObject()).toList();
             var launch=requests.stream().filter(r -> r.get("command").getAsString().equals("launch")).findFirst().orElseThrow();
             assertFalse(launch.getAsJsonObject("arguments").get("hookDebugConsole").getAsBoolean());
@@ -150,6 +166,11 @@ public class FactorioReplTest extends HeavyPlatformTestCase {
         });
         var lookup=(com.intellij.codeInsight.lookup.impl.LookupImpl)com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(editor);
         lookup.setCurrentItem(lookup.getItems().stream().filter(i -> i.getLookupString().equals(suggestion)).findFirst().orElseThrow());
+        if (suggestion.equals("nested")) {
+            var presentation=new com.intellij.codeInsight.lookup.LookupElementPresentation();
+            lookup.getCurrentItem().renderElement(presentation);
+            assertEquals(!FactorioSettings.get(getProject()).hideDebugAddresses,presentation.getTailText().contains("*0x1234"));
+        }
         lookup.finishLookup('\n');
         assertEquals(expected,input.getExpression().getExpression());
         assertNull(com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(editor));

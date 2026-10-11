@@ -1,7 +1,7 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.6.1-dev.
+`de.softwareforge.factorio`. Development release 0.6.2-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
 `0.21.1-SNAPSHOT-factorio-formatting-patched2`.
 LuaLS and profiling are not supported.
@@ -211,6 +211,15 @@ Factorio API methods, nil/annotation-only fields, computed indices and call resu
 such as `get_train().` are not completed. At most 1,000 entries from each scope or
 table are inspected; virtual range nodes and metatable lookups are not followed.
 This does not require native DAP completion support or an upstream plugin patch.
+
+Under **Settings → Factorio Development Environment → Debugger**, enable
+**Hide memory addresses in debugger values** to shorten native previews such as
+`[table *0x00006000e1792220]` to `[table]`. This project setting applies to variables,
+watches, debug hovers, REPL results and completion previews when they are next
+refreshed (for example, after stepping or evaluating again). It defaults to off.
+Function source locations remain visible. Virtual `[address]` rows are omitted
+from expanded tables; ordinary strings, numeric values and variable names remain
+unchanged. Table expansion, evaluation and raw DAP traces retain the original data.
 
 Enable **DAP logging** in the Factorio run configuration for verbose protocol
 traces in the debug console. **Save DAP log to file** redirects protocol traces

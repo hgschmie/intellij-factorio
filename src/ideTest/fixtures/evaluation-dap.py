@@ -64,7 +64,7 @@ while True:
         if expression == 'bad()':
             reply(request, {'error': {'id': 1, 'format': 'LuaTrain.get_rail_end: invalid argument 3'}}, False)
             continue
-        body = {'result': '{inner = {...}}', 'type': 'table', 'variablesReference': 21, 'namedVariables': 1}
+        body = {'result': '{inner = [table *0x1234]}', 'type': 'table', 'variablesReference': 21, 'namedVariables': 3}
         if expression == 'slow()':
             def delayed(r=request, b=body):
                 time.sleep(.8)
@@ -74,13 +74,17 @@ while True:
     elif command == 'variables':
         body = {'variables': [{'name': 'inner', 'value': '{value = 42}', 'type': 'table', 'variablesReference': 22}]}
         if args['variablesReference'] == 1:
-            body = {'variables': [{'name': '[1] nested', 'value': '{...}', 'variablesReference': 21}]}
+            body = {'variables': [{'name': '[1] nested', 'value': '{inner = [table *0x1234]}', 'type': 'table', 'variablesReference': 21}]}
         elif args['variablesReference'] in (2, 3, 4):
             body = {'variables': []}
         elif args['variablesReference'] == 21:
             body['variables'].append({'name': '"creative-mode"', 'value': '{...}', 'variablesReference': 22})
         elif args['variablesReference'] == 22:
             body = {'variables': [{'name': 'value', 'value': '42', 'type': 'number', 'variablesReference': 0}]}
+        if args['variablesReference'] in (21, 22):
+            body['variables'].insert(0, {'name': '[address]', 'value': '*0x1234', 'type': 'address',
+                                        'variablesReference': 0,
+                                        'presentationHint': {'kind': 'virtual', 'attributes': ['readOnly']}})
     elif command == 'continue':
         body = {'allThreadsContinued': True}
     reply(request, body)
