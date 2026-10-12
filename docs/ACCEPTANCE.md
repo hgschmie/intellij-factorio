@@ -1170,3 +1170,57 @@ ZIP SHA-256:
 
 - EmmyLua2: `b5ca4464946776de98ddaad05e24ce8292e1aed0a123ed05c3ec0ebe4488a3af`.
 - FDE: `4d8bd0346c472982dfbc7959c926135d0bed010c5eed638a92dbda6fa6d23b3c`.
+
+## Diagnostic-refresh review integration, 0.7.2-dev (2026-10-12)
+
+FDE pins analyzer `f5349db8ee7c970d654720fcb8b64b0736bc788b`, packaged in EmmyLua2
+`0.30.0-135-IDEA262-patched-modules`. Signed merge `49a9ed3f` integrates the
+reviewed PR #1283 follow-up `1c47a240` into `work/intellij-modules`; its change is
+exactly the reviewed ten-file patch. The upstream baseline and other internal
+patches are unchanged. The contribution branch remains separate.
+
+The follow-up stops pending diagnostic refreshes before shutdown acknowledgement
+and on context close, prevents queued updates from scheduling after shutdown,
+and uses weak client references in timer tasks. Tracked removals on close,
+rename and configuration reload also use the capability-gated scheduler.
+
+This release updates dependency pins and package metadata; FDE Java behavior,
+LSP4IJ and toolkit pins are unchanged. Install both new archives:
+
+- `upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-135-IDEA262-patched-modules.zip`
+- `intellij-factorio/build/distributions/intellij-factorio-0.7.2-dev.zip`
+
+The rebuilt patched analyzer is macOS arm64 only; other bundled platforms remain
+upstream 0.25.1. The regular IDE and original mods were not changed.
+
+All 2,473 analyzer workspace tests with all features, rustfmt and workspace
+Clippy (warnings denied) passed. All 22 EmmyLua2 tests passed on retry. The first
+run encountered an existing LSP4IJ `LanguageServerWrapper.isActive()` null
+`launcherFuture` startup race; the failing report is retained in EmmyLua2's
+`build/reports/refresh-review-initial/`.
+
+FDE passed 59 unit tests (one optional native-game test skipped). Real protocol
+checks passed runtime/prototype/event completion, API hover, local/cross-mod
+imports, dependency edits, locale file lifecycle/changelog symbols, and all 17
+asymmetric Factorio 2.1.21 attributes. The expanded diagnostic-refresh regression
+passed against the packaged binary for edits, close/deletion, watcher events,
+rename, configuration reload, capability gating and shutdown. Its bounded
+cleanup does not claim to fix general stdio-worker teardown behavior.
+
+All nine IntelliJ platform tests passed with real language-server processes:
+module routing/formatting, EDT lifecycle, Lua/locale isolation/removal, unsaved
+dependency edits, native module config/VFS reload, generated API/built-in imports,
+asymmetric attributes, copied real-mod navigation/storage and Lua language level.
+Packaging verified versions, source pins, binary hash and executable permissions.
+No interactive IDE/game test or Plugin Verifier run was performed.
+
+Evidence: `build/logs/refresh-review-{plugin-build,platform,language-services,module-services,asymmetric-api}.log`,
+`build/reports/refresh-review-{unit,platform}/`, and
+`build/logs/refresh-review-packages.json`. Analyzer evidence is in its active
+worktree's `build/logs/refresh-review-*`; EmmyLua2 evidence is in its worktree's
+`build/logs/refresh-review-{build135,plugin-tests-retry}.log`.
+
+ZIP SHA-256:
+
+- EmmyLua2: `927a0bae786ddfa0a23aca03c27df1ba7aaec4c455ab7cdd0203fa8bc31e6795`.
+- FDE: `fda5b401cb98105ba131673a996fc692e9eb9489d20073a96c2d31397e3a9bf7`.
