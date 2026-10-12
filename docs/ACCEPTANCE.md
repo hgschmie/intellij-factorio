@@ -1126,3 +1126,47 @@ ZIP SHA-256:
 
 - EmmyLua2: `fa0f8a8fcdb8fbdce1ab7a96b6a4652ca7e7e71e6e23670c88918bd1625eb6e0`.
 - FDE: `437603e5f88914e1788ac5b55513c59b557490bcb85ac5fa355909dd77d39c5d`.
+
+## Merged upstream module resolution, 0.7.1-dev (2026-10-12)
+
+FDE pins analyzer `f6e67847612be9ae8822e7fad0e865849a78510c`, packaged in EmmyLua2
+`0.30.0-134-IDEA262-patched-modules`. The internal branch is rebased onto
+upstream main `dbb68f47`, which includes our merged PR #1266 and the newer
+callable-table and tuple/dictionary compatibility fixes. The remaining local
+patches are preserved. The only rebase conflict combined upstream member
+initializers with our standalone-call metatable indexing; no additional
+compatibility code was needed.
+
+This release updates the analyzer pin and package versions. LSP4IJ and toolkit
+pins are unchanged. The patched analyzer is rebuilt for macOS arm64; other
+bundled platforms remain upstream 0.25.1. Install both new archives:
+
+- `upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-134-IDEA262-patched-modules.zip`
+- `intellij-factorio/build/distributions/intellij-factorio-0.7.1-dev.zip`
+
+Rust validation passed all 2,471 workspace tests with all features, rustfmt and
+workspace Clippy with warnings denied. All 22 EmmyLua2 plugin tests passed.
+
+FDE validation passed 59 unit tests (one optional native-game test skipped) and
+all nine IntelliJ platform tests. These cover per-module routing/formatting,
+EDT registry lifecycle, independent Lua/locale services and removal, unsaved
+dependency edits, native module configuration/VFS reload, generated API/built-in
+imports, asymmetric fields, copied real-mod navigation/storage and Lua version.
+Real protocol tests also passed runtime/prototype/event completion, API hover,
+local/cross-mod imports, locale file lifecycle/changelog symbols, cross-file
+diagnostic refresh and all 17 asymmetric Factorio 2.1.21 attributes.
+
+Packaging verified descriptor versions, analyzer source pin and binary hash,
+and Unix executable permissions after extraction. No interactive IDE/game test
+or Plugin Verifier run was performed. The regular IDE and original mods were
+not modified.
+
+Evidence: `build/logs/merged-module-{plugin-build,platform,language-services,module-services,asymmetric-api}.log`,
+`build/reports/merged-module-{unit,platform}/`, EmmyLua2's
+`build/logs/merged-module-{build134,plugin-tests}.log`, and analyzer
+`build/logs/merged-module-{workspace,clippy,refresh-protocol}.log`.
+
+ZIP SHA-256:
+
+- EmmyLua2: `b5ca4464946776de98ddaad05e24ce8292e1aed0a123ed05c3ec0ebe4488a3af`.
+- FDE: `4d8bd0346c472982dfbc7959c926135d0bed010c5eed638a92dbda6fa6d23b3c`.
