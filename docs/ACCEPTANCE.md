@@ -1069,3 +1069,60 @@ The final row-suppression refinement is verified in
 `build/reports/debug-address-rows-{unit,platform}/`.
 Archive: `build/distributions/intellij-factorio-0.6.2-dev.zip`.
 SHA-256: `86af354fcc0dbd086cc35ace3a85bac8fffa08b7d15b20c6ca492cbd4112ae2f`.
+
+## Analyzer 0.30.0 integration, 0.7.0-dev (2026-10-12)
+
+FDE now pins analyzer `78c3ea62b1b3ace4e011310dd66fa1179ffc45fb`, packaged in
+EmmyLua2 `0.30.0-133-IDEA262-patched-modules`. The internal analyzer branch was
+rebased onto upstream main `1c8589bb` and the squashed module-resolution PR
+commit `ef3cf3c8`, which has been pushed to the user's fork. Independent patch
+branches and backups remain available; internal compatibility fixes are not
+part of PR #1266.
+
+The upstream semantic-engine rewrite required porting the existing diagnostic,
+navigation, metatable, asymmetric-field and dictionary-index patches. Integration
+tests also identified lost inline API members/overloads, event-type union matching,
+imported factory signatures and return-type hover rendering. Internal fixes retain
+Factorio event inference, `This, Framework = require('lib.init')()` typing and
+navigation, and API calls with aliased parameters such as `uint32|string`.
+
+This release updates dependency pins and package versions; no FDE Java behavior
+changed. LSP4IJ and the toolkit remain on their existing pins. Install both:
+
+- `upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-133-IDEA262-patched-modules.zip`
+- `intellij-factorio/build/distributions/intellij-factorio-0.7.0-dev.zip`
+
+The rebuilt patched analyzer is macOS arm64 only. Other binaries in the EmmyLua2
+archive remain upstream 0.25.1. The regular IDE and original mods were not changed.
+
+Validation:
+
+- All 2,455 analyzer workspace tests passed with all features, including the
+  upstream slow test. Workspace Clippy (all targets/features, warnings denied)
+  and rustfmt passed. All 21 internal commits above upstream main have verified
+  signatures.
+- All 22 EmmyLua2 plugin tests passed. FDE's 59 unit tests passed; one optional
+  native game test was skipped.
+- All nine IntelliJ platform tests passed with real language-server processes.
+  They cover formatting/routing, EDT lifecycle, independent Lua/locale services,
+  unsaved dependencies, native module config/VFS reload, generated API and built-in
+  mod imports, asymmetric attributes, copied real-mod navigation/storage isolation,
+  and the Factorio Lua language level.
+- Real LSP probes passed runtime/prototype/event completion, API hover, module-local
+  and cross-mod imports, dependency edits, locale close/reopen and file watchers,
+  changelog symbols, and cross-file diagnostic refresh. All 17 asymmetric
+  attributes in the installed Factorio 2.1.21 API passed read/write checks.
+- Packaging verified versions, analyzer source pin and binary hash, and Unix
+  executable permissions after ZIP extraction. No interactive IDE/game test or
+  Plugin Verifier run was performed for this upgrade.
+
+Evidence: `build/logs/analyzer-030-{plugin-build,platform-final,language-services-verified,module-services-verified,asymmetric-api-verified}.log`,
+`build/reports/analyzer-030-{unit-tests,platform-final}/`, EmmyLua2's
+`build/logs/analyzer-030-{build133,plugin-tests}.log`, and the analyzer's
+`build/logs/internal-rebase-{workspace-final,clippy-final,refresh-protocol-final}.log`.
+Earlier platform runs recorded the regressions fixed above; the final run passed.
+
+ZIP SHA-256:
+
+- EmmyLua2: `fa0f8a8fcdb8fbdce1ab7a96b6a4652ca7e7e71e6e23670c88918bd1625eb6e0`.
+- FDE: `437603e5f88914e1788ac5b55513c59b557490bcb85ac5fa355909dd77d39c5d`.
