@@ -1224,3 +1224,41 @@ ZIP SHA-256:
 
 - EmmyLua2: `927a0bae786ddfa0a23aca03c27df1ba7aaec4c455ab7cdd0203fa8bc31e6795`.
 - FDE: `fda5b401cb98105ba131673a996fc692e9eb9489d20073a96c2d31397e3a9bf7`.
+
+## Named cast expression scope, 0.7.3-dev (2026-10-12)
+
+FDE pins analyzer `8548f5d19da5c965f95886d6103b0cba6dbe5bd1`, packaged in
+EmmyLua2 `0.30.0-136-IDEA262-patched-modules`. This includes the named-cast fix
+from [draft PR #1285](https://github.com/EmmyLuaLs/emmylua-analyzer-rust/pull/1285),
+merged into the analyzer work branch as `51288958`. The cast on an array key no
+longer replaces the element type. The standalone patch passed 2,389 Rust workspace
+tests and the combined work branch passed 2,475, plus Clippy and rustfmt, during
+the preceding implementation task.
+
+The rebuild passed 22 EmmyLua2 tests and 59 FDE unit tests (one optional native-game
+test skipped). Eight selected platform tests passed initially; the asymmetric
+API test failed only during teardown on an IntelliJ DiscoveryService thread
+leak in macOS filesystem discovery. Its isolated retry passed without code or
+configuration changes. Both reports are preserved. These nine tests cover real
+Lua/FMTK processes, routing, formatting, dependency edits, generated API and
+asymmetric fields, copied real-mod navigation/storage and Lua language level.
+
+The packaged analyzer passes the original cast/index/assert LSP reproduction.
+Archive descriptors, source pins, binary hashes and Unix executable permissions
+were verified. FDE Java code, LSP4IJ and toolkit pins are unchanged. Custom
+analyzer patches remain macOS arm64 only. No interactive IDE/game testing,
+Plugin Verifier run or everyday IDE installation was performed.
+
+Artifacts:
+
+- `upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-136-IDEA262-patched-modules.zip`
+- `intellij-factorio/build/distributions/intellij-factorio-0.7.3-dev.zip`
+
+Evidence: `build/logs/named-cast-*`, `build/reports/named-cast-unit/`,
+`build/reports/named-cast-platform-initial/`, `build/reports/named-cast-platform-retry/`,
+and analyzer `build/investigations/cast-index/packaged136/`.
+
+ZIP SHA-256:
+
+- EmmyLua2: `46f8b212a1fe01c92fdd025a35f1ff47bfa3e36e44fd8a413024c048baebdb55`.
+- FDE: `49941eb121ef0bddcd3d0a1310b77947d3a4292f854e21aebbaec88cd4720a90`.
