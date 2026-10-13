@@ -1362,3 +1362,70 @@ ZIP SHA-256:
 - FDE: `17e3743cd09d2fdd0839adddf9088f474647983b76aff3530a1fc730f82b117b`.
 
 Arm64 analyzer SHA-256: `21e0c03fca8997fa2a195e16599296283d27a02374e2d5aba8ccc5750269c6dc`.
+
+## Table rendering and inline assertions, 0.7.6-dev (2026-10-13)
+
+The analyzer pin is `8b32942e911f4ed49351f8383b41d09aa140d557` on
+`work/intellij-modules`. Two independent upstream fixes address the
+LogisticTrainNetwork table annotation reports:
+
+- [PR #1289](https://github.com/EmmyLuaLs/emmylua-analyzer-rust/pull/1289)
+  preserves explicit generic arguments in rendering. Built-in `table` declarations
+  have no declared generic parameters; the renderer previously dropped their
+  supplied key/value types and displayed `table<>`.
+- [PR #1290](https://github.com/EmmyLuaLs/emmylua-analyzer-rust/pull/1290)
+  confines inline `@as` assertions to their attached expression. A constructor's
+  `@as ltn.FreeTrain` no longer casts its individual fields or unrelated later reads.
+
+Both branches start at upstream main `cb05b0c0`, were submitted as drafts, and
+received review follow-ups before integration. Signed backports `71c30d1c`,
+`6c341ed2`, `f5ee2ad1`, and `18ea33d9` preserve our existing Arc baseline without
+importing unrelated upstream changes. Work-only commit `581ba186` applies the
+same expression-local rule to our directional-field read walker and adds a
+compatibility regression. Both PRs have 15 successful CI checks and the expected
+skipped release job; no additional feedback appeared at the final check.
+
+All 2,510 combined Rust workspace tests passed with all features, plus
+workspace/all-target Clippy with warnings denied and rustfmt. All 22 EmmyLua2
+tests, 59 FDE unit tests (one optional native-game skip), and nine selected
+IntelliJ platform tests passed. No platform retry was needed. Platform coverage
+includes real Lua/FMTK processes, per-module routing/formatting, lifecycle/EDT,
+dependency edits, configuration reload, generated API/asymmetric fields, copied
+real-mod navigation/storage and Lua language level.
+
+The packaged server was tested with copies of all 37 LogisticTrainNetwork Lua
+files. Hover now displays `table<integer,ltn.FreeTrain>` and the constructor
+fields retain LuaTrain, LuaSurface and integer types. File diagnostics decreased
+from 57 to 53: four false constructor-field warnings removed, with no new warning
+locations. An existing LocalisedString/boolean warning at line 889 now names the
+literal string instead of the enclosing assertion type. The earlier line 365/366
+warnings remain absent, and every cast/index probe case matches packaged build
+138, including FreeTrain? lookup and FreeTrain after assert. The standalone
+minimal constructor probe also passes with and without the inline assertion.
+
+Archive IDs/versions, analyzer pins, hashes and Unix 0755 executable modes were
+verified. The release, prepared and ZIP arm64 server bytes match. Only macOS arm64
+carries the custom analyzer patches; other bundled servers remain upstream
+0.25.1. LSP4IJ/toolkit pins are unchanged. No ordinary IDE installation,
+interactive IDE/game test or Plugin Verifier run was performed. Original mods
+were not changed. Internal branches remain local; only PR branches were pushed.
+
+Evidence: `build/logs/table-annotations-*`, including `packages.json` and
+`packaged-probes.json` with that prefix; `build/reports/table-annotations-{unit,platform}/`;
+EmmyLua2 `build/reports/table-annotations-plugin-tests/`; analyzer work
+`build/logs/table-annotations-*`; main analyzer
+`build/investigations/table-annotations/{packaged139,real-mod-packaged139}/`
+(including `diagnostic-diff.json`), `build/investigations/cast-index/packaged139/`
+and `build/investigations/union-member-argument/real-mod-packaged139/`.
+
+Artifacts:
+
+- `upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-139-IDEA262-patched-modules.zip`
+- `intellij-factorio/build/distributions/intellij-factorio-0.7.6-dev.zip`
+
+ZIP SHA-256:
+
+- EmmyLua2: `d1021bdd5068aab43bd5349cf8138b8c1a7f1e6e115dbd99787ffa14aadd13bf`.
+- FDE: `cebe773a4f01dee4faba385a085e587972bdb3a3d79fcaa9df72016805d0d63c`.
+
+Arm64 analyzer SHA-256: `d9a1a4a2f0c118bd6e3e50ac21d24e20aa1f3f0568c570f1e54d1fd132fed867`.
