@@ -1592,3 +1592,57 @@ Artifact:
 No interactive IDE/game test or Plugin Verifier run. The custom server remains
 macOS arm64 only; the other bundled binaries remain upstream 0.25.1. Toolkit and
 LSP4IJ are unchanged.
+
+
+## Analyzer-only update: nominal enum member compatibility (2026-10-13)
+
+FDE remains **0.7.8-dev** with its existing ZIP unchanged. Only the development
+analyzer pin and integration evidence advance; install EmmyLua2 build 143 and
+restart IntelliJ. The analyzer lock is a build/test reproducibility check, not a
+runtime requirement: FDE uses the server supplied by the installed EmmyLua2.
+
+The new pin is `d750819c0f7d37e25e038c38c6542c95fbc4f41f`. Local standalone
+`fix/nominal-enum-member-compatibility` (`c6446351`, upstream/main `cb05b0c0`)
+is integrated by signed backport `dd161a18`. No push or PR was made.
+
+The analyzer preserves Factorio's precise member classes such as
+`defines.rail_direction.front`, while accepting them for parameters of the
+containing enum `defines.rail_direction`. The upstream rewrite omitted this
+compatibility; our existing inline member-type preservation exposes it in direct
+API calls. Explicitly typed members and predeclared class-valued enums also
+reproduce the bug on plain upstream. The fix retains unrelated-class, other-enum,
+nil, private-class and recursive-member rejections. It does not depend on strict
+dictionary indexing. Existing local analyzer fixes remain integrated.
+
+Validation:
+- Standalone analyzer: 2,409 workspace/all-feature tests; combined work: 2,536.
+  Both pass workspace/all-target/all-feature Clippy (-D warnings) and rustfmt.
+- EmmyLua2: 22 client tests; FDE: 59 unit tests passed, one optional native-game
+  test skipped.
+- All 9 selected IntelliJ platform tests pass: 8 PerModServersTest cases and
+  1 FactorioLuaLanguageLevelTest case.
+- Packaged-server replay on identical copies of all 37 LTN Lua files removes
+  exactly four ParamTypeMismatch warnings at request_processor.lua:479/487/513/516
+  (41→37 diagnostics). cache.lua stays at 8 and constants.lua at 0. No added
+  diagnostics; all six front/back hovers preserve their precise class types.
+  Original mod sources were not modified.
+- Package audit verifies IDs, versions, source pin, release/prepared/archive
+  binary identity and Unix0755 permissions. FDE ZIP SHA-256 and mtime are unchanged.
+
+Evidence: analyzer checkout `build/checkouts/nominal-enum-members/build/investigation/`
+contains before/after results and packaged143-real/diagnostic-diff.json; its
+`build/logs/standalone-final-*` and the work checkout's `build/logs/rail-enum-*`
+contain Rust checks. Emmy and FDE logs/reports are in their respective
+`build/logs/rail-enum-*` and `build/reports/rail-enum-*`; FDE's
+`build/logs/rail-enum-package.json` records archive checks.
+
+Artifact:
+`upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-143-IDEA262-patched-modules.zip`
+
+- Emmy ZIP SHA-256: `2950e3bbd69c24995057296ab636e2e2316818b0fe3025fa9e846f19aa207cbd`.
+- Analyzer SHA-256: `f902e64cb59748b2da5aa4f8f263e8ba7420c1268ff56ed0800821dbb929f640`.
+- Unchanged FDE ZIP SHA-256: `97f14b6051ebd3ef1565b6b085863a1579b7002abe932c0a054790978127f90b`.
+
+No interactive IDE/game test or Plugin Verifier run. The custom analyzer remains
+macOS arm64 only; other bundled binaries remain upstream 0.25.1. Toolkit and
+LSP4IJ dependencies are unchanged.
