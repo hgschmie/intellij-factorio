@@ -1492,3 +1492,55 @@ ZIP SHA-256:
 - FDE: `4929d27ccc8d9a76d04806a1edfb677405128af3cb7fb67fce7fc240f1f382dc`.
 
 Arm64 analyzer SHA-256: `7256ebb3e2de790a227cbd4af0ea89197ffd76e6214ef92d81b9b6618f249f7e`.
+
+## Computed-index assignment flow, 0.7.8-dev (2026-10-13)
+
+The analyzer pin is `c29ce116c7eebeb46a54b0f1b42d862b8af3271c` on
+`work/intellij-modules`. This release narrows reads such as `groups[key]` after
+`groups[key] = groups[key] or {...}`. It preserves the declared element type while
+removing nil when the same local table/key definitely received a nonnil value.
+Key/table reassignment, alias-capable writes, calls, control-flow joins, loop and
+closure boundaries conservatively stop the new trace. Nominal classes retain
+their existing read/write semantics.
+
+The independent local branch is `fix/computed-index-assignment-flow`, signed
+`9fdb3dde`, on current upstream main `cb05b0c0`; signed work backport `3ee94cbc`.
+Its reproduction uses upstream's strict array indexing and does not depend on
+the pending strict dictionary-index feature. Work-only integration tests verify
+all combinations of strict.tableIndex and strict.arrayIndex, precise element
+type and retained unsafe-lookup warnings. No new branch or PR was pushed.
+
+This build also includes the reviewed follow-ups to dictionary constructors
+(PR1291, work `e538efd3`) and cross-file enum tables (PR1292, work `6ad16119`).
+Existing module, metatable, read/write, optional-key, cast and type-display fixes
+remain. Toolkit and LSP4IJ dependencies are unchanged.
+
+Validation completed:
+- Standalone upstream workspace: 2,407 tests, all features; workspace/all-target
+  Clippy with warnings denied and rustfmt pass.
+- Combined work workspace: 2,526 tests, all features; the same Clippy/fmt checks.
+- EmmyLua2: 22 tests; FDE: 59 unit tests passed, one optional native-game skip.
+- Packaged server protocol replay uses identical copies of all 37 Lua files from
+  LogisticTrainNetwork. Only the reported line432 NeedCheckNil disappears:
+  request_processor.lua 46→45, constants.lua 0→0, cache.lua 8→8. No diagnostics
+  added in the three checked files. Original mod sources were not modified.
+- Archive audit verifies plugin IDs/versions, source pin, matching release/
+  prepared/ZIP server bytes and Unix0755 executable modes.
+
+IntelliJ platform verification: all 9 selected tests passed (8 PerModServersTest
+and 1 FactorioLuaLanguageLevelTest).
+No interactive IDE/game test or Plugin Verifier run. The custom analyzer remains
+macOS arm64 only; other bundled server binaries remain upstream0.25.1.
+
+Evidence:
+- Analyzer `build/checkouts/computed-index-flow/build/logs/{workspace-tests,clippy,fmt}.log`.
+- Work analyzer `build/logs/computed-index-{workspace-tests,clippy,fmt,integration}.log`.
+- Main analyzer `build/investigations/computed-index-flow/{packaged140,packaged141}/`,
+  including `packaged141/diagnostic-diff.json`.
+- Plugin worktree `build/logs/computed-index-*` and saved
+  `build/reports/computed-index-*` XML/HTML reports.
+- FDE `build/logs/computed-index-packages.json` archive audit.
+
+Install both archives from their usual directories, then restart IntelliJ:
+- `upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-141-IDEA262-patched-modules.zip`
+- `intellij-factorio/build/distributions/intellij-factorio-0.7.8-dev.zip`
