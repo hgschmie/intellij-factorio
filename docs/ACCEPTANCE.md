@@ -1429,3 +1429,66 @@ ZIP SHA-256:
 - FDE: `cebe773a4f01dee4faba385a085e587972bdb3a3d79fcaa9df72016805d0d63c`.
 
 Arm64 analyzer SHA-256: `d9a1a4a2f0c118bd6e3e50ac21d24e20aa1f3f0568c570f1e54d1fd132fed867`.
+
+## Dictionary constructors and enum tables, 0.7.7-dev (2026-10-13)
+
+Analyzer pin `5a064469ebcbfdd7faca3bfcbd24ee4ba716ebb8` retains the previous
+work branch and adds two independent diagnostic fixes based on upstream main
+`cb05b0c0`. Both failures originate in the upstream semantic rewrite, not our
+local patches. Neither branch was pushed and no PR was created, at the user's
+request; future PR descriptions are saved in each checkout's ignored
+`build/PR_DESCRIPTION.md`.
+
+- `fix/dictionary-constructor-fields`, signed `cdf32d10`: the field checker
+  treated `table<K,V>` as the standard library table class's closed record
+  surface. A narrow guard matches the existing assignment checker's treatment
+  of dictionaries. Class missing/extra field checks remain enabled. This does
+  not add dictionary key/value validation.
+- `fix/cross-file-enum-members`, signed `7727a58f`: the checker looked for an enum
+  runtime declaration in the current file and checked its enum type rather than
+  its constructor's fields. It now uses the owning file and runtime table surface.
+  Enum-typed values and missing fields remain errors, including in conditions.
+
+Signed backports `5c39ca41` and `14ac6b9e` applied cleanly to the existing work
+branch; no compatibility glue or unrelated upstream changes were needed.
+Standalone checker/type-check suites passed 639 and 638 tests, respectively,
+with Clippy and formatting checks. The new positive regressions fail before
+fixing. All 2,515 combined workspace tests with all features, workspace/all-target
+Clippy with warnings denied, and rustfmt passed.
+
+All 22 EmmyLua2 tests, 59 FDE unit tests (one optional native-game test skipped),
+and nine selected IntelliJ platform tests passed on the first run. Platform tests
+exercise real Lua/FMTK processes, routing/formatting, lifecycle/EDT, dependency
+and configuration updates, generated APIs/asymmetric fields, copied real-mod
+navigation/storage and Lua language level.
+
+The packaged server was tested against copies of all 37 LogisticTrainNetwork
+Lua files. Comparing build 139 with 140 gives constants.lua 17→0 diagnostics,
+request_processor.lua 53→46, and cache.lua 21→8. No diagnostics were added. All
+reported dictionary constructor and DISTANCE_RESULT member warnings disappeared.
+Original mod files and the ordinary IDE profile were not changed.
+
+Archive IDs/versions, pins, hashes and Unix 0755 executable permissions were
+verified. Release, prepared and archived arm64 server binaries are identical.
+Custom analyzer changes remain macOS arm64 only; other bundled servers remain
+upstream 0.25.1. LSP4IJ/toolkit pins are unchanged. No interactive IDE/game test
+or Plugin Verifier run was performed. All branches remain local for this task.
+
+Evidence: plugin repositories `build/logs/constructor-enum-*`,
+`build/reports/constructor-enum-{unit,platform,plugin-tests}/` as applicable;
+analyzer work `build/logs/constructor-enum-*`; standalone checkout `build/logs/`;
+main analyzer `build/investigations/constructor-enum/{packaged139,packaged140}/`
+(including `packaged140/diagnostic-diff.json`). Archive audit is FDE
+`build/logs/constructor-enum-packages.json`.
+
+Artifacts:
+
+- `upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-140-IDEA262-patched-modules.zip`
+- `intellij-factorio/build/distributions/intellij-factorio-0.7.7-dev.zip`
+
+ZIP SHA-256:
+
+- EmmyLua2: `8bd8744807452933a16b190b788aba9e49fca2dccd3aca5be4f338c0d16c7257`.
+- FDE: `4929d27ccc8d9a76d04806a1edfb677405128af3cb7fb67fce7fc240f1f382dc`.
+
+Arm64 analyzer SHA-256: `7256ebb3e2de790a227cbd4af0ea89197ffd76e6214ef92d81b9b6618f249f7e`.
