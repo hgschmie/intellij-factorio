@@ -1544,3 +1544,51 @@ Evidence:
 Install both archives from their usual directories, then restart IntelliJ:
 - `upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-141-IDEA262-patched-modules.zip`
 - `intellij-factorio/build/distributions/intellij-factorio-0.7.8-dev.zip`
+
+## Analyzer-only update: unbound-table field diagnostics (2026-10-13)
+
+FDE remains **0.7.8-dev**. Its existing ZIP is unchanged; this update advances
+only the development analyzer pin and the tested EmmyLua2 dependency to build
+142. Install the new EmmyLua2 ZIP and restart IntelliJ; an FDE reinstall is not
+needed. FDE starts the server supplied by EmmyLua2; its analyzer lock is a
+build/test reproducibility check, not a runtime version requirement.
+
+The new development pin is `6666fb8402124e510642a5dec3ad40f88e014bc8`.
+Standalone local-only `fix/unbound-table-field-diagnostics` (`fb18e8d6` on
+upstream/main `cb05b0c0`) is integrated via signed backport `3cbe6449`.
+The checker used to bind any unannotated table to the nearest preceding or
+same-named class/enum. It now uses the declaration's actual doc-comment owner.
+This removes false UndefinedField on `seen_train[train.id] = true`; `train.id`
+already retained its uint32 type. Actual class/enum constraints remain checked.
+The fix is independent of strict dictionary indexing. No branch or PR was pushed.
+
+Validation:
+- Standalone analyzer: 2,405 all-feature workspace tests; combined work: 2,529.
+  Both pass workspace/all-target/all-feature Clippy (-D warnings) and rustfmt.
+- EmmyLua2: 22 client tests; FDE: 59 unit tests passed, one optional native-game
+  test skipped; all 9 selected IntelliJ platform tests passed (8 PerModServersTest
+  and 1 FactorioLuaLanguageLevelTest).
+- Packaged-server LSP replay uses identical copies of all 37 LTN Lua files.
+  request_processor.lua diagnostics drop 45→40, removing false UndefinedField at
+  475/482/490 and the same unbound-table issue at 926/927. constants.lua stays 0
+  and cache.lua stays 8. No added diagnostics; all six train.id hovers stay uint32.
+  Original mod sources were not modified.
+- Package audit verifies the version, pin, release/prepared/archive byte identity
+  and Unix0755 server mode. The FDE ZIP's hash and mtime remain unchanged.
+
+Evidence: analyzer `build/investigations/unbound-table-fields/` (including
+packaged142/diagnostic-diff.json), both analyzer checkouts' `build/logs/unbound-*`,
+Emmy worktree `build/logs/unbound-*` and `build/reports/unbound-routing`, and FDE
+`build/logs/unbound-*`, `build/reports/unbound-{unit,platform}`. Archive verification
+is in `build/logs/unbound-table-package.json`.
+
+Artifact:
+`upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-142-IDEA262-patched-modules.zip`
+
+- Emmy ZIP SHA-256: `519f7bf56d05ba17867e476490feee650627ce39e6832cbee9aa6bdf103d851f`.
+- Analyzer SHA-256: `bbc0ddfa4a7619886de31407c60323dec3ca5e53b16080a3169f9fc25c95d3b7`.
+- Unchanged FDE ZIP SHA-256: `97f14b6051ebd3ef1565b6b085863a1579b7002abe932c0a054790978127f90b`.
+
+No interactive IDE/game test or Plugin Verifier run. The custom server remains
+macOS arm64 only; the other bundled binaries remain upstream 0.25.1. Toolkit and
+LSP4IJ are unchanged.

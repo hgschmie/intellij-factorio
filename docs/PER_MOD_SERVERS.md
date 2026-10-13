@@ -8,7 +8,7 @@ that fixes short and named module imports.
 ## Dependencies and installation
 
 The current release uses LSP4IJ `0.21.1-SNAPSHOT-factorio-formatting-patched2`
-and EmmyLua2 `0.30.0-141-IDEA262-patched-modules`, which provides
+and EmmyLua2 `0.30.0-142-IDEA262-patched-modules`, which provides
 `EmmyLuaServerProvider` and `EmmyLuaServerRouting`.
 The active EmmyLua2 branch is `work/patched-build`; see its `PATCHED_BUILD.md`.
 
