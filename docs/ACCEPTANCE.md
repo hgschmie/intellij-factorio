@@ -1646,3 +1646,30 @@ Artifact:
 No interactive IDE/game test or Plugin Verifier run. The custom analyzer remains
 macOS arm64 only; other bundled binaries remain upstream 0.25.1. Toolkit and
 LSP4IJ dependencies are unchanged.
+
+# Analyzer-only update: callback return compatibility — 2026-10-13
+
+FDE remains **0.7.8-dev**. Only the development analyzer pin moves to
+`f09c538f04fef94371780cf8917f4474f855d5ae`; install EmmyLua2 **0.30.0-144-IDEA262-patched-modules**.
+FDE launches that installed server, so no FDE rebuild or reinstall is needed.
+Existing FDE ZIP hash and modification time were verified unchanged.
+
+The upstream-independent fix13cef7ff handles callback return aliases/unions and
+repeated tuple tails, clearing the false msg_func warning at LTN
+request_processor.lua502. Work backport4acdc110 and upstream tuple prerequisite
+backport3fde3155 are signed and integrated. All2,408 standalone/2,544 combined
+Rust tests, Clippy and formatting pass. Emmy22 tests and FDE59unit tests pass
+(one optional native-game skip). All9 platform compatibility checks pass: the initial run omitted -PrealMods;
+its single fixture-precondition failure passes on the corrected rerun. Initial
+and retry reports plus the aggregate result are retained.
+
+On identical copies of37LTN Lua files, packaged144 removes all8msg_func warnings
+and introduces no diagnostics or sampled-hover changes in the four checked files:
+request_processor37->29, cache8->8, constants0->0, tools31->31. Original mods and
+ordinary IDE profile were untouched. Package pin/hash/0755 checks pass.
+
+Evidence: build/logs/callback-return-{unit,platform}.log,
+build/logs/callback-return-package.json, build/reports/callback-return-*;
+analyzer build/investigations/callback-return/packaged144-real/diagnostic-diff.json.
+No interactive IDE/game test or Plugin Verifier run. Custom analyzer changes
+remain macOSarm64 only. No push/PR for this new fix.
