@@ -1262,3 +1262,41 @@ ZIP SHA-256:
 
 - EmmyLua2: `46f8b212a1fe01c92fdd025a35f1ff47bfa3e36e44fd8a413024c048baebdb55`.
 - FDE: `49941eb121ef0bddcd3d0a1310b77947d3a4292f854e21aebbaec88cd4720a90`.
+
+## Named cast review follow-up, 0.7.4-dev (2026-10-12)
+
+FDE pins analyzer `4b1a0c2cef5f358bef03ba356038286cded26f64`, packaged in
+EmmyLua2 `0.30.0-137-IDEA262-patched-modules`. Draft PR #1285 now includes signed
+follow-up `3b0d6831`, merged internally as `697f751d`. The review adds typed index
+operands, debug stack checks and regression coverage for owner/statement casts,
+nil/never keys, nested computed keys and recursive dependencies. The original
+cast/index/assert behavior is preserved.
+
+Validation passed all 2,392 standalone and 2,478 combined Rust workspace tests,
+Clippy with warnings denied, and rustfmt; 22 EmmyLua2 tests and 59 FDE unit tests
+passed (one optional native-game test skipped). The packaged LSP reproduction
+returns `ltn.FreeTrain?` for the raw lookup and `ltn.FreeTrain` after `assert`.
+All nine platform tests passed on the first run, exercising real Lua/FMTK
+processes, module routing/formatting, lifecycle/EDT handling, dependency edits,
+module configuration reload, generated API and asymmetric fields, copied real-mod
+navigation/storage and Lua language level. Evidence is in
+`build/logs/cast-review-platform.log`.
+
+Archive versions, source pins, binary hashes and executable permissions were
+verified. No product Java/Kotlin implementation, LSP4IJ or toolkit pin changed.
+Custom analyzer patches remain macOS arm64 only. No interactive IDE/game test,
+Plugin Verifier run or ordinary IDE installation was performed.
+
+Artifacts:
+
+- `upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-137-IDEA262-patched-modules.zip`
+- `intellij-factorio/build/distributions/intellij-factorio-0.7.4-dev.zip`
+
+Evidence: `build/logs/cast-review-*`, `build/reports/cast-review-{unit,platform}/`,
+EmmyLua2 `build/reports/cast-review-plugin-tests/`, analyzer checkout
+`build/logs/cast-review-*` and `build/investigations/cast-index/packaged137/`.
+
+ZIP SHA-256:
+
+- EmmyLua2: `2366a953236e1fc28fc0671ce52dd11f25a23fab282b011182ac407057900ea8`.
+- FDE: `21fc46d8c5937cc680d76f4e5a1ca7edf857aeeabb7ec7241454f1828c8fb540`.
