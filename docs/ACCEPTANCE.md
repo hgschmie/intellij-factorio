@@ -1300,3 +1300,65 @@ ZIP SHA-256:
 
 - EmmyLua2: `2366a953236e1fc28fc0671ce52dd11f25a23fab282b011182ac407057900ea8`.
 - FDE: `21fc46d8c5937cc680d76f4e5a1ca7edf857aeeabb7ec7241454f1828c8fb540`.
+
+
+## Flow-aware union member arguments, 0.7.5-dev (2026-10-12)
+
+FDE pins analyzer `f653fa59ba576db2c2330b41e14b2702ddde62b9`, packaged in
+EmmyLua2 `0.30.0-138-IDEA262-patched-modules`. [PR #1286](https://github.com/EmmyLuaLs/emmylua-analyzer-rust/pull/1286)
+uses the owner's flow-sensitive type in missing-union-member argument checks,
+so casts, guards and assignments remove false nil diagnostics while remaining
+missing members and incompatible field types still diagnose. Original `430fe1de`
+and review follow-up `272d3096` were merged internally as `b62f2f41` and `3862d97d`.
+
+Combined validation also exposed an interaction with PR #1285 for ambiguous
+union members without a unique ID. Its follow-up `4dbecfe5`, merged as `525a6f0f`,
+restores an immediate named cast only on its exact static path and resolved root
+declaration. It preserves owner/path isolation, projected field types, scope and
+reassignment behavior. General ambiguous-member cast persistence after an
+intervening statement was already absent and remains outside this correction.
+Both upstream contributions remain independent and are ready for review.
+
+All 2,492 combined analyzer workspace tests with all features, workspace/all-target
+Clippy with warnings denied and rustfmt passed. The PR #1285 compatibility change
+also passed all 2,395 standalone workspace tests. All 22 EmmyLua2 tests and 59 FDE
+unit tests passed (one optional native-game test skipped). All nine selected
+platform tests passed on the first run, using real Lua/FMTK processes and copied
+mod fixtures. They cover routing/formatting, lifecycle/EDT handling, dependency
+edits, module configuration reload, generated API and asymmetric fields, copied
+real-mod navigation/storage, and Lua language level.
+
+The packaged server was tested with copies of all 37 LogisticTrainNetwork Lua
+files. The reported request_processor.lua lines 365/366 have no target parameter
+diagnostics. Comparing all diagnostics for that file with build 137 gives 69 to
+58: eleven synthetic nil mismatches removed, no added diagnostics. The prior
+cast/index probe still returns `ltn.FreeTrain?` for the raw lookup and
+`ltn.FreeTrain` after `assert`.
+
+Archive IDs/versions, analyzer pins, binary hashes and Unix executable modes
+were verified. Release, prepared and ZIP arm64 server bytes are identical.
+FDE Java code, LSP4IJ and toolkit pins are unchanged. Custom analyzer patches
+remain macOS arm64 only; other bundled servers are upstream 0.25.1. No ordinary
+IDE installation, interactive IDE/game test or Plugin Verifier run was performed.
+The original mod files were not changed.
+
+Artifacts:
+
+- `upstream/Intellij-EmmyLua2/build/distributions/IntelliJ-EmmyLua2-0.30.0-138-IDEA262-patched-modules.zip`
+- `intellij-factorio/build/distributions/intellij-factorio-0.7.5-dev.zip`
+
+Evidence: `build/logs/union-argument-*`,
+`build/reports/union-argument-{unit,platform}/`, EmmyLua2's
+`build/reports/union-argument-plugin-tests/`, analyzer worktree
+`build/logs/union-argument-*` and main analyzer repository
+`build/investigations/union-member-argument/real-mod-packaged138/` and
+`build/investigations/cast-index/packaged138/`. The real-mod diagnostic comparison
+is `real-mod-packaged138/diagnostic-diff.json`; the package audit is
+`build/logs/union-argument-packages.json`.
+
+ZIP SHA-256:
+
+- EmmyLua2: `b53caf8025cdae10f84067fccffc83172fbffb1de751c146c0d07b2849cb35ae`.
+- FDE: `17e3743cd09d2fdd0839adddf9088f474647983b76aff3530a1fc730f82b117b`.
+
+Arm64 analyzer SHA-256: `21e0c03fca8997fa2a195e16599296283d27a02374e2d5aba8ccc5750269c6dc`.
