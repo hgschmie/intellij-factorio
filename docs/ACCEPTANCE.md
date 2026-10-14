@@ -1,3 +1,24 @@
+# Overnight analyzer refresh — 2026-10-14
+
+EmmyLua2 build151 packages analyzer `df28f68a`, based on upstream/main 7096fef5.
+Upstream supplies merged #1285/#1289/#1291; the remaining 27 contribution branches
+and work-only compatibility changes are rebased. The production source and tests
+are unchanged from build150. PR1290 was closed as superseded; PR1283 was closed
+unmerged by upstream and its refresh implementation remains a local patch.
+
+All 2,629 combined tests, Clippy and formatting pass. Packaged-server replay has
+zero diagnostics for the frozen LTN request_processor.lua and interface.lua,
+using the original module configuration and no additional suppressions.
+Generated API, asymmetric attributes and Lua-version platform tests pass (three
+tests). buildPlugin completed up to date; FDE stays 0.7.8-dev and its archive
+hash/mtime are unchanged. Install only the new EmmyLua2 archive.
+
+Full contribution validation/publication is recorded in workspace
+upstream/ANALYZER_REFRESH_2026-10-14.md. Package and integration evidence is in
+analyzer build/investigations/analyzer-refresh-20261014/package-validation.json.
+No interactive IDE test or regular-profile installation was performed. The older
+file-event/RPC timeout cases remain outside this validation.
+
 # Analyzer refresh and clean LTN baseline — 2026-10-13
 
 EmmyLua2 build 150 packages analyzer `5ff43630`, reconstructed on upstream/main
