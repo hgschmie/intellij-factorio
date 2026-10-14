@@ -291,6 +291,59 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         });
     }
 
+    /** Observe LSP4IJ's cache, without requesting dependent-file diagnostics ourselves. */
+    public void testWorkspaceDiagnosticsFollowUnsavedCrossFileEdits() throws Exception {
+        Path root = mod("workspacepull", "value");
+        Path types = root.resolve("types.lua"), control = root.resolve("control.lua");
+        String optional = "---@class Provider\n";
+        String required = optional + "---@field set_values fun()\n";
+        Files.writeString(types, optional);
+        Files.writeString(control, "---@type Provider\nlocal settings_table = {}\nreturn settings_table\n");
+        attach(List.of(root));
+        for (int n = 0; n < 60; n++) { PlatformTestUtil.dispatchAllEventsInIdeEventQueue(); Thread.sleep(20); }
+        FactorioSettings.get(getProject()).serviceMode = "ENABLED";
+        var manager = FactorioServerManager.get(getProject());
+        manager.configure(List.of(scope(root, List.of())));
+        var item = server(manager.luaServer(control));
+        var lease = item.keepAlive();
+        var wrapper = item.getServerWrapper();
+        var editors = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(getProject());
+        var typesFile = file(types);
+        var controlFile = file(control);
+        try {
+            var psi = Objects.requireNonNull(PsiManager.getInstance(getProject()).findFile(typesFile));
+            await(LanguageServiceAccessor.getInstance(getProject()).getLanguageServers(psi, null, null));
+            editors.openFile(typesFile, true);
+            var document = Objects.requireNonNull(FileDocumentManager.getInstance().getDocument(typesFile));
+            // Initial workspace pull populates the closed consumer's diagnostics.
+            eventually(() -> wrapper.getClosedDocument(control.toUri(), false) != null);
+            BooleanSupplier missing = () -> {
+                var open = wrapper.getOpenedDocument(control.toUri());
+                var cached = open != null ? open : wrapper.getClosedDocument(control.toUri(), false);
+                return cached != null && cached.getDiagnostics().stream().anyMatch(d ->
+                        d.getCode() != null && "missing-fields".equals(d.getCode().getLeft()));
+            };
+            assertFalse(missing.getAsBoolean());
+            com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(getProject(), () -> document.setText(required));
+            eventually(missing);
+            com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(getProject(), () -> document.setText(optional));
+            eventually(() -> !missing.getAsBoolean());
+            // The same cross-file update must refresh a consumer open in the editor.
+            var consumerPsi = Objects.requireNonNull(PsiManager.getInstance(getProject()).findFile(controlFile));
+            await(LanguageServiceAccessor.getInstance(getProject()).getLanguageServers(consumerPsi, null, null));
+            editors.openFile(controlFile, true);
+            eventually(() -> wrapper.getOpenedDocument(control.toUri()) != null);
+            com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(getProject(), () -> document.setText(required));
+            eventually(missing);
+            com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(getProject(), () -> document.setText(optional));
+            eventually(() -> !missing.getAsBoolean());
+        } finally {
+            editors.closeFile(typesFile);
+            editors.closeFile(controlFile);
+            lease.dispose();
+        }
+    }
+
     private String diagnostics(LanguageServerItem item, Path path) throws Exception {
         var params = new DocumentDiagnosticParams();
         params.setTextDocument(new TextDocumentIdentifier(path.toUri().toString()));
