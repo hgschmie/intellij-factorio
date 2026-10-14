@@ -1,17 +1,26 @@
 # LSP4IJ workspace diagnostics — 2026-10-14
 
-Development now uses `lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched1.zip`
-from signed work revision `3830e1c1`, replacing the official nightly. The feature
-branch is `feat/workspace-diagnostics` at `3a26671c`, based on upstream/main
+Development now uses `lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched2.zip`
+from signed work revision `5e442af4`, replacing the official nightly. The feature
+branch is `feat/workspace-diagnostics` at `5b430e28`, based on upstream/main
 `f3825955`; local IDEA 262 build changes remain only on `work/factorio-build`.
 The archive and prepared dependency match the SHA-256 in `lsp4ij.lock`.
+The patched2 refinement publishes the closed-file diagnostic list and its error
+status as one immutable snapshot; provider updates remain synchronized.
 
-All 24 selected LSP4IJ tests pass, including fifteen new request/cache/transport
-checks and existing diagnostics, lifecycle, file routing and breakpoint tests.
-All five new transport/IDE integration tests fail on unpatched upstream because
-no workspace request is sent. FDE's unit suite and four platform tests pass:
-generated API with separate workspaces, asymmetric API fields, Lua version and
-formatting isolation. Logs: `build/logs/lsp4ij-workspace-{unit,platform}.log`.
+All 24 selected LSP4IJ tests pass again on patched2, including the extended
+provider-cache test for error status and retained diagnostic lists. Build/test log:
+`../upstream/lsp4ij/build/checkouts/patched/build/logs/workspace-snapshot-build.log`.
+The sandboxed test JVM aborted during macOS AWT application registration; rerunning
+with application-service access passed. FDE's unit suite was rerun with the new
+prepared archive: 59 passed, one skipped; log: `build/logs/lsp4ij-snapshot-unit.log`.
+Its process-cleanup tests require process-enumeration access outside the sandbox.
+
+The initial patched1 validation established that all five new transport/IDE tests
+fail on unpatched upstream because no workspace request is sent. Four FDE platform
+tests also passed then: separate API workspaces, asymmetric API fields, Lua version
+and formatting isolation (`build/logs/lsp4ij-workspace-platform.log`). Those four
+FDE platform tests were not rerun for the snapshot-only refinement.
 
 Install the LSP4IJ ZIP from `upstream/lsp4ij/build/distributions/`. FDE remains
 0.7.8-dev; its existing archive is unchanged (SHA-256
