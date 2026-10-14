@@ -65,7 +65,7 @@ branch `work/patched-build`, commit `54818f2` or later) and the official LSP4IJ 
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
 `aarch64` fix (current development build:
-`0.30.0-147-IDEA262-patched-modules`). See [acceptance results](docs/ACCEPTANCE.md)
+`0.30.0-148-IDEA262-patched-modules`). See [acceptance results](docs/ACCEPTANCE.md)
 for validation details.
 
 Alternatively, add `https://plugins.jetbrains.com/plugins/nightly/23257` under

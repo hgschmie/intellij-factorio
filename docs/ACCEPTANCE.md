@@ -1,11 +1,21 @@
 # Official LSP4IJ nightly — 2026-10-13
 
-Current dependency follow-up: EmmyLua2 build 147 contains analyzer `210923cf`.
-Three relevant platform checks passed with this nightly: generated API
-definitions in separate workspaces, asymmetric API fields and Lua version
-selection. The broader results below apply to build 145. Two file-event/RPC
-timeout checks observed with build 146 were not retested or fixed by build 147.
-No interactive IDE validation was performed for these dependency updates.
+Current dependency follow-up: EmmyLua2 build 148 contains analyzer `c35d8ae4`.
+UP-041 fixes named union parameter aliases, clearing both false custom-event
+argument warnings at LTN request_processor.lua:811 and :910. Packaged-server
+replay of the fixed mod snapshot removes exactly those two diagnostics; three
+unrelated diagnostics remain and none are added. The standalone analyzer suite
+passes 2,417 tests; the combined work suite passes 2,596, plus Clippy/formatting.
+
+Three relevant platform checks passed with build 148 and this nightly: generated
+API definitions in separate workspaces, asymmetric API fields and Lua version
+selection. All 23 existing FDE archives retain their hashes and modification
+times. This is an analyzer dependency update only; FDE stays at 0.7.8-dev.
+The broader results below apply to build 145. Two file-event/RPC timeout checks
+observed with build 146 were not retested or fixed. No interactive IDE validation
+was performed. Evidence: analyzer
+`build/investigations/event-type-union-20261013/package-verification.json` and
+`diagnostic-diff.json`, plus FDE `build/logs/` and `build/test-results/test/`.
 
 Development now uses official Marketplace nightly `0.21.1-20261011-014957`
 (update `1191193`) instead of `0.21.1-SNAPSHOT-factorio-formatting-patched2`.
