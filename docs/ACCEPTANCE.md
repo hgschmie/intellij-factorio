@@ -1673,3 +1673,35 @@ build/logs/callback-return-package.json, build/reports/callback-return-*;
 analyzer build/investigations/callback-return/packaged144-real/diagnostic-diff.json.
 No interactive IDE/game test or Plugin Verifier run. Custom analyzer changes
 remain macOSarm64 only. No push/PR for this new fix.
+
+## Analyzer-only update: LTN length, alias, guard and constructor fixes (2026-10-13)
+
+FDE remains **0.7.8-dev**. Only the development analyzer pin moves to
+`f93fb93873e7dcda3f23335c12c7f44709718af6`; install EmmyLua2
+**0.30.0-145-IDEA262-patched-modules** and restart IntelliJ. FDE's existing ZIP
+SHA-256 and mtime are unchanged; no FDE rebuild or reinstall is needed.
+
+Seven signed local analyzer fix branches address all four reported locations:
+length inference (including inferred members), alias argument compatibility and
+condition narrowing, computed dictionary guards, and union/inline-cast constructor
+checking with numeric-index class compatibility. Branches, dependencies and
+standalone commits are recorded in the analyzer's current development handoff
+and EmmyLua2 PATCHED_BUILD.md. No PR or push was made for this batch.
+
+All 2,583 combined Rust tests, Clippy and formatting pass. EmmyLua2 passes 22
+client tests. FDE passes 59 unit tests (one optional native-game test skipped)
+and all 9 selected IntelliJ platform tests with the final prepared server.
+Archive pin, binary identity and Unix0755 checks pass. Preserved evidence is in
+build/logs/ltn-batch-* and build/reports/ltn-batch-*; package verification is
+build/logs/ltn-batch-package.json.
+
+The final packaged server replays the same 37 saved LTN Lua files: reported sites
+are clear, request_processor diagnostics fall 29→9, overall diagnostics 1,836→962.
+Remaining issues include pre-existing overload noise, broader SignalIDType indexing,
+nullable uncast LocalisedString elements, and a pre-existing string.find
+truthiness bug newly exposed for alias arguments. Detailed before/after evidence
+and follow-up scope are recorded in EmmyLua2 PATCHED_BUILD.md and analyzer
+build/investigations/ltn-batch-20261013. Original mod files were not modified.
+
+No interactive IDE/game or Plugin Verifier test was run. The custom analyzer
+remains macOS arm64 only. No toolkit or LSP4IJ changes.
