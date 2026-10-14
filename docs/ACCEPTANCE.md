@@ -1,3 +1,13 @@
+# Analyzer baseline before full rebase — 2026-10-13
+
+EmmyLua2 build 149 packages analyzer work `1bdab7f2`, integrating standalone
+UP-042/UP-043. All 2,602 combined workspace tests pass. Packaged LTN replay
+reports zero diagnostics in request_processor.lua and interface.lua with the
+module's existing diagnostics settings. The generated-API, asymmetric-field
+and Lua-version platform tests pass (three tests); buildPlugin is up to date.
+FDE version remains 0.7.8-dev. No interactive IDE validation. The full analyzer
+branch audit/rebase and final rebuilt dependency will follow this baseline.
+
 # Official LSP4IJ nightly — 2026-10-13
 
 Current dependency follow-up: EmmyLua2 build 148 contains analyzer `c35d8ae4`.
