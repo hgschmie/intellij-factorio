@@ -1,6 +1,5 @@
 {
-  "version": "0.21.1-20261011-014957",
-  "channel": "nightly",
-  "url": "https://plugins.jetbrains.com/files/23257/1191193/lsp4ij-0.21.1-20261011-014957.zip",
-  "sha256": "178efd01e7023099fda4707c98aa6e9edd25e3f83371bd1372be04c77c48905f"
+  "version": "0.21.1-SNAPSHOT-workspace-diagnostics-patched1",
+  "sourceRevision": "3830e1c196a9007cabddebe588f09d5d4c50c90a",
+  "sha256": "36eab2a88126c984b7ccb30d9e7139ee88749a3b231b32f833f5e501bd6d51f7"
 }

@@ -1,3 +1,26 @@
+# LSP4IJ workspace diagnostics — 2026-10-14
+
+Development now uses `lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched1.zip`
+from signed work revision `3830e1c1`, replacing the official nightly. The feature
+branch is `feat/workspace-diagnostics` at `3a26671c`, based on upstream/main
+`f3825955`; local IDEA 262 build changes remain only on `work/factorio-build`.
+The archive and prepared dependency match the SHA-256 in `lsp4ij.lock`.
+
+All 24 selected LSP4IJ tests pass, including fifteen new request/cache/transport
+checks and existing diagnostics, lifecycle, file routing and breakpoint tests.
+All five new transport/IDE integration tests fail on unpatched upstream because
+no workspace request is sent. FDE's unit suite and four platform tests pass:
+generated API with separate workspaces, asymmetric API fields, Lua version and
+formatting isolation. Logs: `build/logs/lsp4ij-workspace-{unit,platform}.log`.
+
+Install the LSP4IJ ZIP from `upstream/lsp4ij/build/distributions/`. FDE remains
+0.7.8-dev; its existing archive is unchanged (SHA-256
+`97f14b6051ebd3ef1565b6b085863a1579b7002abe932c0a054790978127f90b`).
+EmmyLua2 build151 and analyzer UP-008 remain unchanged. This implements the
+client half of workspace diagnostics; analyzer scheduling still needs separate
+investigation. No regular-IDE installation or interactive validation was performed.
+No contribution PR was created.
+
 # Overnight analyzer refresh — 2026-10-14
 
 EmmyLua2 build151 packages analyzer `df28f68a`, based on upstream/main 7096fef5.

@@ -61,14 +61,13 @@ or the historical `spike/ide/`; it copied LSP4IJ and reusable protocol/module
 inputs from those historical locations. Historical acceptance notes retain their
 original paths and describe the old layout.
 
-Both LSP4IJ contributions are upstream: breakpoint removal (#1679; `6ed15ae6`,
-with test follow-up `4887361f`) and file-specific server selection/formatting
-(#1688; merge `baf0413c`). Active builds use the official nightly
-`0.21.1-20261011-014957`, published from `f3825955`, which contains both fixes.
-Its Marketplace URL and SHA-256 are pinned in `lsp4ij.lock`.
-The historical `work/factorio-build` checkout under
-`upstream/lsp4ij/build/checkouts/patched` remains available for reference; it is
-no longer needed to prepare the active dependency.
+The earlier LSP4IJ contributions are upstream: breakpoint removal (#1679) and
+file-specific server selection/formatting (#1688). The active dependency is now
+`0.21.1-SNAPSHOT-workspace-diagnostics-patched1`, built from
+`work/factorio-build` at `3830e1c1`. It contains upstream/main `f3825955`, the
+independent `feat/workspace-diagnostics` contribution, and local IDEA 262 build
+support. Its checkout is `upstream/lsp4ij/build/checkouts/patched`; the contribution
+checkout is `upstream/lsp4ij-worktrees/workspace-diagnostics`.
 
 Run `intellij-factorio/scripts/build-lsp4ij.sh` to prepare the pinned archive.
 For a local build, `lsp4ij.lock` records the version, source revision and SHA-256;

@@ -2,8 +2,8 @@
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
 `de.softwareforge.factorio`. Development release 0.7.8-dev.
-Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and official LSP4IJ nightly
-`0.21.1-20261011-014957`.
+Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
+`0.21.1-SNAPSHOT-workspace-diagnostics-patched1`.
 LuaLS and profiling are not supported.
 
 FDE uses [Factorio Modding Tool Kit (FMTK)](https://github.com/justarandomgeek/vscode-factoriomod-debug)
@@ -39,9 +39,8 @@ Override these with `-PideaPath`, `-Plsp4ijPath` and `-PemmyPath`.
 prepared plugin source pins and the EmmyLua routing hook.
 
 To prepare those dependencies, use `bash scripts/build-lsp4ij.sh` and the
-EmmyLua2 repository's `bash scripts/build-module-patch.sh`. The first downloads
-and verifies the pinned official LSP4IJ archive; the second builds patched
-EmmyLua2 from source. `clean`, `help` and `tasks` do not need them.
+EmmyLua2 repository's `bash scripts/build-module-patch.sh`. The first verifies the pinned local LSP4IJ archive (or builds the pinned
+work checkout if it is absent); the second builds patched EmmyLua2 from source. `clean`, `help` and `tasks` do not need them.
 
 The toolkit defaults to `../upstream/vscode-factoriomod-debug`; override it with
 `-PtoolkitPath`. Keep the accepted `work/intellij-toolkit` baseline checked out.
@@ -60,18 +59,20 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 ## Install and configure
 
 Install the patched EmmyLua2 build containing the file-routing extension (work
-branch `work/patched-build`, commit `54818f2` or later) and the official LSP4IJ ZIP
-`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-20261011-014957.zip`,
+branch `work/patched-build`, commit `54818f2` or later) and the patched LSP4IJ ZIP
+`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched1.zip`,
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
 `aarch64` fix (current development build:
 `0.30.0-151-IDEA262-patched-modules`). See [acceptance results](docs/ACCEPTANCE.md)
 for validation details.
 
-Alternatively, add `https://plugins.jetbrains.com/plugins/nightly/23257` under
-**Settings → Plugins → Manage Plugin Repositories** to install LSP4IJ nightlies
-from Marketplace. Development builds remain pinned to the exact version and
-checksum in `lsp4ij.lock`; changing that pin requires validation.
+This LSP4IJ build adds workspace diagnostic pulls that are absent from the
+previous official nightly. Install it from disk and retain it while testing this
+feature; an automatic Marketplace update may replace it. Development builds use
+the exact source revision, version and checksum in `lsp4ij.lock`.
+The analyzer's local diagnostic-refresh patch remains in place pending separate
+work on its workspace scheduling.
 
 Choose **Factorio Mod** in New Project or New Module. This is a separate
 wizard entry alongside Lua. Enter the mod's name, title, author and target
