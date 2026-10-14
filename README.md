@@ -3,7 +3,7 @@
 Factorio mod development for IntelliJ IDEA, implemented in Java under
 `de.softwareforge.factorio`. Development release 0.7.8-dev.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
-`0.21.1-SNAPSHOT-workspace-diagnostics-patched1`.
+`0.21.1-SNAPSHOT-workspace-diagnostics-patched3`.
 LuaLS and profiling are not supported.
 
 FDE uses [Factorio Modding Tool Kit (FMTK)](https://github.com/justarandomgeek/vscode-factoriomod-debug)
@@ -60,19 +60,20 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 Install the patched EmmyLua2 build containing the file-routing extension (work
 branch `work/patched-build`, commit `54818f2` or later) and the patched LSP4IJ ZIP
-`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched1.zip`,
+`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched3.zip`,
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
 `aarch64` fix (current development build:
-`0.30.0-151-IDEA262-patched-modules`). See [acceptance results](docs/ACCEPTANCE.md)
+`0.30.0-153-IDEA262-patched-modules`). See [acceptance results](docs/ACCEPTANCE.md)
 for validation details.
 
 This LSP4IJ build adds workspace diagnostic pulls that are absent from the
 previous official nightly. Install it from disk and retain it while testing this
 feature; an automatic Marketplace update may replace it. Development builds use
 the exact source revision, version and checksum in `lsp4ij.lock`.
-The analyzer's local diagnostic-refresh patch remains in place pending separate
-work on its workspace scheduling.
+The analyzer now schedules workspace diagnostics after edits (UP-045), replacing
+the old global refresh workaround. Patched3 also honors document matchers for
+workspace reports, keeping the generic EmmyLua server out of FDE mod diagnostics.
 
 Choose **Factorio Mod** in New Project or New Module. This is a separate
 wizard entry alongside Lua. Enter the mod's name, title, author and target

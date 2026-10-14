@@ -1,3 +1,32 @@
+# Multi-root duplicate class and diagnostic routing — 2026-10-14
+
+Development dependencies are EmmyLua2 build153 (analyzer `0f4d0c10`) and LSP4IJ
+workspace-diagnostics-patched3 (`e6f9f35e`). FDE remains 0.7.8-dev; its existing
+ZIP is unchanged (SHA-256 `97f14b6051ebd3ef1565b6b085863a1579b7002abe932c0a054790978127f90b`).
+
+The generic EmmyLua server can start for an external Lua file and scan all eight
+project roots. An upstream analyzer bug aggregated MAIN repeatedly, falsely
+reporting ltn.Metrics as duplicate. UP-046 fixes that aggregation and preserves
+real same-name declarations when another file is edited. Separately, UP-044 now
+checks synchronous/asynchronous DocumentMatchers for workspace diagnostics, so
+the generic server's reports cannot leak into mod files owned by FDE servers.
+
+Both new LSP4IJ regression tests failed before the matcher fix; all 26 selected
+LSP4IJ tests pass afterward. Four FDE platform tests pass against the new packages:
+separate generated API workspaces, asymmetric attributes, Lua language level,
+and automatic open/closed dependent-file diagnostics after unsaved type edits.
+Log: `build/logs/duplicate-metrics-platform.log`.
+
+The packaged analyzer removes duplicate-type from metrics.lua in the real
+multi-root setup. A separate assignment mismatch at metrics.lua:44 remains and
+is not part of this fix. The frozen request_processor.lua/interface.lua baseline
+still has zero diagnostics. Package identity, pins and executable modes are
+verified. See workspace `upstream/DUPLICATE_METRICS_2026-10-14.md` for analyzer
+suite results and before/after protocol evidence.
+
+Install the two new upstream plugin ZIPs; FDE does not need reinstalling. The
+regular IDE profile and original mod files were not changed. No push or PR.
+
 # Analyzer workspace diagnostic replacement — 2026-10-14
 
 EmmyLua2 build152 packages analyzer `a8307e66`. UP-045, standalone

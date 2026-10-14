@@ -63,11 +63,12 @@ original paths and describe the old layout.
 
 The earlier LSP4IJ contributions are upstream: breakpoint removal (#1679) and
 file-specific server selection/formatting (#1688). The active dependency is now
-`0.21.1-SNAPSHOT-workspace-diagnostics-patched2`, built from
-`work/factorio-build` at `5e442af4`. It contains upstream/main `f3825955`, the
+`0.21.1-SNAPSHOT-workspace-diagnostics-patched3`, built from
+`work/factorio-build` at `e6f9f35e`. It contains upstream/main `f3825955`, the
 independent `feat/workspace-diagnostics` contribution, and local IDEA 262 build
 support. Closed-file diagnostics and their error status are published together
-through one immutable snapshot. Its checkout is `upstream/lsp4ij/build/checkouts/patched`; the contribution
+through one immutable snapshot. Workspace reports honor synchronous/asynchronous
+DocumentMatchers without connecting documents or starting servers. Its checkout is `upstream/lsp4ij/build/checkouts/patched`; the contribution
 checkout is `upstream/lsp4ij-worktrees/workspace-diagnostics`.
 
 Run `intellij-factorio/scripts/build-lsp4ij.sh` to prepare the pinned archive.
