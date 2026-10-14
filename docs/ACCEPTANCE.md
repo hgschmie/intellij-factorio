@@ -1,3 +1,27 @@
+# Analyzer refresh and clean LTN baseline — 2026-10-13
+
+EmmyLua2 build 150 packages analyzer `5ff43630`, reconstructed on upstream/main
+`a0ce1512` with thirty retained contribution branches and internal integration
+changes. The obsolete inline-assertion scope implementation is supplied by
+upstream; its twelve regression cases remain in our work suite. All 2,629 combined
+workspace/all-feature tests, Clippy and formatting checks pass. Each retained
+contribution branch also passed its standalone suite and checks.
+
+Packaged-server replay reports zero diagnostics for the frozen LTN
+`script/request_processor.lua` and `script/interface.lua`, using the original
+module configuration (only its existing unnecessary-assert suppression). No mod
+source or suppression was changed. This frozen file is the new baseline.
+
+Three platform tests pass with build 150: generated API in separate workspaces,
+asymmetric API fields and Lua version selection. The requested buildPlugin task
+completed up to date; FDE remains 0.7.8-dev and its ZIP checksum and modification
+time are unchanged. This dependency update requires installing EmmyLua2 only.
+The two older file-event/RPC timeout checks were not retested or fixed; no
+interactive IDE validation or regular-profile installation was performed.
+
+Full report: workspace `upstream/ANALYZER_REFRESH_2026-10-13.md`.
+Evidence: analyzer `build/investigations/analyzer-refresh-20261013/final-validation.json`.
+
 # Analyzer baseline before full rebase — 2026-10-13
 
 EmmyLua2 build 149 packages analyzer work `1bdab7f2`, integrating standalone
