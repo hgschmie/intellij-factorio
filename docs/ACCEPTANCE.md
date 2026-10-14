@@ -1,3 +1,35 @@
+# Analyzer workspace diagnostic replacement — 2026-10-14
+
+EmmyLua2 build152 packages analyzer `a8307e66`. UP-045, standalone
+`fix/workspace-diagnostic-scheduling` (`7306538d`), replaces UP-008's per-edit
+refresh workaround in the development branch. LSP4IJ remains workspace-diagnostics-patched2.
+UP-008 and analyzer backup `backup/intellij-modules-before-workspace-diagnostics-20261014`
+are retained; EmmyLua2 build151 remains available for installation rollback.
+
+Four platform tests pass against the packaged analyzer and real LSP4IJ client:
+
+- Unsaved type-file edits automatically add/clear missing-fields warnings in
+  dependent files, both closed and open in the editor. The test observes the
+  client's diagnostic cache and does not issue dependent-file diagnostic pulls.
+- Generated API definitions remain isolated across module workspaces.
+- Asymmetric API attribute types remain correct.
+- Lua version selection remains correct.
+
+All 2,627 combined Rust tests, Clippy and formatting pass. Seven packaged-server
+protocol scenarios cover edits, file events, close, save, reload capability
+gating and cancellation/shutdown. The frozen LTN request_processor.lua and
+interface.lua still report zero diagnostics using the original configuration.
+The standalone server's 226 tests pass; the unsaved-edit protocol case fails on
+unpatched upstream, establishing the scheduler regression.
+
+Evidence: `build/logs/workspace-diagnostic-platform.log` and analyzer
+`build/investigations/workspace-diagnostic-scheduling/verification.json` (includes
+preserved platform test XML). New integration coverage and the development pin
+are the only FDE changes. FDE stays 0.7.8-dev; its existing ZIP remains byte-identical
+(SHA-256 `97f14b6051ebd3ef1565b6b085863a1579b7002abe932c0a054790978127f90b`).
+Install EmmyLua2 build152; retain/install LSP4IJ patched2. No regular-IDE
+installation, interactive UI validation, new upstream PR or push was performed.
+
 # LSP4IJ workspace diagnostics — 2026-10-14
 
 Development now uses `lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched2.zip`
