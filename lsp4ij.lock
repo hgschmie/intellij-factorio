@@ -1,6 +1,6 @@
 {
-  "version": "0.21.1-SNAPSHOT-factorio-formatting-patched2",
-  "channel": "local",
-  "sourceRevision": "d96484ea330c31a46df0251ab8e86dd0c7312d84",
-  "sha256": "a8dd1d4dc507b98ed8e37c0b207b4415fa86959851bbf074fbc53acaa217db73"
+  "version": "0.21.1-20261011-014957",
+  "channel": "nightly",
+  "url": "https://plugins.jetbrains.com/files/23257/1191193/lsp4ij-0.21.1-20261011-014957.zip",
+  "sha256": "178efd01e7023099fda4707c98aa6e9edd25e3f83371bd1372be04c77c48905f"
 }

@@ -1,3 +1,48 @@
+# Official LSP4IJ nightly — 2026-10-13
+
+Current dependency follow-up: EmmyLua2 build 147 contains analyzer `210923cf`.
+Three relevant platform checks passed with this nightly: generated API
+definitions in separate workspaces, asymmetric API fields and Lua version
+selection. The broader results below apply to build 145. Two file-event/RPC
+timeout checks observed with build 146 were not retested or fixed by build 147.
+No interactive IDE validation was performed for these dependency updates.
+
+Development now uses official Marketplace nightly `0.21.1-20261011-014957`
+(update `1191193`) instead of `0.21.1-SNAPSHOT-factorio-formatting-patched2`.
+The successful upstream publishing run `38103129629` built `f3825955`, which
+contains both contributed fixes: breakpoint removal (#1679) and file-specific
+server selection/formatting (#1688, merge `baf0413c`). Later scheduled runs skipped
+publishing because that source revision was unchanged.
+
+`lsp4ij.lock` pins the immutable Marketplace archive URL and SHA-256
+`178efd01e7023099fda4707c98aa6e9edd25e3f83371bd1372be04c77c48905f`.
+`scripts/build-lsp4ij.sh` verified the archive, plugin ID/version and prepared
+`dev/plugins/lsp4ij` using its existing official-download path. No source patch
+or script change was needed. The local LSP4IJ work branch remains for history.
+
+Validation on IDEA 262 with EmmyLua2 build 145:
+
+- All 22 EmmyLua2 client tests passed using the established routing test harness.
+- FDE unit tests: 59 passed, one optional native-game test skipped.
+- All 22 selected IntelliJ platform tests passed: eight per-module language
+  service/formatting checks, breakpoint removal, seven stop cases, restart and
+  five REPL/completion/trace/address-display cases. Real mod navigation uses
+  copies of `inventory-sensor-improved` and `logistics-sensor`.
+- FDE 0.7.8-dev and EmmyLua2 build 145 ZIP checksums and modification times are
+  unchanged. Neither archive needs rebuilding for this dependency replacement.
+
+The first restricted unit run could not inspect test subprocesses (`sysctl`);
+rerunning with normal process access passed. An initial direct EmmyLua2 test
+invocation hit its known old Gradle-plugin SDK descriptor issue; the documented
+test harness passed with its existing Gradle-plugin override. No test or product
+source was changed to address either environment issue.
+
+Install only `../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-20261011-014957.zip`
+and restart IntelliJ. Alternatively, use the upstream nightly Marketplace
+repository. The regular IDE profile was not modified or tested interactively.
+Evidence is in `build/logs/lsp4ij-nightly-20261013/`; EmmyLua2's test log is also
+retained under its worktree's `build/logs/`.
+
 # Toolchain check correction — 2026-09-28
 
 Version 0.2.4 checks FMTK with `--help`, which includes its version and exits

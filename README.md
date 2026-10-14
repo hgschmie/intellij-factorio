@@ -2,8 +2,8 @@
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
 `de.softwareforge.factorio`. Development release 0.7.8-dev.
-Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
-`0.21.1-SNAPSHOT-factorio-formatting-patched2`.
+Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and official LSP4IJ nightly
+`0.21.1-20261011-014957`.
 LuaLS and profiling are not supported.
 
 FDE uses [Factorio Modding Tool Kit (FMTK)](https://github.com/justarandomgeek/vscode-factoriomod-debug)
@@ -30,7 +30,7 @@ are incremental. Ordinary unit tests do not build the toolkit; platform tests an
 plugin packaging do. `clean` removes this repository's build outputs, leaving
 shared caches, external checkouts and their build outputs intact.
 
-The IDE SDK and patched plugins are prepared separately. Gradle defaults to
+The IDE SDK and plugin dependencies are prepared separately. Gradle defaults to
 `~/Applications/IntelliJ IDEA.app` (then `/Applications/IntelliJ IDEA.app`),
 `../dev/plugins/lsp4ij` and
 `../upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2`.
@@ -39,8 +39,9 @@ Override these with `-PideaPath`, `-Plsp4ijPath` and `-PemmyPath`.
 prepared plugin source pins and the EmmyLua routing hook.
 
 To prepare those dependencies, use `bash scripts/build-lsp4ij.sh` and the
-EmmyLua2 repository's `bash scripts/build-module-patch.sh`. They retain their
-separate source-build workflows. `clean`, `help` and `tasks` do not need them.
+EmmyLua2 repository's `bash scripts/build-module-patch.sh`. The first downloads
+and verifies the pinned official LSP4IJ archive; the second builds patched
+EmmyLua2 from source. `clean`, `help` and `tasks` do not need them.
 
 The toolkit defaults to `../upstream/vscode-factoriomod-debug`; override it with
 `-PtoolkitPath`. Keep the accepted `work/intellij-toolkit` baseline checked out.
@@ -59,11 +60,18 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 ## Install and configure
 
 Install the patched EmmyLua2 build containing the file-routing extension (work
-branch `work/patched-build`, commit `54818f2` or later) and the patched LSP4IJ ZIP
-`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-factorio-formatting-patched2.zip`,
+branch `work/patched-build`, commit `54818f2` or later) and the official LSP4IJ ZIP
+`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-20261011-014957.zip`,
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
-`aarch64` fix (the local `0.30.0-142-IDEA262-patched-modules` build is tested).
+`aarch64` fix (current development build:
+`0.30.0-147-IDEA262-patched-modules`). See [acceptance results](docs/ACCEPTANCE.md)
+for validation details.
+
+Alternatively, add `https://plugins.jetbrains.com/plugins/nightly/23257` under
+**Settings → Plugins → Manage Plugin Repositories** to install LSP4IJ nightlies
+from Marketplace. Development builds remain pinned to the exact version and
+checksum in `lsp4ij.lock`; changing that pin requires validation.
 
 Choose **Factorio Mod** in New Project or New Module. This is a separate
 wizard entry alongside Lua. Enter the mod's name, title, author and target
@@ -115,7 +123,7 @@ the scheme defaults.
 
 Whole-file and selection formatting now use the server that owns the file's mod.
 Factorio guards its formatting feature against selection of another mod's server;
-the separate LSP4IJ fix applies file enablement to its shared selection helpers.
+the upstream LSP4IJ fix applies file enablement to its shared selection helpers.
 This corrects silent formatting failures with several module servers running.
 
 Locale `.cfg` files have native syntax highlighting for sections, keys, comments,

@@ -61,13 +61,14 @@ or the historical `spike/ide/`; it copied LSP4IJ and reusable protocol/module
 inputs from those historical locations. Historical acceptance notes retain their
 original paths and describe the old layout.
 
-LSP4IJ's breakpoint fix is upstream (`6ed15ae6`, with test follow-up `4887361f`).
-The independent `fix/file-scoped-formatting` branch (`4ef6aa5c`) is based on
-upstream main `4796cf99` and checks file enablement in server-selection helpers.
-The review follow-up shares the predicate and explicitly rejects missing virtual files.
-It is merged into `work/factorio-build` at
-`upstream/lsp4ij/build/checkouts/patched`, alongside local build-tooling changes.
-Active builds use `0.21.1-SNAPSHOT-factorio-formatting-patched2` from that worktree.
+Both LSP4IJ contributions are upstream: breakpoint removal (#1679; `6ed15ae6`,
+with test follow-up `4887361f`) and file-specific server selection/formatting
+(#1688; merge `baf0413c`). Active builds use the official nightly
+`0.21.1-20261011-014957`, published from `f3825955`, which contains both fixes.
+Its Marketplace URL and SHA-256 are pinned in `lsp4ij.lock`.
+The historical `work/factorio-build` checkout under
+`upstream/lsp4ij/build/checkouts/patched` remains available for reference; it is
+no longer needed to prepare the active dependency.
 
 Run `intellij-factorio/scripts/build-lsp4ij.sh` to prepare the pinned archive.
 For a local build, `lsp4ij.lock` records the version, source revision and SHA-256;
