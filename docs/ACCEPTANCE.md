@@ -1,3 +1,32 @@
+# data-util analyzer fixes — EmmyLua2 build155 (2026-10-14)
+
+Development analyzer pin is `fb7a3502ae2c69aba522e4caed5860a40a23603e`.
+Install EmmyLua2 `IntelliJ-EmmyLua2-0.30.0-155-IDEA262-patched-modules.zip`.
+FDE remains 0.7.9-dev with its existing archive; LSP4IJ remains
+workspace-diagnostics-patched3. Only macOS arm64 contains the local analyzer fixes.
+
+UP-049 restores bare-table reads and member guards, including the guarded generic
+copy in LTN data-util.lua. UP-050 resolves constructor parents in their declaring
+namespace. The final packaged-server probe removes the three false condition
+warnings and inherited Sprite field errors. Four legitimate mod-annotation
+warnings remain (Sprite versus SpritePrototype, and runtime versus pixel types).
+Frozen request_processor.lua and interface.lua still have zero diagnostics.
+Original mod files were not changed.
+
+All four real-server platform checks executed and passed with the final binary:
+generated API workspaces, asymmetric read/write attributes, default-server root
+ownership/release, and Lua language-version selection. Log:
+`build/logs/data-util-final-platform-forced.log`; preserved JUnit XML:
+`build/test-results/data-util-final-platform`. Use `test --rerun` when changing
+only the native analyzer: Gradle can otherwise consider tests up-to-date because
+the dependency JARs have not changed. No interactive regular-IDE check was run.
+
+All 2,645 combined Rust tests, standalone suites (1,474/1,475), Clippy and rustfmt
+pass. Package provenance and branch details are recorded in workspace
+`upstream/DATA_UTIL_FIXES_2026-10-14.md` and `upstream/FIX_INVENTORY.md`.
+FDE ZIP SHA-256 remains
+`52ba714fb67065d488554a642dc1e754ed2fe921235fb424984c5c27c863f2c3`.
+
 # Workspace ownership — 0.7.9-dev (2026-10-14)
 
 Install FDE `intellij-factorio-0.7.9-dev.zip` and EmmyLua2
