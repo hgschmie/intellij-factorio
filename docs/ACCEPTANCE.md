@@ -1,3 +1,53 @@
+# Factorio Problems — 0.8.0-dev (2026-10-14)
+
+Adds a native **Problems → Factorio** tab combining FDE-owned EmmyLua and FMTK
+locale/changelog diagnostics. Select all modules or one, filter by severity/text,
+and navigate to the reported location. The tab consumes cached notifications;
+it does not start an analysis or another workspace diagnostic loop. The explicit
+Start services button starts configured services, reusing running servers.
+
+Install FDE 0.8.0-dev and LSP4IJ
+`0.21.1-SNAPSHOT-workspace-diagnostics-patched4`. Both existing EmmyLua2 build158
+variants work; the normal development analyzer pin remains `3c9cdfb4` and no
+analyzer/EmmyLua archive was rebuilt. See [usage and coverage](PROBLEMS.md).
+
+Validation:
+
+- FDE unit suite: 65 tests, zero failures/errors, one existing opt-in game/DAP
+  test skipped. Five new model tests cover independent providers, replacement,
+  session retirement, module ownership (including newly nested roots), file
+  deletion and duplicate/unchanged reports.
+- Three native IntelliJ platform tests pass, none skipped. They cover tab
+  registration, combined module/service results, filters, exact navigation,
+  Lua workspace diagnostics for closed files, FMTK push diagnostics and edit
+  clearing, removed-module cleanup and unsaved cross-file workspace updates.
+- The real-server aggregation test also passes with the UP-008 build158
+  comparison. Its prepared analyzer pin `9eac5d7d` was checked explicitly;
+  the normal dependency-pin check was bypassed for that one comparison run.
+- LSP4IJ's integrated work build passes all 27 selected diagnostic/wrapper/routing
+  tests, including the new generic hook tests. No independent build of the
+  standalone contribution branch is claimed.
+- A native panel preview was rendered and inspected. No regular-IDE installation
+  or interactive validation in the user's project was performed.
+
+Logs: `build/logs/problems-final-package.log`, `problems-final-platform.log`,
+`problems-up008-platform.log`. Preserved XML is under
+`build/test-results/problems-final-unit`, `problems-final-platform` and
+`problems-up008-platform`. LSP4IJ log:
+`../upstream/lsp4ij/build/checkouts/patched/build/logs/diagnostic-hook-package.log`.
+
+Coverage limit: FMTK publishes locale/changelog diagnostics for opened/edited
+files and clears them on close. The tab does not claim to validate all closed
+locale/changelog files. Lua closed-file coverage uses existing workspace reports;
+service startup and diagnostic scheduling behavior are unchanged. Empty means
+no received problems, not proof that every file has been checked.
+
+The independent LSP4IJ contribution is UP-055, `feat/diagnostic-update-hook`
+(`5e3848b9`, `6dc69807`), based on upstream/main `12703a33`. Work integration
+`9e48c797`/`c9a0a23b` and packaging `3d389532` are signed. No push or PR.
+Complete artifact hashes and handoff: workspace
+`upstream/FACTORIO_PROBLEMS_2026-10-14.md`.
+
 ## Request/update ordering — EmmyLua2 build158 (2026-10-14)
 
 Development analyzer pin: `3c9cdfb4ce4cd42f710f49f41115c8f3053e06e2`.

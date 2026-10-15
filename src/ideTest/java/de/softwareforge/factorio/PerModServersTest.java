@@ -544,6 +544,42 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         }
     }
 
+    public void testProblemsCollectLuaWorkspaceAndFmtkPushDiagnostics() throws Exception {
+        Path a=mod("problemsalpha","value"),b=mod("problemsbeta","value");
+        Files.writeString(a.resolve("control.lua"),"return MissingAlphaGlobal\n");
+        Files.writeString(b.resolve("control.lua"),"return MissingBetaGlobal\n");
+        Files.writeString(a.resolve("locale/en/test.cfg"),"[same]\nkey=first\n[same]\nother=second\n");
+        Files.writeString(b.resolve("changelog.txt"),"invalid changelog line\n");
+        attach(List.of(a,b));
+        for(int n=0;n<60;n++){PlatformTestUtil.dispatchAllEventsInIdeEventQueue();Thread.sleep(20);}
+        FactorioSettings.get(getProject()).serviceMode="ENABLED";
+        var manager=FactorioServerManager.get(getProject());
+        manager.configure(List.of(scope(a,List.of()),scope(b,List.of())));
+        var store=FactorioProblems.get(getProject());
+        var sa=server(manager.luaServer(a.resolve("control.lua")));
+        var sb=server(manager.luaServer(b.resolve("control.lua")));
+        var leaseA=sa.keepAlive(); var leaseB=sb.keepAlive();
+        try {
+            // No editor is opened: workspace reports supply both Lua files.
+            eventually(()->store.snapshot().problems().stream().filter(p->p.code().equals("undefined-global")).count()>=2);
+            for(Path path:List.of(a.resolve("locale/en/test.cfg"),b.resolve("changelog.txt"))) {
+                var psi=Objects.requireNonNull(PsiManager.getInstance(getProject()).findFile(file(path)));
+                await(LanguageServiceAccessor.getInstance(getProject()).getLanguageServers(psi,null,null));
+                com.intellij.openapi.fileEditor.FileEditorManager.getInstance(getProject()).openFile(file(path),true);
+            }
+            eventually(()->store.snapshot().problems().stream().anyMatch(p->p.source().equals("factorio-locale")));
+            eventually(()->store.snapshot().problems().stream().anyMatch(p->p.source().equals("factorio-changelog")));
+            var localeFile=file(a.resolve("locale/en/test.cfg"));
+            var document=Objects.requireNonNull(FileDocumentManager.getInstance().getDocument(localeFile));
+            com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction(getProject(),()->document.setText("[same]\nkey=fixed\n"));
+            eventually(()->store.snapshot().problems().stream().noneMatch(p->p.file().equals(a.resolve("locale/en/test.cfg"))));
+            assertTrue(store.snapshot().problems().stream().anyMatch(p->p.file().equals(a.resolve("control.lua"))));
+            manager.configure(List.of(scope(a,List.of())));
+            eventually(()->store.snapshot().modules().size()==1);
+            assertTrue(store.snapshot().problems().stream().noneMatch(p->p.file().startsWith(b)));
+        } finally { leaseA.dispose();leaseB.dispose(); }
+    }
+
     public void testGeneratedApiWithSeparateWorkspaces() throws Exception {
         Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
         org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));

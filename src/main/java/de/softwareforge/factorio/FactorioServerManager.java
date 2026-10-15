@@ -135,6 +135,7 @@ public final class FactorioServerManager implements Disposable {
         if (disposed || project.isDisposed()) return;
         var old = scopes;
         scopes = List.copyOf(next);
+        FactorioProblems.get(project).configure(next.stream().map(this::problemModule).toList());
         var desired = new LinkedHashMap<String,Definition>();
         for (var scope : next) for (boolean lua : List.of(true,false)) {
             String id = id(scope,lua);
@@ -145,6 +146,7 @@ public final class FactorioServerManager implements Disposable {
         var registry = LanguageServersRegistry.getInstance();
         for (var entry : definitions.entrySet()) if (desired.get(entry.getKey()) != entry.getValue()) {
             entry.getValue().active = false;
+            if(entry.getValue().features!=null) entry.getValue().features.clearProblems();
             registry.removeServerDefinition(project,entry.getValue());
         }
         for (var entry : desired.entrySet()) if (definitions.get(entry.getKey()) != entry.getValue()) {
@@ -167,6 +169,11 @@ public final class FactorioServerManager implements Disposable {
         if (ownershipChanged || !old.equals(next)) refreshEditors();
         scheduleSync();
     }
+    private FactorioProblemsModel.Module problemModule(ModLanguageScope scope) {
+        String name=FactorioModules.get(project).mods().stream().filter(m->m.root().equals(scope.root()))
+            .map(ModDiscovery.Mod::module).findFirst().orElse(scope.name());
+        return new FactorioProblemsModel.Module(scope.root(),name);
+    }
     private static Path filePath(VirtualFile file) {
         String path = file.getCanonicalPath();
         return Path.of(path == null ? file.getPath() : path);
@@ -178,6 +185,12 @@ public final class FactorioServerManager implements Disposable {
     public void retain(List<ModDiscovery.Mod> mods) {
         var snapshot = List.copyOf(mods);
         onEdt(() -> configureOnEdt(scopes.stream().filter(s -> snapshot.stream().anyMatch(m -> m.root().equals(s.root()))).toList()));
+    }
+    public void startServices() { onEdt(this::startServicesOnEdt); }
+    private synchronized void startServicesOnEdt() {
+        if(disposed || project.isDisposed() || !FactorioSettings.servicesEnabled(project))return;
+        for(var definition:definitions.values()) if(definition.isEnabled(project))
+            LanguageServerManager.getInstance(project).start(definition);
     }
     public void restart() {
         onEdt(this::restartOnEdt);
@@ -245,6 +258,7 @@ public final class FactorioServerManager implements Disposable {
     }
     private final class Definition extends LanguageServerDefinition {
         final ModLanguageScope scope;
+        final FactorioProblemsModel.Module problemModule;
         final boolean lua;
         final List<String> command;
         final String fingerprint;
@@ -252,10 +266,10 @@ public final class FactorioServerManager implements Disposable {
         volatile Features features;
         Definition(ModLanguageScope scope, boolean lua) {
             super(id(scope,lua), scope.name() + (lua ? " — EmmyLua" : " — Factorio locale"), "Per-mod Factorio language service",false,60,false);
-            this.scope=scope; this.lua=lua;
+            this.scope=scope; this.lua=lua; this.problemModule=problemModule(scope);
             command = lua ? List.of(EmmyLuaAnalyzerAdaptor.INSTANCE.getEmmyLuaLanguageServer(),"--editor","intellij","--log-level",ApplicationManager.getApplication().isUnitTestMode() ? "debug" : "info","--log-path",scope.workspace().getParent().resolve("logs/"+scope.name()).toString(),"--resources-path",scope.workspace().getParent().resolve("data-"+scope.name()).resolve("emmylua_ls/resources").toString())
                 : List.copyOf(Toolkit.command(project,"lsp","--stdio"));
-            fingerprint = scope.toString()+command;
+            fingerprint = scope.toString()+command+problemModule;
         }
         @Override public boolean isEnabled(Project p) { return p == project && active && !disposed && FactorioSettings.servicesEnabled(p) && super.isEnabled(p); }
         @Override public StreamConnectionProvider createConnectionProvider(Project p) {
@@ -308,8 +322,16 @@ public final class FactorioServerManager implements Disposable {
         private final Map<String,Long> stamps = new HashMap<>();
         private final Map<String,Integer> versions = new HashMap<>();
         private boolean ready;
+        private volatile Object problemSession;
         Features(Definition definition) {
             this.definition=definition;
+            problemSession=FactorioProblems.get(project).register(definition.problemModule);
+            setDiagnosticFeature(new LSPDiagnosticFeature() {
+                @Override public void diagnosticsUpdated(VirtualFile file,List<Diagnostic> diagnostics) {
+                    if(Features.this.isEnabled(file)) FactorioProblems.get(project).update(problemSession,
+                        definition.problemModule,file,diagnostics,this,definition.lua?"EmmyLua":"Factorio locale/changelog");
+                }
+            });
             // LSP4IJ formatting can select a server through its feature rather than
             // the normal file-aware accessor. Keep that path inside this mod too.
             setFormattingFeature(new LSPFormattingFeature() {
@@ -344,9 +366,17 @@ public final class FactorioServerManager implements Disposable {
         }
         @Override public synchronized void handleServerStatusChanged(ServerStatus status) {
             ready = status == ServerStatus.started;
+            if(status==ServerStatus.starting || status==ServerStatus.started) {
+                if(problemSession==null)problemSession=FactorioProblems.get(project).register(definition.problemModule);
+            } else if(status==ServerStatus.stopping || status==ServerStatus.stopped) clearProblems();
             stamps.clear(); versions.clear();
             if (ready) scheduleSync();
         }
+        synchronized void clearProblems() {
+            Object previous=problemSession; problemSession=null;
+            FactorioProblems.get(project).remove(previous);
+        }
+        @Override public void dispose() { clearProblems(); super.dispose(); }
         synchronized void sync(List<Buffer> buffers) {
             if (!ready || !definition.active) return;
             var server = getLanguageServer(); if (server == null) return;

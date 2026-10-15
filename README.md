@@ -1,14 +1,17 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.7.9-dev.
+`de.softwareforge.factorio`. Development release 0.8.0-dev.
 
-This release coordinates source-root ownership with EmmyLua2: the default Lua
-server excludes FDE-managed mod folders while continuing to serve other Lua files.
-Install it with EmmyLua2 build154 (or a later build containing the ownership hook).
-See [per-mod servers](docs/PER_MOD_SERVERS.md) for configuration and lifecycle details.
-Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
-`0.21.1-SNAPSHOT-workspace-diagnostics-patched3`.
+This release adds **Problems → Factorio**: Lua and locale/changelog diagnostics
+across mod modules, grouped by module and file, with module/severity/text filters
+and navigation. The view uses received diagnostics; it does not launch another
+analysis pass. See [Factorio Problems](docs/PROBLEMS.md) for reporting coverage.
+
+Source-root ownership coordination with EmmyLua2 remains enabled. Use EmmyLua2
+build154 or later (both build158 scheduler variants work), and patched LSP4IJ
+`0.21.1-SNAPSHOT-workspace-diagnostics-patched4`. Install **both FDE and LSP4IJ**
+for this update. Targets IntelliJ IDEA 2026.2 (build262).
 LuaLS and profiling are not supported.
 
 FDE uses [Factorio Modding Tool Kit (FMTK)](https://github.com/justarandomgeek/vscode-factoriomod-debug)
@@ -65,11 +68,11 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 Install the patched EmmyLua2 build containing the file-routing extension (work
 branch `work/patched-build`, commit `54818f2` or later) and the patched LSP4IJ ZIP
-`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched3.zip`,
+`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched4.zip`,
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
 `aarch64` fix (current development build:
-`0.30.0-153-IDEA262-patched-modules`). See [acceptance results](docs/ACCEPTANCE.md)
+`0.30.0-158-IDEA262-patched-modules`). See [acceptance results](docs/ACCEPTANCE.md)
 for validation details.
 
 This LSP4IJ build adds workspace diagnostic pulls that are absent from the
@@ -79,6 +82,7 @@ the exact source revision, version and checksum in `lsp4ij.lock`.
 The analyzer now schedules workspace diagnostics after edits (UP-045), replacing
 the old global refresh workaround. Patched3 also honors document matchers for
 workspace reports, keeping the generic EmmyLua server out of FDE mod diagnostics.
+Patched4 adds the cache notification hook used by the Factorio Problems tab.
 
 Choose **Factorio Mod** in New Project or New Module. This is a separate
 wizard entry alongside Lua. Enter the mod's name, title, author and target

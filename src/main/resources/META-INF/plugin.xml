@@ -14,6 +14,7 @@
   <depends>com.cppcxy.Intellij-EmmyLua</depends>
   <depends>com.redhat.devtools.lsp4ij</depends>
   <extensions defaultExtensionNs="com.intellij">
+    <problemsViewPanelProvider implementation="de.softwareforge.factorio.FactorioProblemsPanel$Provider"/>
     <lang.parserDefinition language="FactorioChangelog" implementationClass="de.softwareforge.factorio.FactorioChangelogParserDefinition"/>
     <fileType name="Factorio Changelog" language="FactorioChangelog" fileNames="changelog.txt" implementationClass="de.softwareforge.factorio.FactorioChangelogFileType" fieldName="INSTANCE"/>
     <fileType name="Factorio Locale" language="FactorioLocale" extensions="cfg" implementationClass="de.softwareforge.factorio.FactorioLocaleFileType" fieldName="INSTANCE"/>
