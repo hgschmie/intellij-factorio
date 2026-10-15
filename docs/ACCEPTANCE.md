@@ -1,3 +1,31 @@
+## Request/update ordering — EmmyLua2 build158 (2026-10-14)
+
+Development analyzer pin: `3c9cdfb4ce4cd42f710f49f41115c8f3053e06e2`.
+UP-054 makes request handlers wait for preceding queued updates, preventing stale
+semantic highlighting and completions immediately after editing. UP-045 remains
+the normal scheduler, as selected by the user. UP-008 stays a build157 comparison.
+FDE remains 0.7.9-dev, its existing archive unchanged. LSP4IJ remains
+workspace-diagnostics-patched3; install only the new EmmyLua2 package.
+
+Six forced platform tests pass with no skips. The new test sends twenty changes
+through the real LSP4IJ connection, immediately requests semantic tokens without
+retry/sleep/diagnostic synchronization, and checks the current annotation's
+keyword, variable and operator ranges. Existing generated API completion,
+asymmetric attributes, ownership, cross-file workspace diagnostics and Lua version
+checks also pass. This verifies protocol behavior, not a visual popup/color check.
+Log: `build/logs/ordering158-platform.log`; archived XML:
+`build/test-results/ordering158-platform/`.
+
+Five deterministic Rust request-ordering regressions cover preceding edits,
+cancellation, later edits, concurrent requests and close; three fail before the
+standalone fix. All 229 standalone and 260 integrated server tests, Clippy/fmt,
+and seven UP-045 workspace protocol scenarios pass. The packaged server returns
+current semantic tokens at all seven edit stages and correct API completions on
+30 immediate requests with a pending workspace pull. Frozen LTN request_processor
+and interface files retain zero diagnostics. The fix preserves freshness; full
+workspace contention may still delay responses. See workspace
+`upstream/REQUEST_ORDERING_2026-10-14.md` for branch and artifact provenance.
+
 ## Annotation type completion — EmmyLua2 build157 (2026-10-14)
 
 Development analyzer pin: `f44bc15020e7c9bfc0c0b73dfadc49550146fc1e`.

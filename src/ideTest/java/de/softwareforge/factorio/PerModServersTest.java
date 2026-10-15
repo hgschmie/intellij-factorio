@@ -499,6 +499,51 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         }
     }
 
+    public void testSemanticTokensObserveImmediateEdits() throws Exception {
+        Path root = mod("fresh_tokens", "state"), control = root.resolve("control.lua");
+        String prefix = "---@type table?\nlocal port\n";
+        Files.writeString(control, prefix + "    ---\nlocal value = port\n");
+        attach(List.of(root));
+        var manager = FactorioServerManager.get(getProject());
+        FactorioSettings.get(getProject()).serviceMode = "ENABLED";
+        manager.configure(List.of(scope(root, List.of())));
+        var item = server(manager.luaServer(control));
+        var service = item.getServer().getTextDocumentService();
+        var identifier = new TextDocumentIdentifier(control.toUri().toString());
+        var params = new SemanticTokensParams(identifier);
+        service.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(identifier.getUri(), "lua", 1, Files.readString(control))));
+        var legend = item.getServerCapabilities().getSemanticTokensProvider().getLegend().getTokenTypes();
+        int version = 1;
+        try {
+            for (int round = 0; round < 10; round++) {
+                for (String annotation : List.of("    --- @c", "    --- @cast port -?")) {
+                    service.didChange(new DidChangeTextDocumentParams(
+                        new VersionedTextDocumentIdentifier(identifier.getUri(), ++version),
+                        List.of(new TextDocumentContentChangeEvent(prefix + annotation + "\nlocal value = port\n"))));
+                    // No diagnostic pull, retry or sleep between edit and token request.
+                    var tokens = await(service.semanticTokensFull(params)).getData();
+                    var names = new HashSet<String>();
+                    int line = 0, column = 0;
+                    for (int i = 0; i < tokens.size(); i += 5) {
+                        int delta = tokens.get(i);
+                        line += delta;
+                        column = delta == 0 ? column + tokens.get(i + 1) : tokens.get(i + 1);
+                        if (line != 2) continue;
+                        int end = column + tokens.get(i + 2);
+                        assertTrue("Token exceeds current annotation: " + tokens, end <= annotation.length());
+                        names.add(annotation.substring(column, end) + ":" + legend.get(tokens.get(i + 3)));
+                    }
+                    assertTrue(names.toString(), names.contains("@:keyword"));
+                    if (annotation.endsWith("@c")) assertTrue(names.toString(), names.contains("c:keyword"));
+                    else for (String expected : List.of("cast:keyword", "port:variable", "-:operator", "?:operator"))
+                        assertTrue(names.toString(), names.contains(expected));
+                }
+            }
+        } finally {
+            service.didClose(new DidCloseTextDocumentParams(identifier));
+        }
+    }
+
     public void testGeneratedApiWithSeparateWorkspaces() throws Exception {
         Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
         org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));
