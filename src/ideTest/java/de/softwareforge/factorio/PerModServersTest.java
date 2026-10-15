@@ -504,6 +504,8 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));
         Path a=mod("alpha","alphaValue"),b=mod("beta","betaValue");
         for(Path root:List.of(a,b)) Files.writeString(root.resolve("control.lua"),"local surface = game.get_surface(1)\nstorage.sensor_data = { sensors = {} }\nlocal saved = storage\nlocal util = require('util')\nlocal copy = util.table.deepcopy({})\n");
+        String typePrefix = "---@type data.La";
+        for (Path root : List.of(a,b)) Files.writeString(root.resolve("type-completion.lua"), typePrefix + "\nlocal lamp\n");
         Path data=docs.getParent().resolve("data");
         var imports=new ArrayList<String>();
         var targets=new ArrayList<Path>();
@@ -549,6 +551,20 @@ public class PerModServersTest extends HeavyPlatformTestCase {
                 String target=definitions(item,root.resolve("control.lua"),5+i,27);
                 assertTrue(imports.get(i)+": "+target,target.contains(targets.get(i).toUri().toString()));
             }
+            var response = await(item.getServer().getTextDocumentService().completion(new CompletionParams(
+                new TextDocumentIdentifier(root.resolve("type-completion.lua").toUri().toString()),
+                new Position(0, typePrefix.length()))));
+            assertNotNull("Generated API annotation completions", response);
+            var items = response.isLeft() ? response.getLeft() : response.getRight().getItems();
+            var lamp = items.stream().filter(candidate -> "LampPrototype".equals(candidate.getLabel())).findFirst();
+            assertTrue("Missing data.LampPrototype in " + items, lamp.isPresent());
+            assertEquals("data.LampPrototype", lamp.get().getFilterText());
+            assertNotNull(lamp.get().getTextEdit());
+            assertTrue(lamp.get().getTextEdit().isLeft());
+            var edit = lamp.get().getTextEdit().getLeft();
+            assertEquals(new Range(new Position(0, 9), new Position(0, typePrefix.length())), edit.getRange());
+            assertEquals("---@type data.LampPrototype", typePrefix.substring(0, edit.getRange().getStart().getCharacter())
+                + edit.getNewText() + typePrefix.substring(edit.getRange().getEnd().getCharacter()));
         }
     }
 

@@ -1,3 +1,30 @@
+## Annotation type completion — EmmyLua2 build157 (2026-10-14)
+
+Development analyzer pin: `f44bc15020e7c9bfc0c0b73dfadc49550146fc1e`.
+UP-053 restores visible library/metadata types and qualified annotation completion.
+The normal build157 retains UP-045; the matching one-off `-up008` build contains
+the same completion fix and existing analyzer patches with UP-008 instead.
+FDE remains **0.7.9-dev** with its existing archive unchanged; LSP4IJ remains
+workspace-diagnostics-patched3. Only EmmyLua2 needs replacing for this fix.
+
+Five forced platform tests passed, none skipped: generated API workspaces,
+asymmetric attributes, workspace ownership, cross-file workspace diagnostics and
+Lua language levels. The generated-API test now requests `---@type data.La` in
+both module servers, checks `LampPrototype`/its full filter text, and applies the
+returned replacement edit to obtain exactly `---@type data.LampPrototype`.
+This exercises real packaged servers through LSP4IJ; it is not a visual popup test.
+Logs: `build/logs/doc-type157-platform.log`; archived XML results:
+`build/test-results/doc-type157-platform/`.
+
+Both packaged analyzers pass five minimal library/metadata/qualified completion
+cases and twelve completion requests after changes to frozen entities.lua. All
+returned edits insert the complete name without duplicating the namespace.
+Frozen request_processor.lua and interface.lua retain zero diagnostics.
+Completion requests wait 600ms after edits to isolate this provider fix from the
+known update-queue race; no claim is made that diagnostic contention is repaired.
+Package hashes and complete evidence: workspace
+`upstream/DOC_TYPE_COMPLETION_2026-10-14.md`.
+
 ## Analyzer build156 and UP-008 comparison (2026-10-14)
 
 Development analyzer pin: `54b5a910887ae4f880d5c1e8b5b17df0e3e2d796`.
