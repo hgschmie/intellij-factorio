@@ -47,7 +47,7 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
         this.project=project; problems=FactorioProblems.get(project);
         var filters=new JPanel(new FlowLayout(FlowLayout.LEFT,JBUI.scale(8),JBUI.scale(4)));
         filters.add(new JBLabel("Module:")); filters.add(modules); filters.add(severity);
-        start.setToolTipText("Start Lua and locale/changelog services for all configured modules; reuse servers already running");
+        start.setToolTipText("Start services for all modules and keep them running for this project session; reuse servers already running");
         start.addActionListener(e->FactorioServerManager.get(project).startServices());
         filters.add(start);
         var expand=new JButton(AllIcons.Actions.Expandall);
@@ -89,8 +89,8 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
     @Override public void customizeTabContent(Content content) {
         this.content=content; content.setIcon(FactorioIcons.FACTORIO); content.setDisposer(this); refresh();
     }
-    @Override public void selectionChangedTo(boolean selected) { this.selected=selected; if(selected)refresh(); }
-    @Override public void visibilityChangedTo(boolean visible) { this.visible=visible; if(visible && selected)refresh(); }
+    @Override public void selectionChangedTo(boolean selected) { this.selected=selected; if(selected && visible){FactorioServerManager.get(project).startServices();refresh();} }
+    @Override public void visibilityChangedTo(boolean visible) { this.visible=visible; if(visible && selected){FactorioServerManager.get(project).startServices();refresh();} }
     @Override public void dispose() { disposed=true; ToolTipManager.sharedInstance().unregisterComponent(tree); }
 
     void refresh() {

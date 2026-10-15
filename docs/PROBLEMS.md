@@ -11,11 +11,17 @@ grouped by module and relative file path. Each message shows its source, code,
 line and column. Double-click or press Enter/F4 to open its exact location.
 Expand/collapse controls operate on the whole tree.
 
-**Start services** starts Lua and locale/changelog services for all configured
-modules; already-running servers are reused. Ordinary file opening still starts
-the appropriate services automatically. Opening or filtering the Problems tab
-only reads cached results and does not request a new analysis. UI updates are
-coalesced, and hidden/inactive views defer tree rebuilding until shown.
+Opening the Factorio tab starts Lua and locale/changelog services for **all
+configured modules**, including modules without open files. **Start services**
+retries stopped services; already-running servers are reused. These services stay
+alive for this project session, including after the last editor closes. Modules
+added later start automatically; removed or disabled services are still stopped.
+Server startup runs in the background, while registry and UI updates stay on EDT.
+
+Ordinary file opening remains lazy until project-wide diagnostics are requested.
+Filtering only reads cached results; the tab does not introduce another diagnostic
+request loop. UI updates are coalesced, and hidden/inactive views defer tree
+rebuilding until shown.
 
 ## What “project-wide” covers
 
@@ -28,7 +34,8 @@ The tab displays the latest diagnostics supplied by the servers:
   opened or edited and clears them on close. Closed locale/changelog files are
   indexed for language features, but that does not produce project-wide diagnostic
   reports. This release does not change that server behavior.
-- A module whose servers have not started has no results yet. An empty view means
+- Startup and the first workspace analysis take time. Disabled or failed services
+  have no results. An empty view means
   no problems have been reported, not that every project file passed an analysis.
 
 Each server's results are replaced independently, so clearing Lua warnings does

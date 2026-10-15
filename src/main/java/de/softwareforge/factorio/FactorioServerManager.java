@@ -19,6 +19,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.Alarm;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import com.redhat.devtools.lsp4ij.*;
 import com.redhat.devtools.lsp4ij.client.LanguageClientImpl;
 import com.redhat.devtools.lsp4ij.client.features.*;
@@ -32,6 +33,8 @@ import java.net.URI;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 
 /** One independent analyzer and locale index per mod; definitions live only for this project. */
 @Service(Service.Level.PROJECT)
@@ -40,6 +43,8 @@ public final class FactorioServerManager implements Disposable {
     private final Alarm configAlarm = new Alarm(Alarm.ThreadToUse.SWING_THREAD, this);
     private final Set<Path> pendingConfigRoots = new HashSet<>();
     private final Alarm syncAlarm = new Alarm(Alarm.ThreadToUse.POOLED_THREAD, this);
+    private final ExecutorService lifecycleExecutor = AppExecutorUtil.createBoundedApplicationPoolExecutor("Factorio language services",1);
+    private volatile boolean projectDiagnosticsRequested;
     private volatile List<ModLanguageScope> scopes = List.of();
     private List<Path> publishedOwnedRoots = List.of();
     private final Map<String, Definition> definitions = new LinkedHashMap<>();
@@ -168,6 +173,7 @@ public final class FactorioServerManager implements Disposable {
         }
         if (ownershipChanged || !old.equals(next)) refreshEditors();
         scheduleSync();
+        if(projectDiagnosticsRequested) queueServices(List.copyOf(definitions.values()),false);
     }
     private FactorioProblemsModel.Module problemModule(ModLanguageScope scope) {
         String name=FactorioModules.get(project).mods().stream().filter(m->m.root().equals(scope.root()))
@@ -189,8 +195,32 @@ public final class FactorioServerManager implements Disposable {
     public void startServices() { onEdt(this::startServicesOnEdt); }
     private synchronized void startServicesOnEdt() {
         if(disposed || project.isDisposed() || !FactorioSettings.servicesEnabled(project))return;
-        for(var definition:definitions.values()) if(definition.isEnabled(project))
-            LanguageServerManager.getInstance(project).start(definition);
+        projectDiagnosticsRequested=true;
+        queueServices(List.copyOf(definitions.values()),false);
+    }
+    private void queueServices(List<Definition> requested,boolean restart) {
+        if(disposed)return;
+        try { lifecycleExecutor.execute(()->{
+            // Registry/UI changes stay on EDT. Starting a server may inspect PSI
+            // and perform blocking I/O, so it must run outside EDT and manager locks.
+            for(var definition:requested) {
+                if(disposed || project.isDisposed())return;
+                if(!definition.isEnabled(project))continue;
+                var features=definition.features;
+                if(!restart && features!=null && (features.getServerStatus()==ServerStatus.started
+                    || features.getServerStatus()==ServerStatus.starting))continue;
+                try {
+                    LanguageServerManager.getInstance(project).start(definition,
+                        new LanguageServerManager.StartOptions().setForceStart(true)
+                            .setForceRestart(restart).setWillEnable(false));
+                } catch(RuntimeException error) {
+                    onEdt(()->{if(!disposed && !project.isDisposed() && definition.active)
+                        FactorioActions.report(project,"Cannot start "+definition.getDisplayName()+": "+error.getMessage(),true);});
+                }
+            }
+        }); } catch(RejectedExecutionException error) {
+            if(!disposed)throw error;
+        }
     }
     public void restart() {
         onEdt(this::restartOnEdt);
@@ -198,16 +228,12 @@ public final class FactorioServerManager implements Disposable {
     private synchronized void restartOnEdt() {
         if (disposed || project.isDisposed()) return;
         configureOnEdt(scopes);
-        for (var d : definitions.values()) LanguageServerManager.getInstance(project).start(d,new LanguageServerManager.StartOptions().setForceRestart(true));
+        queueServices(List.copyOf(definitions.values()),true);
         refreshEditors();
     }
     private synchronized void restartLuaRoots(Set<Path> roots) {
         if (disposed || project.isDisposed()) return;
-        for (var definition : definitions.values()) {
-            if (definition.lua && roots.contains(definition.scope.root()))
-                LanguageServerManager.getInstance(project).start(definition,
-                    new LanguageServerManager.StartOptions().setForceRestart(true));
-        }
+        queueServices(definitions.values().stream().filter(d->d.lua && roots.contains(d.scope.root())).toList(),true);
     }
     private void refreshEditors() {
         ApplicationManager.getApplication().invokeLater(() -> {
@@ -252,6 +278,7 @@ public final class FactorioServerManager implements Disposable {
             removed.forEach(d -> d.active = false);
             definitions.clear();
         }
+        lifecycleExecutor.shutdownNow();
         // Do not expire this callback with the project: global registry cleanup
         // must still run when project disposal originated on a background thread.
         onEdt(() -> removed.forEach(d -> LanguageServersRegistry.getInstance().removeServerDefinition(project,d)));
@@ -354,6 +381,7 @@ public final class FactorioServerManager implements Disposable {
             });
         }
         @Override public boolean isEnabled(VirtualFile file) { return definition.active && owns(definition.scope,filePath(file),definition.lua) && accepts(file,definition.lua); }
+        @Override public boolean keepServerAlive() { return projectDiagnosticsRequested && definition.isEnabled(project); }
         @Override public void initializeParams(InitializeParams params) {
             Path root = definition.lua ? definition.scope.root() : definition.scope.workspace();
             params.setRootUri(root.toUri().toString());

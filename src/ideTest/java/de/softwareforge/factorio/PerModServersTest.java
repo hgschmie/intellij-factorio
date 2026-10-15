@@ -580,6 +580,53 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         } finally { leaseA.dispose();leaseB.dispose(); }
     }
 
+    public void testProblemsStartAllServicesWithoutEditorsAndKeepClosedFiles() throws Exception {
+        Path a=mod("coldalpha","value"), b=mod("coldbeta","value");
+        Files.writeString(a.resolve("control.lua"),"return MissingAlphaGlobal\n");
+        Path nested=Files.createDirectories(a.resolve("scripts")).resolve("closed.lua");
+        Files.writeString(nested,"return MissingClosedGlobal\n");
+        Files.writeString(b.resolve("control.lua"),"return MissingBetaGlobal\n");
+        attach(List.of(a,b));
+        for(int n=0;n<60;n++){PlatformTestUtil.dispatchAllEventsInIdeEventQueue();Thread.sleep(20);}
+        FactorioSettings.get(getProject()).serviceMode="ENABLED";
+        var manager=FactorioServerManager.get(getProject());
+        manager.configure(List.of(scope(a,List.of()),scope(b,List.of())));
+        var store=FactorioProblems.get(getProject());
+        var panel=new FactorioProblemsPanel(getProject());
+        try {
+            assertEmpty(com.intellij.openapi.fileEditor.FileEditorManager.getInstance(getProject()).getOpenFiles());
+            // Exercise the actual UI entry point, never server(id), which starts servers itself.
+            panel.selectionChangedTo(true);
+            eventually(()->store.snapshot().problems().stream().filter(p->p.code().equals("undefined-global")).count()==3);
+            assertTrue(store.snapshot().problems().stream().anyMatch(p->p.file().equals(nested)));
+            var accessor=LanguageServiceAccessor.getInstance(getProject());
+            eventually(()->accessor.getStartedServers().stream()
+                .filter(s->s.getServerDefinition().getId().startsWith("de.softwareforge.factorio.") && s.getServerStatus()==ServerStatus.started).count()==4);
+            var services=accessor.getStartedServers().stream()
+                .filter(s->s.getServerDefinition().getId().startsWith("de.softwareforge.factorio.")).toList();
+            assertTrue(services.stream().allMatch(s->s.getClientFeatures().keepServerAlive()));
+            var processes=services.stream().map(LanguageServerWrapper::getCurrentProcessId).toList();
+            manager.startServices();manager.startServices();
+            for(int n=0;n<20;n++){PlatformTestUtil.dispatchAllEventsInIdeEventQueue();Thread.sleep(20);}
+            assertEquals(processes,services.stream().map(LanguageServerWrapper::getCurrentProcessId).toList());
+            var editorFile=file(a.resolve("control.lua"));
+            var psi=Objects.requireNonNull(PsiManager.getInstance(getProject()).findFile(editorFile));
+            await(LanguageServiceAccessor.getInstance(getProject()).getLanguageServers(psi,null,null));
+            var editors=com.intellij.openapi.fileEditor.FileEditorManager.getInstance(getProject());
+            editors.openFile(editorFile,true);editors.closeFile(editorFile);
+            for(int n=0;n<20;n++){PlatformTestUtil.dispatchAllEventsInIdeEventQueue();Thread.sleep(20);}
+            assertTrue(services.stream().allMatch(s->s.getServerStatus()==ServerStatus.started));
+            assertTrue(store.snapshot().problems().stream().anyMatch(p->p.file().equals(nested)));
+            manager.configure(List.of(scope(a,List.of())));
+            eventually(()->services.stream().filter(s->s.getServerDefinition().getDisplayName().startsWith("coldbeta"))
+                .allMatch(LanguageServerWrapper::isDisposed));
+            assertTrue(store.snapshot().problems().stream().noneMatch(p->p.file().startsWith(b)));
+            // New module definitions inherit the project-wide diagnostics request.
+            manager.configure(List.of(scope(a,List.of()),scope(b,List.of())));
+            eventually(()->store.snapshot().problems().stream().anyMatch(p->p.file().equals(b.resolve("control.lua"))));
+        } finally { com.intellij.openapi.util.Disposer.dispose(panel); }
+    }
+
     public void testGeneratedApiWithSeparateWorkspaces() throws Exception {
         Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
         org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));
@@ -686,6 +733,41 @@ public class PerModServersTest extends HeavyPlatformTestCase {
             try { Definitions.generate(getProject(),new com.intellij.openapi.progress.EmptyProgressIndicator(),message -> {}); }
             catch(Exception e) { throw new CompletionException(e); }
         }));
+    }
+
+    public void testProblemsForClosedFilesInReportedMod() throws Exception {
+        String originalPath=System.getProperty("factorio.test.realMods","");
+        org.junit.Assume.assumeTrue("Pass -PrealMods to test a copy of LTN",!originalPath.isBlank());
+        Path source=Path.of(originalPath).resolve("LogisticTrainNetwork");
+        Path target=temporary.resolve("LogisticTrainNetwork");
+        Files.walkFileTree(source,EnumSet.of(FileVisitOption.FOLLOW_LINKS),Integer.MAX_VALUE,new SimpleFileVisitor<Path>() {
+            @Override public FileVisitResult preVisitDirectory(Path directory,java.nio.file.attribute.BasicFileAttributes attrs) throws java.io.IOException {
+                if(Set.of(".git",".portal").contains(directory.getFileName().toString()))return FileVisitResult.SKIP_SUBTREE;
+                Files.createDirectories(target.resolve(source.relativize(directory)));return FileVisitResult.CONTINUE;
+            }
+            @Override public FileVisitResult visitFile(Path file,java.nio.file.attribute.BasicFileAttributes attrs) throws java.io.IOException {
+                if(file.toString().matches(".*\\.(lua|json|cfg)$"))Files.copy(file,target.resolve(source.relativize(file)),StandardCopyOption.REPLACE_EXISTING);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        // Deterministic markers in the disposable copy, never in the user's mod.
+        Files.writeString(target.resolve("script/fde-closed-test.lua"),"return MissingClosedFileMarker\n");
+        attach(List.of(target));
+        for(int n=0;n<60;n++){PlatformTestUtil.dispatchAllEventsInIdeEventQueue();Thread.sleep(20);}
+        var settings=FactorioSettings.get(getProject());settings.serviceMode="ENABLED";
+        settings.apiDocs=System.getProperty("factorio.test.apiDocs");
+        await(CompletableFuture.runAsync(()->{
+            try { Definitions.generate(getProject(),new com.intellij.openapi.progress.EmptyProgressIndicator(),message->{}); }
+            catch(Exception e){throw new CompletionException(e);}
+        }));
+        var panel=new FactorioProblemsPanel(getProject());
+        try {
+            assertEmpty(com.intellij.openapi.fileEditor.FileEditorManager.getInstance(getProject()).getOpenFiles());
+            panel.selectionChangedTo(true);
+            var store=FactorioProblems.get(getProject());
+            eventually(()->store.snapshot().problems().stream().anyMatch(p->p.file().equals(target.resolve("script/fde-closed-test.lua"))));
+            assertTrue("Closed real-mod files should be reported",store.snapshot().problems().stream().map(FactorioProblemsModel.Problem::file).distinct().count()>1);
+        } finally { com.intellij.openapi.util.Disposer.dispose(panel); }
     }
 
     public void testReportedNavigationWithCopiesOfActualMods() throws Exception {
