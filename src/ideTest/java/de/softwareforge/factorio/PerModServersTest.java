@@ -580,6 +580,39 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         } finally { leaseA.dispose();leaseB.dispose(); }
     }
 
+    public void testStartServicesWhileClientFeaturesAwaitWrapperAttachment() throws Exception {
+        Path root=mod("attaching","value");
+        Files.writeString(root.resolve("control.lua"),"return MissingAttachmentGlobal\n");
+        attach(List.of(root));
+        for(int n=0;n<60;n++){PlatformTestUtil.dispatchAllEventsInIdeEventQueue();Thread.sleep(20);}
+        FactorioSettings.get(getProject()).serviceMode="ENABLED";
+        var manager=FactorioServerManager.get(getProject());
+        manager.configure(List.of(scope(root,List.of())));
+        var definition=LanguageServersRegistry.getInstance().getServerDefinition(manager.luaServer(root.resolve("control.lua")));
+        assertNotNull(definition);
+        // Reproduce the interval between LSP4IJ's factory call and setServerWrapper.
+        var unattached=definition.createClientFeatures();
+        assertNull(unattached.getServerWrapper());
+        try {
+            manager.startServices();
+            eventually(()->FactorioProblems.get(getProject()).snapshot().problems().stream()
+                .anyMatch(p->p.code().equals("undefined-global") && p.file().equals(root.resolve("control.lua"))));
+            eventually(()->LanguageServiceAccessor.getInstance(getProject()).getStartedServers().stream()
+                .filter(s->s.getServerDefinition().getId().startsWith("de.softwareforge.factorio.")
+                    && s.getServerStatus()==ServerStatus.started).count()==2);
+            var services=List.copyOf(LanguageServiceAccessor.getInstance(getProject()).getStartedServers());
+            var processes=services.stream().map(LanguageServerWrapper::getCurrentProcessId).toList();
+            // Settings can create another wrapper-less preview while the server runs.
+            var preview=definition.createClientFeatures();
+            assertNull(preview.getServerWrapper());
+            try {
+                manager.startServices();manager.startServices();
+                for(int n=0;n<20;n++){PlatformTestUtil.dispatchAllEventsInIdeEventQueue();Thread.sleep(20);}
+                assertEquals(processes,services.stream().map(LanguageServerWrapper::getCurrentProcessId).toList());
+            } finally { preview.dispose(); }
+        } finally { unattached.dispose(); }
+    }
+
     public void testProblemsStartAllServicesWithoutEditorsAndKeepClosedFiles() throws Exception {
         Path a=mod("coldalpha","value"), b=mod("coldbeta","value");
         Files.writeString(a.resolve("control.lua"),"return MissingAlphaGlobal\n");

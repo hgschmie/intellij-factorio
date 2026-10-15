@@ -206,10 +206,10 @@ public final class FactorioServerManager implements Disposable {
             for(var definition:requested) {
                 if(disposed || project.isDisposed())return;
                 if(!definition.isEnabled(project))continue;
-                var features=definition.features;
-                if(!restart && features!=null && (features.getServerStatus()==ServerStatus.started
-                    || features.getServerStatus()==ServerStatus.starting))continue;
                 try {
+                    var features=definition.features;
+                    var status=features==null ? ServerStatus.none : features.getServerStatus();
+                    if(!restart && (status==ServerStatus.started || status==ServerStatus.starting))continue;
                     LanguageServerManager.getInstance(project).start(definition,
                         new LanguageServerManager.StartOptions().setForceStart(true)
                             .setForceRestart(restart).setWillEnable(false));
@@ -317,7 +317,11 @@ public final class FactorioServerManager implements Disposable {
             provider.setCommandLine(line); return provider;
         }
         @Override public Class<? extends LanguageServer> getServerInterface() { return lua ? EmmyLuaCustomApi.class : LanguageServer.class; }
-        @Override public LSPClientFeatures createClientFeatures() { features = new Features(this); return features; }
+        @Override public LSPClientFeatures createClientFeatures() {
+            // Settings/installer inspection also calls this factory without a
+            // wrapper. Publish only the features of a real lifecycle callback.
+            return new Features(this);
+        }
         @Override public LanguageClientImpl createLanguageClient(Project p) {
             return new LanguageClientImpl(p) {
                 @Override public CompletableFuture<List<Object>> configuration(ConfigurationParams params) {
@@ -352,7 +356,6 @@ public final class FactorioServerManager implements Disposable {
         private volatile Object problemSession;
         Features(Definition definition) {
             this.definition=definition;
-            problemSession=FactorioProblems.get(project).register(definition.problemModule);
             setDiagnosticFeature(new LSPDiagnosticFeature() {
                 @Override public void diagnosticsUpdated(VirtualFile file,List<Diagnostic> diagnostics) {
                     if(Features.this.isEnabled(file)) FactorioProblems.get(project).update(problemSession,
@@ -399,6 +402,9 @@ public final class FactorioServerManager implements Disposable {
             } else if(status==ServerStatus.stopping || status==ServerStatus.stopped) clearProblems();
             stamps.clear(); versions.clear();
             if (ready) scheduleSync();
+            // The wrapper is attached before LSP4IJ invokes this callback. The
+            // volatile publication also makes that attachment visible to startup.
+            definition.features=this;
         }
         synchronized void clearProblems() {
             Object previous=problemSession; problemSession=null;
