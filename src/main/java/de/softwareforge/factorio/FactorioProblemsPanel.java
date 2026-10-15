@@ -40,6 +40,7 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
     private boolean visible=true;
     private boolean disposed;
     private record Choice(Path root, String label) { @Override public String toString(){return label;} }
+    private record ModuleGroup(FactorioProblemsModel.Module module, int count, long errors, long warnings) {}
     private record FileGroup(Path path, String label, int count) {}
 
     public FactorioProblemsPanel(Project project) {
@@ -122,7 +123,9 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
             for(var module:snapshot.modules()) {
                 var entries=visible.stream().filter(p->p.module().equals(module)).toList();
                 if(entries.isEmpty())continue;
-                var moduleNode=new DefaultMutableTreeNode(module); root.add(moduleNode);
+                var moduleNode=new DefaultMutableTreeNode(new ModuleGroup(module,entries.size(),
+                    entries.stream().filter(p->p.severity()==1).count(),entries.stream().filter(p->p.severity()==2).count()));
+                root.add(moduleNode);
                 var files=new LinkedHashMap<Path,List<FactorioProblemsModel.Problem>>();
                 for(var entry:entries)files.computeIfAbsent(entry.file(),p->new ArrayList<>()).add(entry);
                 for(var entry:files.entrySet()) {
@@ -135,20 +138,24 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
             var nodes=root.depthFirstEnumeration();
             while(nodes.hasMoreElements()) {
                 var node=(DefaultMutableTreeNode)nodes.nextElement(); var path=new TreePath(node.getPath());
-                if(expanded.contains(key(node)) || previousRoot.getChildCount()==0 && node.getUserObject() instanceof FactorioProblemsModel.Module)tree.expandPath(path);
+                if(expanded.contains(key(node)) || previousRoot.getChildCount()==0 && node.getUserObject() instanceof ModuleGroup)tree.expandPath(path);
                 if(selection!=null && Objects.equals(selection,key(node)))tree.setSelectionPath(path);
             }
             tree.getEmptyText().setText(snapshot.modules().isEmpty()?"No Factorio modules configured":snapshot.problems().isEmpty()?"No problems reported by Factorio language services":"No problems match these filters");
             long errors=visible.stream().filter(p->p.severity()==1).count();
             long warnings=visible.stream().filter(p->p.severity()==2).count();
-            summary.setText(count(visible.size(),"problem")+" · "+count(errors,"error")+" · "+count(warnings,"warning"));
+            summary.setText(summary(visible.size(),errors,warnings));
             summary.setToolTipText("Latest diagnostics received from Lua and locale/changelog services, including closed files. This view does not run an additional analysis.");
             if(content!=null)content.setDisplayName("Factorio"+(snapshot.problems().isEmpty()?"":" ("+snapshot.problems().size()+")"));
         } finally { rebuilding=false; }
     }
     private static String count(long count,String noun) { return count+" "+noun+(count==1?"":"s"); }
+    private static String summary(long total,long errors,long warnings) {
+        return count(total,"problem")+" · "+count(errors,"error")+" · "+count(warnings,"warning");
+    }
     private static Object key(DefaultMutableTreeNode node) {
-        Object value=node.getUserObject(); return value instanceof FileGroup file?file.path():value;
+        Object value=node.getUserObject();
+        return value instanceof ModuleGroup group?group.module().root():value instanceof FileGroup file?file.path():value;
     }
     private OpenFileDescriptor descriptor() {
         if(!(tree.getLastSelectedPathComponent() instanceof DefaultMutableTreeNode node))return null;
@@ -169,7 +176,11 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
         @Override public void customizeCellRenderer(JTree tree,Object value,boolean selected,boolean expanded,boolean leaf,int row,boolean focus) {
             setToolTipText(null);
             Object item=((DefaultMutableTreeNode)value).getUserObject();
-            if(item instanceof FactorioProblemsModel.Module module) { setIcon(FactorioIcons.FACTORIO); append(module.name(),SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES); setToolTipText(module.root().toString()); }
+            if(item instanceof ModuleGroup group) {
+                setIcon(FactorioIcons.FACTORIO); append(group.module().name(),SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
+                append("  "+summary(group.count(),group.errors(),group.warnings()),SimpleTextAttributes.GRAYED_ATTRIBUTES);
+                setToolTipText(group.module().root().toString());
+            }
             else if(item instanceof FileGroup file) { setIcon(AllIcons.FileTypes.Any_type); append(file.label()); append(" ("+file.count()+")",SimpleTextAttributes.GRAYED_ATTRIBUTES); setToolTipText(file.path().toString()); }
             else if(item instanceof FactorioProblemsModel.Problem p) {
                 setIcon(p.severity()==1?AllIcons.General.Error:p.severity()==2?AllIcons.General.Warning:AllIcons.General.Information);

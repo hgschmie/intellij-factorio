@@ -1,4 +1,4 @@
-# Factorio Problems — 0.8.2-dev
+# Factorio Problems — 0.8.3-dev
 
 Open **View → Tool Windows → Problems**, then choose **Factorio**.
 The tab combines the diagnostics received by FDE's per-module EmmyLua and FMTK
@@ -7,7 +7,9 @@ Factorio API library diagnostics or other projects' results.
 
 Choose **All modules** or one module, select a severity filter, and optionally
 filter by text (message, file, module, source or diagnostic code). Results are
-grouped by module and relative file path. Each message shows its source, code,
+grouped by module and relative file path. Each module heading shows its problem,
+error and warning counts, matching the active filters (added in 0.8.3-dev).
+Each message shows its source, code,
 line and column. Double-click or press Enter/F4 to open its exact location.
 Expand/collapse controls operate on the whole tree.
 
@@ -48,7 +50,7 @@ Generated/dependency files outside the owning module are filtered out.
 
 ## Dependencies and implementation
 
-Install FDE `intellij-factorio-0.8.2-dev.zip` and EmmyLua2 build159, then restart
+Install FDE `intellij-factorio-0.8.3-dev.zip` and EmmyLua2 build159, then restart
 IntelliJ. Choose the normal or matching UP-008 variant. Build159 independently
 fixes false unresolved-require warnings for existing side-effect modules.
 Keep LSP4IJ `lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched4.zip`.
