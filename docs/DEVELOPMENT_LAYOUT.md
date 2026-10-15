@@ -4,6 +4,15 @@ All paths below are relative to `~/ai/fmtk`. Active builds and tests do not use
 `spike/`. That directory preserves historical investigations, logs, screenshots,
 old profiles and unused artifacts. Do not redirect new validation logs there.
 
+The workspace root itself is not a Git repository. The analyzer investigation
+skill has a versioned copy in [analyzer-workflow/SKILL.md](analyzer-workflow/SKILL.md),
+including the [fixed historical comparison revisions](analyzer-workflow/references/historical-provenance.md)
+and the UP-057 provenance report. Its active workspace copy is
+`.agents/skills/find-lua-analyzer-bug/`; keep this versioned copy in sync when that
+workflow changes. Paths within the skill refer to the containing workspace,
+not this documentation directory. Workspace HANDOFF.md and upstream/FIX_INVENTORY.md
+remain the live cross-repository records.
+
 | Path | Purpose |
 | --- | --- |
 | `plugins/` | Shared install-from-disk folder containing copies of validated plugin ZIPs, including all variants directly in this folder |

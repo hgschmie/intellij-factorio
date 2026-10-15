@@ -1,0 +1,4 @@
+interface:
+  display_name: "Find Lua analyzer bug"
+  short_description: "Investigate and locally package EmmyLua analyzer fixes"
+  default_prompt: "Use $find-lua-analyzer-bug to investigate this Lua diagnostic, prepare a local fix branch, and integrate and package the fix as needed."
