@@ -1,9 +1,13 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.8.1-dev.
+`de.softwareforge.factorio`. Development release 0.8.2-dev.
 
-**Problems → Factorio** now starts services for all configured modules in the
+This patch fixes a Start services crash when client features have no server
+wrapper yet, including preview objects created by LSP4IJ's settings UI. FDE now
+tracks only feature objects attached to a real server.
+
+**Problems → Factorio** starts services for all configured modules in the
 background and keeps them running for the project session, including modules
 without open files. Start services reuses running servers. The tab uses received
 diagnostics and preserves module/severity/text filters and navigation.

@@ -1,4 +1,4 @@
-# Factorio Problems — 0.8.1-dev
+# Factorio Problems — 0.8.2-dev
 
 Open **View → Tool Windows → Problems**, then choose **Factorio**.
 The tab combines the diagnostics received by FDE's per-module EmmyLua and FMTK
@@ -17,6 +17,8 @@ retries stopped services; already-running servers are reused. These services sta
 alive for this project session, including after the last editor closes. Modules
 added later start automatically; removed or disabled services are still stopped.
 Server startup runs in the background, while registry and UI updates stay on EDT.
+Version 0.8.2-dev fixes startup during client-feature creation/settings inspection:
+wrapper-less preview objects cannot replace the active server reference.
 
 Ordinary file opening remains lazy until project-wide diagnostics are requested.
 Filtering only reads cached results; the tab does not introduce another diagnostic
@@ -46,7 +48,7 @@ Generated/dependency files outside the owning module are filtered out.
 
 ## Dependencies and implementation
 
-Install FDE `intellij-factorio-0.8.1-dev.zip` and EmmyLua2 build159, then restart
+Install FDE `intellij-factorio-0.8.2-dev.zip` and EmmyLua2 build159, then restart
 IntelliJ. Choose the normal or matching UP-008 variant. Build159 independently
 fixes false unresolved-require warnings for existing side-effect modules.
 Keep LSP4IJ `lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched4.zip`.
