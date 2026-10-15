@@ -1,16 +1,18 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.8.0-dev.
+`de.softwareforge.factorio`. Development release 0.8.1-dev.
 
-This release adds **Problems → Factorio**: Lua and locale/changelog diagnostics
-across mod modules, grouped by module and file, with module/severity/text filters
-and navigation. The view uses received diagnostics; it does not launch another
-analysis pass. See [Factorio Problems](docs/PROBLEMS.md) for reporting coverage.
+**Problems → Factorio** now starts services for all configured modules in the
+background and keeps them running for the project session, including modules
+without open files. Start services reuses running servers. The tab uses received
+diagnostics and preserves module/severity/text filters and navigation.
+See [Factorio Problems](docs/PROBLEMS.md) for reporting coverage.
 
 Source-root ownership coordination with EmmyLua2 remains enabled. Use EmmyLua2
-build154 or later (both build158 scheduler variants work), and patched LSP4IJ
-`0.21.1-SNAPSHOT-workspace-diagnostics-patched4`. Install **both FDE and LSP4IJ**
+build159 (normal or UP-008) to also fix false unresolved-require warnings for
+side-effect-only Lua modules. Keep LSP4IJ
+`0.21.1-SNAPSHOT-workspace-diagnostics-patched4`. Install **FDE and EmmyLua2**
 for this update. Targets IntelliJ IDEA 2026.2 (build262).
 LuaLS and profiling are not supported.
 
