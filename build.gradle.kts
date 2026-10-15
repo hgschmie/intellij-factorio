@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.intellij.platform.grammarkit") version "2.18.1"
 }
 group = "de.softwareforge.factorio"
-version = "0.7.8-dev"
+version = "0.7.9-dev"
 repositories { mavenCentral(); intellijPlatform { defaultRepositories() } }
 // Defaults follow the workspace layout; every external location can be overridden with -P.
 val workspaceDir = projectDir.parentFile
@@ -65,6 +65,9 @@ val verifyIdeDependencies = tasks.register("verifyIdeDependencies") {
         check(emmyDir.resolve("lib").listFiles().orEmpty().filter { it.extension == "jar" }.any { jar ->
             ZipFile(jar).use { it.getEntry("com/cppcxy/ide/lsp/EmmyLuaServerProvider.class") != null }
         }) { "EmmyLua2 is missing the file-routing hook. Rebuild work/patched-build." }
+        check(emmyDir.resolve("lib").listFiles().orEmpty().filter { it.extension == "jar" }.any { jar ->
+            ZipFile(jar).use { it.getEntry("com/cppcxy/ide/lsp/EmmyLuaClientFeatures.class") != null }
+        }) { "EmmyLua2 is missing workspace ownership support. Install/prepare patched build 154 or later." }
         check(emmyDir.resolve("lib").listFiles().orEmpty().filter { it.extension == "jar" }.any { jar ->
             ZipFile(jar).use { it.getEntry("com/tang/intellij/lua/lang/LuaLanguageLevelProvider.class") != null }
         }) { "EmmyLua2 is missing the language-level hook. Install/prepare patched build 121 or later." }

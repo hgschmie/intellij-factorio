@@ -89,6 +89,72 @@ public class PerModServersTest extends HeavyPlatformTestCase {
     private String completions(LanguageServerItem item, Path path) throws Exception {
         return String.valueOf(await(item.getServer().getTextDocumentService().completion(new CompletionParams(new TextDocumentIdentifier(path.toUri().toString()),new Position(1,21)))));
     }
+    public void testDefaultServerRespectsRootOwnershipAndRelease() throws Exception {
+        // Keep LSP4IJ progress consumption asynchronous in the IDE test environment.
+        String previous = System.getProperty("intellij.progress.task.ignoreHeadless");
+        System.setProperty("intellij.progress.task.ignoreHeadless", "true");
+        var manager = FactorioServerManager.get(getProject());
+        try {
+            Path parent = Toolkit.root(getProject()).toRealPath();
+            Path owned = Files.move(mod("owned", "ownedValue"), parent.resolve("nested-mod"));
+            Path external = mod("external", "externalValue");
+            Path plain = parent.resolve("plain.lua");
+            Files.writeString(parent.resolve("globals.lua"), "PlainOnlyMarker = {}\n");
+            Files.writeString(owned.resolve("init.lua"), "OwnedOnlyMarker = {}\n");
+            Files.writeString(owned.resolve("control.lua"), "local value = OwnedOnlyMarker\n");
+            Files.writeString(plain, "local own = PlainOnlyMarker\nlocal foreign = OwnedOnlyMarker\nlocal ignored = VendorOnlyMarker\n");
+            Files.writeString(Files.createDirectories(parent.resolve("vendor")).resolve("ignored.lua"), "VendorOnlyMarker = {}\n");
+            // EmmyLua supports dotted as well as nested native configuration keys.
+            Files.writeString(parent.resolve(".luarc.json"), "{\"workspace.ignoreDir\":[\"vendor\"]}");
+            WriteAction.run(() -> ModuleRootModificationUtil.addContentRoot(getModule(), parent.toString()));
+            attach(List.of(owned, external));
+            for (int n=0;n<60;n++) { PlatformTestUtil.dispatchAllEventsInIdeEventQueue(); Thread.sleep(20); }
+            FactorioSettings.get(getProject()).serviceMode = "ENABLED";
+            // Ownership is reserved before definition generation has finished.
+            assertTrue(EmmyLuaServerRouting.getOwnedRoots(getProject()).contains(owned));
+            manager.configure(List.of(scope(owned,List.of()), scope(external,List.of())));
+            var ownServer = server(manager.luaServer(owned.resolve("control.lua")));
+            var plainServer = server("EmmyLua");
+            var alive = plainServer.keepAlive();
+            try {
+                eventually(() -> { try { return definitions(plainServer,plain,0,16).contains("globals.lua"); } catch(Exception e) { return false; } });
+                assertFalse("Nested owned module must not be indexed by the default server",
+                    definitions(plainServer,plain,1,20).contains("init.lua"));
+                assertFalse("Native exclusions must survive the ownership overlay",
+                    definitions(plainServer,plain,2,20).contains("ignored.lua"));
+                eventually(() -> { try { return definitions(ownServer,owned.resolve("control.lua"),0,20).contains("init.lua"); } catch(Exception e) { return false; } });
+                // Saved updates underneath the broad parent must remain excluded too.
+                WriteAction.run(() -> file(owned.resolve("init.lua")).setBinaryContent("OwnedOnlyMarker = { updated = true }\n".getBytes()));
+                Thread.sleep(600);
+                assertFalse(definitions(plainServer,plain,1,20).contains("init.lua"));
+            } finally { alive.dispose(); }
+
+            // An explicit dependency is intentional and still usable despite source ownership.
+            var config = new JsonObject(); var ws = new JsonObject(); var libraries = new com.google.gson.JsonArray();
+            libraries.add(owned.toString()); ws.add("library",libraries); config.add("workspace",ws);
+            Path rc = parent.resolve(".luarc.json"); Files.writeString(rc,config.toString());
+            EmmyLuaServerRouting.ownershipChanged(getProject());
+            var importing = server("EmmyLua"); var importingAlive = importing.keepAlive();
+            try {
+                eventually(() -> { try { return definitions(importing,plain,1,20).contains("init.lua"); } catch(Exception e) { return false; } });
+            } finally { importingAlive.dispose(); }
+            Files.delete(rc);
+
+            FactorioSettings.get(getProject()).serviceMode = "DISABLED";
+            manager.configure(List.of());
+            assertTrue(EmmyLuaServerRouting.getOwnedRoots(getProject()).isEmpty());
+            assertEquals("EmmyLua",EmmyLuaServerRouting.getServerId(getProject(),file(owned.resolve("control.lua"))));
+            var released = server("EmmyLua"); var releasedAlive = released.keepAlive();
+            try {
+                eventually(() -> { try { return definitions(released,plain,1,20).contains("init.lua"); } catch(Exception e) { return false; } });
+            } finally { releasedAlive.dispose(); }
+        } finally {
+            LanguageServerManager.getInstance(getProject()).stop("EmmyLua",new LanguageServerManager.StopOptions().setWillDisable(false));
+            if (previous == null) System.clearProperty("intellij.progress.task.ignoreHeadless");
+            else System.setProperty("intellij.progress.task.ignoreHeadless", previous);
+        }
+    }
+
     public void testFormattingStaysWithinEachMod() throws Exception {
         Path a=mod("alpha","alphaValue"), b=mod("beta","betaValue");
         for(Path root:List.of(a,b)) {
@@ -242,6 +308,8 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         assertNull(LanguageServersRegistry.getInstance().getServerDefinition(bid.replace(".lua.",".locale.")));
         assertEquals("EmmyLua",EmmyLuaServerRouting.getServerId(getProject(),file(b.resolve("control.lua"))));
         assertEquals(aid,EmmyLuaServerRouting.getServerId(getProject(),file(a.resolve("control.lua"))));
+        assertTrue(EmmyLuaServerRouting.getOwnedRoots(getProject()).contains(a));
+        assertFalse(EmmyLuaServerRouting.getOwnedRoots(getProject()).contains(b));
     }
     public void testUnsavedDependencyReachesBothConsumers() throws Exception {
         Path a=mod("alpha","alphaValue"),b=mod("beta","betaValue"),dep=mod("dependency","unused");

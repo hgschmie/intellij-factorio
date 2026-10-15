@@ -1,3 +1,23 @@
+# Default-server workspace ownership (0.7.9-dev)
+
+FDE now advertises its reserved mod roots and managed library roots to EmmyLua2.
+The default server omits those roots from initialization and excludes them from
+broader project scans. Ordinary unowned Lua files still use the default server.
+Adding/removing modules or disabling Factorio services invalidates the default
+server's scope; it restarts on demand with the new ownership snapshot. Existing
+per-file routing and per-mod locale/changelog services remain in place.
+
+Install EmmyLua2 **0.30.0-154-IDEA262-patched-modules** together with FDE
+**0.7.9-dev**. LSP4IJ workspace-diagnostics-patched3 remains the dependency.
+EmmyLua2's optional API is on `feat/workspace-root-ownership` (UP-047), based on
+the pending file-routing contribution (UP-006/#60). No new PR has been opened.
+
+Ownership controls the automatically discovered workspace. Explicit analyzer
+`workspaceRoots`, `library` or `packages` entries can deliberately reintroduce a
+root; those settings remain user-controlled. User config files are not rewritten.
+The packaged analyzer includes UP-048, which merges dotted and nested settings
+correctly so existing native exclusions and the ownership overlay both survive.
+
 # Per-mod language servers
 
 The 0.2.1 development build registers an independent EmmyLua analyzer and FMTK
@@ -13,7 +33,7 @@ and EmmyLua2 `0.30.0-153-IDEA262-patched-modules`, which provides
 The active EmmyLua2 branch is `work/patched-build`; see its `PATCHED_BUILD.md`.
 
 Install those ZIPs from each upstream repository's `build/distributions/` and
-`build/distributions/intellij-factorio-0.7.8-dev.zip`, then restart IDEA.
+`build/distributions/intellij-factorio-0.7.9-dev.zip`, then restart IDEA.
 The LSP4IJ breakpoint-removal fix is documented in
 [BREAKPOINT_REMOVAL.md](BREAKPOINT_REMOVAL.md). The formatting fix requires no
 analyzer changes; the analyzer remains pinned by `emmy-analyzer.lock`.

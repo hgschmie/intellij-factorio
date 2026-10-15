@@ -41,6 +41,7 @@ public final class FactorioServerManager implements Disposable {
     private final Set<Path> pendingConfigRoots = new HashSet<>();
     private final Alarm syncAlarm = new Alarm(Alarm.ThreadToUse.POOLED_THREAD, this);
     private volatile List<ModLanguageScope> scopes = List.of();
+    private List<Path> publishedOwnedRoots = List.of();
     private final Map<String, Definition> definitions = new LinkedHashMap<>();
     private volatile boolean disposed;
     public FactorioServerManager(Project project) {
@@ -99,7 +100,18 @@ public final class FactorioServerManager implements Disposable {
         var pending = FactorioModules.get(project).mods().stream().filter(m -> file.startsWith(m.root())).max(Comparator.comparingInt(m -> m.root().getNameCount())).orElse(null);
         return pending == null ? null : "de.softwareforge.factorio.lua." + ModLanguageScope.identity(Toolkit.root(project),pending.root());
     }
+    private List<Path> ownedRoots() {
+        if (disposed || !FactorioSettings.servicesEnabled(project)) return List.of();
+        var roots = new LinkedHashSet<Path>();
+        // Match the file-routing reservation before definition generation finishes.
+        FactorioModules.get(project).mods().forEach(mod -> roots.add(mod.root()));
+        scopes.forEach(scope -> roots.addAll(scope.roots(true)));
+        return List.copyOf(roots);
+    }
     public static final class Routing implements EmmyLuaServerProvider {
+        @Override public List<Path> getOwnedRoots(Project project) {
+            return get(project).ownedRoots();
+        }
         @Override public String getServerId(Project project, VirtualFile file) {
             return get(project).luaServer(filePath(file));
         }
@@ -146,11 +158,13 @@ public final class FactorioServerManager implements Disposable {
             registry.addServerDefinition(project,d,null);
         }
         definitions.clear(); definitions.putAll(desired);
-        if (!old.equals(next)) {
-            // Drop existing default-server document connections; it may reconnect only unclaimed Lua files.
-            LanguageServerManager.getInstance(project).stop("EmmyLua",new LanguageServerManager.StopOptions().setWillDisable(false));
-            refreshEditors();
+        var ownedRoots = ownedRoots();
+        boolean ownershipChanged = !publishedOwnedRoots.equals(ownedRoots);
+        if (ownershipChanged) {
+            publishedOwnedRoots = ownedRoots;
+            com.cppcxy.ide.lsp.EmmyLuaServerRouting.ownershipChanged(project);
         }
+        if (ownershipChanged || !old.equals(next)) refreshEditors();
         scheduleSync();
     }
     private static Path filePath(VirtualFile file) {

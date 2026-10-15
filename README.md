@@ -1,7 +1,12 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.7.8-dev.
+`de.softwareforge.factorio`. Development release 0.7.9-dev.
+
+This release coordinates source-root ownership with EmmyLua2: the default Lua
+server excludes FDE-managed mod folders while continuing to serve other Lua files.
+Install it with EmmyLua2 build154 (or a later build containing the ownership hook).
+See [per-mod servers](docs/PER_MOD_SERVERS.md) for configuration and lifecycle details.
 Targets IntelliJ IDEA 2026.2 (build 262), EmmyLua2 and patched LSP4IJ
 `0.21.1-SNAPSHOT-workspace-diagnostics-patched3`.
 LuaLS and profiling are not supported.

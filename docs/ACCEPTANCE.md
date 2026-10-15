@@ -1,3 +1,34 @@
+# Workspace ownership — 0.7.9-dev (2026-10-14)
+
+Install FDE `intellij-factorio-0.7.9-dev.zip` and EmmyLua2
+`IntelliJ-EmmyLua2-0.30.0-154-IDEA262-patched-modules.zip`; keep LSP4IJ
+workspace-diagnostics-patched3. FDE advertises reserved module/library roots,
+and EmmyLua2 excludes them from its default automatically discovered workspace.
+Ordinary Lua files remain supported; module removal and disabling services
+release ownership. Explicit workspace/library/package entries remain intentional
+opt-ins. Native configuration files are unchanged.
+
+Seven isolated IDE tests pass with real child servers: nested ownership and
+release (including native dotted exclusions and explicit imports), module
+removal with independent Lua/locale servers, registry EDT lifecycle, formatting,
+unsaved cross-file diagnostic updates, generated API separation and Lua version
+selection. Logs: `build/logs/ownership-platform.log`; preserved JUnit results:
+`build/test-results/ownership-platform`. The native dotted-configuration case
+failed before the independent analyzer fix UP-048 and passes afterward.
+FDE unit suite: 59 passed, one opt-in DAP test skipped. Unit/build log:
+`build/logs/ownership-unit-build.log`.
+
+EmmyLua2 has 30 passing tests; UP-048 has 1,472 standalone analysis tests and
+1,640 combined analysis tests. The packaged analyzer preserves zero diagnostics
+for frozen LTN request_processor.lua and interface.lua. The full historical Rust
+suite was not repeated for this bounded configuration change. No interactive
+regular-IDE check or installation was performed. Original mods remain unchanged.
+
+FDE archive SHA-256:
+`52ba714fb67065d488554a642dc1e754ed2fe921235fb424984c5c27c863f2c3`.
+Source branches, package provenance and dependency relationships are recorded in
+workspace `upstream/WORKSPACE_OWNERSHIP_2026-10-14.md` and FIX_INVENTORY.md.
+
 # Multi-root duplicate class and diagnostic routing — 2026-10-14
 
 Development dependencies are EmmyLua2 build153 (analyzer `0f4d0c10`) and LSP4IJ
