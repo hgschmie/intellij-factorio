@@ -1,3 +1,23 @@
+## Analyzer build156 and UP-008 comparison (2026-10-14)
+
+Development analyzer pin: `54b5a910887ae4f880d5c1e8b5b17df0e3e2d796`.
+Normal EmmyLua2 build156 includes UP-051 callable-class diagnostics and UP-052
+constructor call alignment/overload selection, retaining UP-045. An isolated
+build156 `-up008` comparison package replaces UP-045 with UP-008 and otherwise
+contains the same analyzer fixes. FDE stays **0.7.9-dev** and its existing ZIP
+is unchanged; the pin is for development validation, not runtime server selection.
+
+The normal prepared dependency remains `upstream/Intellij-EmmyLua2/build/prepared`.
+The alternative has its own `build/prepared-up008` directory. Install one EmmyLua2
+ZIP at a time, keep LSP4IJ workspace-diagnostics-patched3, and restart the IDE.
+Five forced platform tests pass: generated APIs, asymmetric fields, workspace
+ownership, automatic cross-file diagnostics and Lua language levels. Evidence is
+under `build/logs/comparison156-platform.log` and
+`build/test-results/comparison156-platform/`. Current completion-provider bugs are
+deliberately unchanged in both packages.
+See workspace `upstream/COMPLETION_COMPARISON_2026-10-14.md` for exact package hashes,
+protocol/real-client evidence and the remaining completion work.
+
 # data-util analyzer fixes — EmmyLua2 build155 (2026-10-14)
 
 Development analyzer pin is `fb7a3502ae2c69aba522e4caed5860a40a23603e`.
