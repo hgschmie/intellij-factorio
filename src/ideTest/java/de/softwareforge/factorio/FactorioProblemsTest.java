@@ -85,5 +85,25 @@ public class FactorioProblemsTest extends HeavyPlatformTestCase {
             javax.imageio.ImageIO.write(image,"png",root.resolve("factorio-problems.png").toFile());
         } finally { Disposer.dispose(panel); }
     }
+    public void testAllSeverityCountsAndFilters() throws Exception {
+        var module=new FactorioProblemsModel.Module(root.resolve("mod"),"mod");
+        var store=FactorioProblems.get(getProject());store.configure(List.of(module));
+        var owner=store.register(module);var file=file("mod/control.lua");
+        store.update(owner,module,file,List.of(
+            diagnostic("error",DiagnosticSeverity.Error),diagnostic("warning",DiagnosticSeverity.Warning),
+            diagnostic("information",DiagnosticSeverity.Information),diagnostic("hint",DiagnosticSeverity.Hint)),new LSPDiagnosticFeature(),"EmmyLua");
+        var panel=new FactorioProblemsPanel(getProject());
+        try {
+            var tree=Objects.requireNonNull(UIUtil.findComponentOfType(panel,Tree.class));
+            assertEquals(4,leaves(tree).size());
+            assertTrue(UIUtil.findComponentsOfType(panel,JLabel.class).stream().anyMatch(label->
+                "4 problems · 1 error · 1 warning · 1 information · 1 hint".equals(label.getText())));
+            var severity=UIUtil.findComponentsOfType(panel,JComboBox.class).stream().filter(c->
+                "Problem severity".equals(c.getAccessibleContext().getAccessibleName())).findFirst().orElseThrow();
+            severity.setSelectedItem("Hints");assertEquals(1,leaves(tree).size());assertEquals("hint",leaves(tree).get(0).message());
+            severity.setSelectedItem("Information");assertEquals(1,leaves(tree).size());assertEquals("information",leaves(tree).get(0).message());
+            severity.setSelectedItem("Errors and warnings");assertEquals(2,leaves(tree).size());
+        } finally { Disposer.dispose(panel); }
+    }
     private static void layout(java.awt.Container component) { component.doLayout();for(var child:component.getComponents())if(child instanceof java.awt.Container c)layout(c); }
 }

@@ -1,7 +1,12 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.8.5-dev.
+`de.softwareforge.factorio`. Development release 0.8.6-dev.
+
+The Factorio Problems tab now shows separate information and hint counts in its
+module and total summaries. Select **Information** or **Hints** to inspect those
+diagnostics; **All severities** includes them alongside errors and warnings.
+
 
 LocalisedString now follows Factorio's documented recursive array types, including
 runtime nil. Typed LocalisedString[] values can be passed, returned and cast to

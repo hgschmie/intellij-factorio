@@ -30,7 +30,7 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
     private final FactorioProblems problems;
     private final Tree tree=new Tree(new DefaultMutableTreeNode());
     private final ComboBox<Choice> modules=new ComboBox<>();
-    private final ComboBox<String> severity=new ComboBox<>(new String[]{"All severities","Errors and warnings","Errors","Warnings"});
+    private final ComboBox<String> severity=new ComboBox<>(new String[]{"All severities","Errors and warnings","Errors","Warnings","Information","Hints"});
     private final SearchTextField search=new SearchTextField();
     private final JBLabel summary=new JBLabel();
     private final JButton start=new JButton("Start services");
@@ -40,7 +40,7 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
     private boolean visible=true;
     private boolean disposed;
     private record Choice(Path root, String label) { @Override public String toString(){return label;} }
-    private record ModuleGroup(FactorioProblemsModel.Module module, int count, long errors, long warnings) {}
+    private record ModuleGroup(FactorioProblemsModel.Module module, int count, long errors, long warnings, long information, long hints) {}
     private record FileGroup(Path path, String label, int count) {}
 
     public FactorioProblemsPanel(Project project) {
@@ -112,7 +112,7 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
             String query=search.getText().trim().toLowerCase(Locale.ROOT);
             int level=severity.getSelectedIndex();
             var visible=snapshot.problems().stream().filter(p->filterRoot==null || p.module().root().equals(filterRoot))
-                .filter(p->level==0 || level==1 && p.severity()<=2 || level==2 && p.severity()==1 || level==3 && p.severity()==2)
+                .filter(p->level==0 || level==1 && p.severity()<=2 || level==2 && p.severity()==1 || level==3 && p.severity()==2 || level==4 && p.severity()==3 || level==5 && p.severity()==4)
                 .filter(p->query.isEmpty() || (p.message()+" "+p.source()+" "+p.code()+" "+p.file()+" "+p.module().name()).toLowerCase(Locale.ROOT).contains(query)).toList();
             var expanded=new HashSet<Object>();
             var previousRoot=(DefaultMutableTreeNode)tree.getModel().getRoot();
@@ -124,7 +124,8 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
                 var entries=visible.stream().filter(p->p.module().equals(module)).toList();
                 if(entries.isEmpty())continue;
                 var moduleNode=new DefaultMutableTreeNode(new ModuleGroup(module,entries.size(),
-                    entries.stream().filter(p->p.severity()==1).count(),entries.stream().filter(p->p.severity()==2).count()));
+                    entries.stream().filter(p->p.severity()==1).count(),entries.stream().filter(p->p.severity()==2).count(),
+                    entries.stream().filter(p->p.severity()==3).count(),entries.stream().filter(p->p.severity()==4).count()));
                 root.add(moduleNode);
                 var files=new LinkedHashMap<Path,List<FactorioProblemsModel.Problem>>();
                 for(var entry:entries)files.computeIfAbsent(entry.file(),p->new ArrayList<>()).add(entry);
@@ -144,14 +145,16 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
             tree.getEmptyText().setText(snapshot.modules().isEmpty()?"No Factorio modules configured":snapshot.problems().isEmpty()?"No problems reported by Factorio language services":"No problems match these filters");
             long errors=visible.stream().filter(p->p.severity()==1).count();
             long warnings=visible.stream().filter(p->p.severity()==2).count();
-            summary.setText(summary(visible.size(),errors,warnings));
+            long information=visible.stream().filter(p->p.severity()==3).count();
+            long hints=visible.stream().filter(p->p.severity()==4).count();
+            summary.setText(summary(visible.size(),errors,warnings,information,hints));
             summary.setToolTipText("Latest diagnostics received from Lua and locale/changelog services, including closed files. This view does not run an additional analysis.");
             if(content!=null)content.setDisplayName("Factorio"+(snapshot.problems().isEmpty()?"":" ("+snapshot.problems().size()+")"));
         } finally { rebuilding=false; }
     }
     private static String count(long count,String noun) { return count+" "+noun+(count==1?"":"s"); }
-    private static String summary(long total,long errors,long warnings) {
-        return count(total,"problem")+" · "+count(errors,"error")+" · "+count(warnings,"warning");
+    private static String summary(long total,long errors,long warnings,long information,long hints) {
+        return count(total,"problem")+" · "+count(errors,"error")+" · "+count(warnings,"warning")+" · "+information+" information · "+count(hints,"hint");
     }
     private static Object key(DefaultMutableTreeNode node) {
         Object value=node.getUserObject();
@@ -178,7 +181,7 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
             Object item=((DefaultMutableTreeNode)value).getUserObject();
             if(item instanceof ModuleGroup group) {
                 setIcon(FactorioIcons.FACTORIO); append(group.module().name(),SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
-                append("  "+summary(group.count(),group.errors(),group.warnings()),SimpleTextAttributes.GRAYED_ATTRIBUTES);
+                append("  "+summary(group.count(),group.errors(),group.warnings(),group.information(),group.hints()),SimpleTextAttributes.GRAYED_ATTRIBUTES);
                 setToolTipText(group.module().root().toString());
             }
             else if(item instanceof FileGroup file) { setIcon(AllIcons.FileTypes.Any_type); append(file.label()); append(" ("+file.count()+")",SimpleTextAttributes.GRAYED_ATTRIBUTES); setToolTipText(file.path().toString()); }
@@ -186,7 +189,7 @@ public final class FactorioProblemsPanel extends JPanel implements ProblemsViewT
                 setIcon(p.severity()==1?AllIcons.General.Error:p.severity()==2?AllIcons.General.Warning:AllIcons.General.Information);
                 append(p.message().replace('\n',' '));
                 append("  "+(p.line()+1)+":"+(p.column()+1)+"  "+p.source()+(p.code().isEmpty()?"":" ("+p.code()+")"),SimpleTextAttributes.GRAYED_ATTRIBUTES);
-                setToolTipText(p.message());
+                setToolTipText((p.severity()==1?"Error":p.severity()==2?"Warning":p.severity()==3?"Information":"Hint")+": "+p.message());
             }
         }
     }
