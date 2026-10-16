@@ -299,6 +299,14 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         WriteAction.run(() -> added.delete(this));
         eventually(() -> { try { return !completions(bl,b.resolve("control.lua")).contains("same.betaAdded"); } catch(Exception e) { return false; } });
         var oldServer=as.getServer(); manager.restart();
+        // Restart runs on the lifecycle executor; the accessor can still return
+        // the old initialized server before that queued operation begins.
+        eventually(() -> {
+            try {
+                var candidate=await(LanguageServerManager.getInstance(getProject()).getLanguageServer(aid));
+                return candidate!=null && candidate.getServer()!=oldServer;
+            } catch(Exception e) { return false; }
+        });
         var restarted=server(aid); assertNotSame(oldServer,restarted.getServer());
         eventually(() -> { try { return definitions(restarted,a.resolve("control.lua"),0,16).contains("alpha/init.lua"); } catch(Exception e) { return false; } });
         WriteAction.run(() -> ModuleManager.getInstance(getProject()).disposeModule(Objects.requireNonNull(ModuleManager.getInstance(getProject()).findModuleByName("beta"))));
