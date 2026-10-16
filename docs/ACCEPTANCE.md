@@ -1,3 +1,27 @@
+# LSP4IJ build 7 — 2026-10-16
+
+The development pin and prepared dependency now select
+`lsp4ij-0.21.1-SNAPSHOT-7.zip`, built from signed work commit `7d11cfe1`.
+This implements HANDOFF's complete-upstream-version naming convention, with
+`pluginVersion=0.21.1-SNAPSHOT` and separate `pluginBuild=7`.
+It includes UP-044 `08475429` and UP-055 `bc613d84` on upstream/main `cbe50d3d`:
+all four completed workspace-diagnostic review fixes and both Javadoc updates.
+
+All **57 LSP4IJ tests** pass with no skips, followed by successful `buildPlugin`.
+ZIP/nested-JAR integrity, plugin ID/version/minimum IDE build and copied archive
+hashes are verified. SHA-256:
+`5eb99e8be54b82d3418577f477ffb9c2f6f0cf8624e0812d99bad25310e0c469`.
+
+All **three FDE native smoke tests** pass against the new prepared package:
+Problems counts/filtering/navigation and service startup/closed-file diagnostic
+retention without editors. Evidence:
+`build/investigations/lsp4ij-build7-20261016/platform/` and
+`../upstream/lsp4ij/build/checkouts/patched/build/investigations/build7-20261016/`.
+Prior build 6's broader compatibility results remain recorded separately; those
+suites were not rerun for this packaging-only change. FDE remains 0.8.6-dev, all
+existing FDE ZIP hashes are unchanged, and the analyzer/EmmyLua pin is untouched.
+No interactive IDE installation. Install the LSP4IJ ZIP from workspace `plugins/`.
+
 # LSP4IJ upstream and review refresh — patched5 (2026-10-16)
 
 The development dependency is now
