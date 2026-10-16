@@ -32,10 +32,9 @@ diagnostics and preserves module/severity/text filters and navigation.
 See [Factorio Problems](docs/PROBLEMS.md) for reporting coverage.
 
 Source-root ownership coordination with EmmyLua2 remains enabled. Use EmmyLua2
-build168 (normal UP-045) to also fix false unresolved-require warnings for
-side-effect-only Lua modules. Keep LSP4IJ
-`0.21.1-SNAPSHOT-workspace-diagnostics-patched5`. Install **FDE and EmmyLua2**
-for this update. Targets IntelliJ IDEA 2026.2 (build262).
+`0.30.0-172` (normal UP-045) and LSP4IJ `0.21.1-6`. Both installable ZIPs are
+collected in `../plugins/`. FDE remains 0.8.6-dev for this analyzer/dependency
+update. Targets IntelliJ IDEA 2026.2 (build 262).
 LuaLS and profiling are not supported.
 
 FDE uses [Factorio Modding Tool Kit (FMTK)](https://github.com/justarandomgeek/vscode-factoriomod-debug)
@@ -90,14 +89,11 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 ## Install and configure
 
-Install the patched EmmyLua2 build containing the file-routing extension (work
-branch `work/patched-build`, commit `54818f2` or later) and the patched LSP4IJ ZIP
-`../upstream/lsp4ij/build/distributions/lsp4ij-0.21.1-SNAPSHOT-workspace-diagnostics-patched5.zip`,
-then use **Install Plugin from Disk** for the Factorio ZIP in
-`build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
-`aarch64` fix (current development build:
-`0.30.0-167-IDEA262-patched-modules`). See [acceptance results](docs/ACCEPTANCE.md)
-for validation details.
+Install `../plugins/IntelliJ-EmmyLua2-0.30.0-172.zip` and
+`../plugins/lsp4ij-0.21.1-6.zip` using **Install Plugin from Disk**. Keep FDE
+0.8.6-dev, or install its existing archive from the same folder if needed.
+The custom analyzer is packaged for macOS arm64. See the
+[latest fixes and validation](docs/LTN_STOP_UPDATE_2026-10-16.md).
 
 This LSP4IJ build adds workspace diagnostic pulls that are absent from the
 previous official nightly. Install it from disk and retain it while testing this
@@ -109,8 +105,8 @@ workspace reports, keeping the generic EmmyLua server out of FDE mod diagnostics
 Patched4 adds the cache notification hook used by the Factorio Problems tab.
 Patched5 refreshes upstream fixes and makes workspace matching asynchronous,
 isolates matcher failures, and clears removed providers' closed-file diagnostics.
-For this dependency refresh, install only the new LSP4IJ ZIP; FDE remains
-0.8.6-dev with its existing archive.
+Build 6 also clears a provider’s closed-file diagnostics when routing stops
+matching that file. Its numeric counter replaces the long package suffix.
 
 Choose **Factorio Mod** in New Project or New Module. This is a separate
 wizard entry alongside Lua. Enter the mod's name, title, author and target
