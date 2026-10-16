@@ -729,6 +729,61 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         }
     }
 
+    public void testTypedRemoteCallReturnShapes() throws Exception {
+        Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
+        org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));
+        Path root=mod("remote-return","state"), control=root.resolve("control.lua");
+        String source="""
+            ---@class (partial) LuaRemote.InterfaceMap
+            ---@field ['fde-probe'] FdeRemoteInterface
+            ---@class FdeRemoteInterface
+            ---@field event fun(): defines.events
+            ---@field pair fun(): string, integer?
+            ---@field many fun(): integer...
+            script.on_event(remote.call('fde-probe', 'event'), function(event) end)
+            local event, extra = remote.call('fde-probe', 'event')
+            local first, second = remote.call('fde-probe', 'pair')
+            local one, two = remote.call('fde-probe', 'many')
+            local fallback = remote.call('untyped-interface', 'get')
+            ---@param value string
+            local function needs_string(value) end
+            needs_string(remote.call('fde-probe', 'event'))
+            """;
+        Files.writeString(control,source);
+        attach(List.of(root));
+        var settings=FactorioSettings.get(getProject());
+        settings.serviceMode="ENABLED"; settings.apiDocs=docs.toString();
+        await(CompletableFuture.runAsync(() -> {
+            try { Definitions.generate(getProject(),new com.intellij.openapi.progress.EmptyProgressIndicator(),message -> {}); }
+            catch(Exception e) { throw new CompletionException(e); }
+        }));
+        var item=server(FactorioServerManager.get(getProject()).luaServer(control));
+        var document=new TextDocumentIdentifier(control.toUri().toString());
+        eventually(() -> {
+            try { return diagnostics(item,control).contains("param-type-mismatch"); }
+            catch(Exception e) { return false; }
+        });
+        var lines=source.lines().toList();
+        for(var expected:Map.of("event", "defines.events", "first", "string",
+                "second", "integer?", "two", "integer").entrySet()) {
+            int line=expected.getKey().equals("event") ? 7
+                    : expected.getKey().equals("two") ? 9 : 8;
+            String hover=String.valueOf(await(item.getServer().getTextDocumentService().hover(new HoverParams(
+                    document,new Position(line,lines.get(line).indexOf(expected.getKey())+1)))));
+            assertTrue(expected.getKey()+": "+hover,hover.contains(expected.getKey()+": "+expected.getValue()));
+        }
+        var params=new DocumentDiagnosticParams(); params.setTextDocument(document);
+        var report=await(item.getServer().getTextDocumentService().diagnostic(params)).getLeft();
+        var mismatches=report.getItems().stream().filter(d -> d.getCode()!=null && "param-type-mismatch".equals(d.getCode().getLeft())).toList();
+        assertEquals(mismatches.toString(),1,mismatches.size());
+        assertEquals(13,mismatches.getFirst().getRange().getStart().getLine());
+        // Extra slots of ordinary scalar calls currently infer any in EmmyLua.
+        // The known event result must not be repeated as if it were Event....
+        String extra=String.valueOf(await(item.getServer().getTextDocumentService().hover(new HoverParams(
+                document,new Position(7,lines.get(7).indexOf("extra")+1)))));
+        assertFalse(extra,extra.contains("defines.events"));
+    }
+
     public void testAsymmetricApiAttributes() throws Exception {
         Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
         org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));
