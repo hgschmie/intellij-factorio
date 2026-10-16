@@ -784,6 +784,72 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         assertFalse(extra,extra.contains("defines.events"));
     }
 
+    public void testLocalisedStringArraysAndOptionalFields() throws Exception {
+        Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
+        org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));
+        Path root=mod("localised-arrays","state"), control=root.resolve("control.lua");
+        // Thread is a reliable negative control: generated LuaObject currently admits
+        // plain functions through callable class alternatives (an independent issue).
+        String source="""
+            ---@param parts LocalisedString[]
+            ---@return LocalisedString
+            local function _message(parts)
+                game.print(parts)
+                return parts
+            end
+            ---@param parts LocalisedString[]
+            local function _cast(parts)
+                ---@cast parts LocalisedString
+                return parts
+            end
+            ---@type LocalisedString
+            local _nil = nil
+            ---@class FdeCaptionOptions
+            ---@field caption? LocalisedString
+            ---@class FdeRequiredOptions
+            ---@field required true
+            ---@type FdeCaptionOptions|FdeRequiredOptions
+            local _options = {}
+            ---@type LocalisedString
+            local _invalid = coroutine.create(function() end)
+            """;
+        String dataSource="""
+            ---@param parts data.LocalisedString[]
+            ---@return data.LocalisedString
+            local function _message(parts) return parts end
+            ---@param parts data.LocalisedString[]
+            local function _cast(parts)
+                ---@cast parts data.LocalisedString
+                return parts
+            end
+            ---@type data.LocalisedString
+            local _invalid = false
+            """;
+        Files.writeString(control,source);
+        Path data=root.resolve("data.lua"); Files.writeString(data,dataSource);
+        attach(List.of(root));
+        var settings=FactorioSettings.get(getProject());
+        settings.serviceMode="ENABLED"; settings.apiDocs=docs.toString();
+        await(CompletableFuture.runAsync(() -> {
+            try { Definitions.generate(getProject(),new com.intellij.openapi.progress.EmptyProgressIndicator(),message -> {}); }
+            catch(Exception e) { throw new CompletionException(e); }
+        }));
+        var item=server(FactorioServerManager.get(getProject()).luaServer(control));
+        for(var entry:Map.of(control,source,data,dataSource).entrySet()) {
+            eventually(() -> {
+                try { return diagnostics(item,entry.getKey()).contains("assign-type-mismatch"); }
+                catch(Exception e) { return false; }
+            });
+            var params=new DocumentDiagnosticParams();
+            params.setTextDocument(new TextDocumentIdentifier(entry.getKey().toUri().toString()));
+            var report=await(item.getServer().getTextDocumentService().diagnostic(params)).getLeft();
+            var problems=report.getItems().stream().filter(d -> d.getCode()!=null && !"unused".equals(d.getCode().getLeft())).toList();
+            assertEquals(problems.toString(),1,problems.size());
+            assertEquals("assign-type-mismatch",problems.getFirst().getCode().getLeft());
+            assertTrue(entry.getValue().lines().toList().get(problems.getFirst().getRange().getStart().getLine()).contains("_invalid"));
+        }
+    }
+
     public void testAsymmetricApiAttributes() throws Exception {
         Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
         org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));

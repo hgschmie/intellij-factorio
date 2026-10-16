@@ -1,14 +1,18 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.8.4-dev.
+`de.softwareforge.factorio`. Development release 0.8.5-dev.
 
-Known remote-interface calls now preserve their declared single, multiple or
-variadic return values. This release bundles the corrected FMTK EmmyLua generator
-and fixes false event-registration warnings for typed `remote.call` results.
-Install FDE 0.8.4-dev and EmmyLua2 build166; keep LSP4IJ patched4. The changed
-bundled CLI invalidates the generated API cache automatically on regeneration.
-See [remote-call return types](docs/REMOTE_CALL_RETURNS.md) for details.
+LocalisedString now follows Factorio's documented recursive array types, including
+runtime nil. Typed LocalisedString[] values can be passed, returned and cast to
+LocalisedString with EmmyLua2 build167. The first array element still needs to be
+the localisation key when Factorio interprets the value. Install FDE 0.8.5-dev
+and EmmyLua2 build167; keep LSP4IJ patched4. See
+[LocalisedString types](docs/LOCALISED_STRING.md) for details.
+
+Known remote-interface calls also preserve their declared single, multiple or
+variadic return values, as introduced in FDE 0.8.4-dev. See
+[remote-call return types](docs/REMOTE_CALL_RETURNS.md).
 
 Module headings in **Problems → Factorio** now show problem, error and warning
 counts, reflecting the active filters. This release also includes the 0.8.2-dev
@@ -22,7 +26,7 @@ diagnostics and preserves module/severity/text filters and navigation.
 See [Factorio Problems](docs/PROBLEMS.md) for reporting coverage.
 
 Source-root ownership coordination with EmmyLua2 remains enabled. Use EmmyLua2
-build166 (normal UP-045) to also fix false unresolved-require warnings for
+build167 (normal UP-045) to also fix false unresolved-require warnings for
 side-effect-only Lua modules. Keep LSP4IJ
 `0.21.1-SNAPSHOT-workspace-diagnostics-patched4`. Install **FDE and EmmyLua2**
 for this update. Targets IntelliJ IDEA 2026.2 (build262).
@@ -86,7 +90,7 @@ branch `work/patched-build`, commit `54818f2` or later) and the patched LSP4IJ Z
 then use **Install Plugin from Disk** for the Factorio ZIP in
 `build/distributions`. On Apple Silicon use an EmmyLua2 release containing the
 `aarch64` fix (current development build:
-`0.30.0-166-IDEA262-patched-modules`). See [acceptance results](docs/ACCEPTANCE.md)
+`0.30.0-167-IDEA262-patched-modules`). See [acceptance results](docs/ACCEPTANCE.md)
 for validation details.
 
 This LSP4IJ build adds workspace diagnostic pulls that are absent from the
