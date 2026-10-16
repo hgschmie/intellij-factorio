@@ -6,20 +6,21 @@ Factorio mod development for IntelliJ IDEA, implemented in Java under
 The Factorio Problems tab now shows separate information and hint counts in its
 module and total summaries. Select **Information** or **Hints** to inspect those
 diagnostics; **All severities** includes them alongside errors and warnings.
-
+With EmmyLua2 build168, the captured LTN audit drops from 105 to 89 diagnostics.
+See [the flow fixes and remaining-problem triage](docs/LTN_FLOW_TRIAGE_2026-10-15.md).
 
 LocalisedString now follows Factorio's documented recursive array types, including
 runtime nil. Typed LocalisedString[] values can be passed, returned and cast to
 LocalisedString with EmmyLua2 build167. The first array element still needs to be
-the localisation key when Factorio interprets the value. Install FDE 0.8.5-dev
-and EmmyLua2 build167; keep LSP4IJ patched4. See
+the localisation key when Factorio interprets the value. Install FDE 0.8.6-dev
+and EmmyLua2 build168; keep LSP4IJ patched4. See
 [LocalisedString types](docs/LOCALISED_STRING.md) for details.
 
 Known remote-interface calls also preserve their declared single, multiple or
 variadic return values, as introduced in FDE 0.8.4-dev. See
 [remote-call return types](docs/REMOTE_CALL_RETURNS.md).
 
-Module headings in **Problems → Factorio** now show problem, error and warning
+Module headings in **Problems → Factorio** now show problem, error, warning, information and hint
 counts, reflecting the active filters. This release also includes the 0.8.2-dev
 Start services fix: FDE tracks only feature objects attached to a real server,
 excluding unattached preview objects created by LSP4IJ's settings UI.
@@ -31,7 +32,7 @@ diagnostics and preserves module/severity/text filters and navigation.
 See [Factorio Problems](docs/PROBLEMS.md) for reporting coverage.
 
 Source-root ownership coordination with EmmyLua2 remains enabled. Use EmmyLua2
-build167 (normal UP-045) to also fix false unresolved-require warnings for
+build168 (normal UP-045) to also fix false unresolved-require warnings for
 side-effect-only Lua modules. Keep LSP4IJ
 `0.21.1-SNAPSHOT-workspace-diagnostics-patched4`. Install **FDE and EmmyLua2**
 for this update. Targets IntelliJ IDEA 2026.2 (build262).
