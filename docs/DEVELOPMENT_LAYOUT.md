@@ -81,13 +81,18 @@ original paths and describe the old layout.
 
 The earlier LSP4IJ contributions are upstream: breakpoint removal (#1679) and
 file-specific server selection/formatting (#1688). The active dependency is now
-`0.21.1-SNAPSHOT-workspace-diagnostics-patched3`, built from
-`work/factorio-build` at `e6f9f35e`. It contains upstream/main `f3825955`, the
-independent `feat/workspace-diagnostics` contribution, and local IDEA 262 build
-support. Closed-file diagnostics and their error status are published together
-through one immutable snapshot. Workspace reports honor synchronous/asynchronous
-DocumentMatchers without connecting documents or starting servers. Its checkout is `upstream/lsp4ij/build/checkouts/patched`; the contribution
-checkout is `upstream/lsp4ij-worktrees/workspace-diagnostics`.
+`0.21.1-SNAPSHOT-workspace-diagnostics-patched5`, built from
+`work/factorio-build` at `fa76ff79`. It contains upstream/main `cbe50d3d`,
+UP-044 workspace diagnostics (`f18c78d0`), UP-055 diagnostic cache notifications
+(`132d557b`), and local IDEA 262 build support. Closed-file diagnostics and their
+error status are published together through one immutable snapshot. Workspace
+reports honor synchronous/asynchronous DocumentMatchers without connecting
+documents or starting servers. Pending matchers leave lifecycle operations
+unblocked, failed matches reject only their report, and provider removal clears
+its cached diagnostics and notifies consumers. Its checkout is
+`upstream/lsp4ij/build/checkouts/patched`; the contribution checkout is
+`upstream/lsp4ij-worktrees/workspace-diagnostics`. FDE retains version 0.8.6-dev
+and its existing distribution for this dependency-only refresh.
 
 Run `intellij-factorio/scripts/build-lsp4ij.sh` to prepare the pinned archive.
 For a local build, `lsp4ij.lock` records the version, source revision and SHA-256;

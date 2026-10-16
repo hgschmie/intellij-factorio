@@ -1,3 +1,31 @@
+# LSP4IJ upstream and review refresh — patched5 (2026-10-16)
+
+The development dependency is now
+`0.21.1-SNAPSHOT-workspace-diagnostics-patched5`, built from signed LSP4IJ work
+commit `fa76ff79`. It integrates freshly fetched upstream/main `cbe50d3d`,
+UP-044 workspace diagnostics at `f18c78d0` and UP-055 diagnostic notifications
+at `132d557b`. Both independent PR branches remain unchanged.
+
+All 54 selected LSP4IJ tests pass, including provider-cleanup notifications and
+the reviewed asynchronous matching/failure/cancellation paths. The ZIP's plugin
+ID/version/minimum IDE build, nested JAR integrity and copied checksums pass.
+`lsp4ij.lock` and the prepared dependency now select this archive.
+
+FDE validation against patched5: 64 unit tests pass with one existing opt-in
+test skipped; all eight selected native tests pass with no skips. Native checks
+cover Problems counts/filters/navigation, file ownership, per-mod formatting,
+unsaved cross-file workspace updates, combined Lua/FMTK diagnostics, wrapper
+attachment during startup and services/closed-file diagnostics without editors.
+
+Logs and XML: `build/investigations/lsp4ij-patched5-20261016/` (`unit`, `platform`).
+Build provenance and archive hash:
+`../upstream/LSP4IJ_PATCHED5_2026-10-16.md` in the workspace.
+
+Install only the new LSP4IJ ZIP from the workspace `plugins/` folder. FDE remains
+0.8.6-dev; its existing distribution and all prior FDE ZIPs are byte-identical.
+The analyzer/EmmyLua dependency is unchanged. No interactive IDE installation
+or live-project validation was performed.
+
 # Factorio Problems — 0.8.0-dev (2026-10-14)
 
 Adds a native **Problems → Factorio** tab combining FDE-owned EmmyLua and FMTK
