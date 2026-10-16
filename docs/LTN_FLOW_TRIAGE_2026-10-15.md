@@ -135,6 +135,13 @@ source snapshot. Do not indiscriminately suppress the warnings.
 
 ### Analyzer or API-model follow-ups
 
+Follow-up **2026-10-16**: UP-075 fixes the aliased dictionary keys at schedule:246
+(the key was correctly inferred; this was not a loop-flow defect), and UP-076
+fixes the inferred literal assignment contract at stop-update:415. Build169
+reduces the saved baseline to 86 diagnostics (72 warnings +14 hints), without
+new diagnostics. See [priorities and validation](LTN_PRIORITY_FOLLOWUPS_2026-10-16.md).
+The list below preserves the original investigation state.
+
 - `schedule.lua:128,162`: the API returns a union of one-goal/all-goals pathfinder
   results without expressing its correlation with the input options. This causes
   inaccessible result fields/assignment mismatch. `129–130,171`: API result indices
