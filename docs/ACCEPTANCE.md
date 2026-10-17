@@ -1,3 +1,14 @@
+# EmmyLua2 build177 — optional hover presentation (2026-10-17)
+
+Analyzer pin c31e503d integrates the UP-080 amendment and independent UP-087.
+All 2,885 Rust workspace tests, Clippy/rustfmt and two forced native IntelliJ
+checks pass. Packaged-server replay confirms cast-narrowed member hovers and
+optional expanded fields; frozen LTN diagnostics remain identical (79 items).
+The archive/version/pin, binary identity and Unix0755 modes are verified.
+Install EmmyLua2 0.30.0-177 from workspace plugins/; retain FDE 0.8.6-dev and
+LSP4IJ 0.21.1-SNAPSHOT-7. FDE's development pin only is updated.
+[Full receipt](LTN_OPTIONAL_HOVER_2026-10-17.md).
+
 # LSP4IJ build 7 — 2026-10-16
 
 The development pin and prepared dependency now select
