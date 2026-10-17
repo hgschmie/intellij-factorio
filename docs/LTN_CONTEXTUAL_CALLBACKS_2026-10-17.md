@@ -31,8 +31,13 @@ local. No PR status was changed or newly checked.
 
 Completed: signed analyzer work **d69ba527115d65f2bd5ca2eabb56913223655c7a**,
 signed EmmyLua2 packaging **309d248**, **IntelliJ-EmmyLua2-0.30.0-178.zip**.
-New fixes/integration/package commits stay local. Pre-existing outstanding work
-was pushed first. No PR or user IDE installation.
+Publication follow-up (2026-10-17): the two fix branches, analyzer work branch,
+EmmyLua2 work branch and FDE main build-pin/receipt commit `6712916` are pushed
+to origin. Direct remote checks confirm all 107 non-archive/non-backup branch
+heads match across the five repositories. All 118 registered worktrees were
+clean; historical archive/backup refs are preserved. This receipt update is a
+documentation-only FDE follow-up. No new PR, PR-status check, rebuild or IDE
+installation. Audit: analyzer `build/publication-audit-20261017-build178/`.
 
 ### Final validation and package
 
