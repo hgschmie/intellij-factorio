@@ -1,3 +1,16 @@
+# EmmyLua2 build179 — negative numeric literals (2026-10-17)
+
+Analyzer pin 72e36621 integrates independent UP-090. Numeric unary minus now
+negates constant values, and hover includes the sign of a direct negative numeral.
+All 2,902 workspace tests, Clippy/rustfmt and two forced native IntelliJ API
+integration tests pass. Packaged replay of actual LTN init.lua143 shows `-1`
+from either sign or digit, with a range covering both. Frozen LTN diagnostics
+remain identical (104; request_processor.lua zero).
+
+Install EmmyLua2 0.30.0-179 from workspace plugins/. Keep FDE 0.8.6-dev and
+LSP4IJ 0.21.1-SNAPSHOT-7. Only FDE's development pin/documentation changes.
+[Full receipt](LTN_NEGATIVE_LITERAL_HOVER_2026-10-17.md).
+
 # EmmyLua2 build178 — contextual callback inference (2026-10-17)
 
 Analyzer pin d69ba527 integrates independent UP-088/089. Dictionary callbacks
