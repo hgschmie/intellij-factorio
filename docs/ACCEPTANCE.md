@@ -1,3 +1,19 @@
+# EmmyLua2 build178 — contextual callback inference (2026-10-17)
+
+Analyzer pin d69ba527 integrates independent UP-088/089. Dictionary callbacks
+inherit declared parameter types; field annotations and table-constructor hover
+context no longer leak into callback bodies. All 2,897 workspace tests,
+Clippy/rustfmt and two forced native IntelliJ API integration tests pass.
+Packaged-server replay verifies all 29 actual settings callbacks and corrected
+member hovers, including individually annotated entries.
+
+The frozen full LTN scan changes 79→104: restored callback typing exposes settings
+assignment-contract warnings plus a valid always-truthy numeric guard. See the
+receipt for their interpretation; original mods are unchanged.
+Install EmmyLua2 0.30.0-178 from workspace plugins/. Keep FDE 0.8.6-dev and
+LSP4IJ 0.21.1-SNAPSHOT-7. Only FDE's development pin/documentation changes.
+[Full receipt](LTN_CONTEXTUAL_CALLBACKS_2026-10-17.md).
+
 # EmmyLua2 build177 — optional hover presentation (2026-10-17)
 
 Analyzer pin c31e503d integrates the UP-080 amendment and independent UP-087.
