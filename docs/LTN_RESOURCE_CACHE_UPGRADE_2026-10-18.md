@@ -77,3 +77,27 @@ manual IntelliJ cache deletion is unnecessary. No IDE installation was performed
 
 Signed EmmyLua2 packaging commit: `f3cdfb7`. New fix/work/package commits remain
 local. PR status was not rechecked; previous verification dates remain unchanged.
+
+## Publication — 2026-10-18
+
+All 123 registered worktrees were clean before publication. Published these
+signed heads to origin, using normal fast-forward pushes or new branches:
+
+| Repository | Branch | Published head |
+| --- | --- | --- |
+| Analyzer (UP-090) | fix/negative-literal-hover | 95d498871b8969f099b3bd473602ab43bb7e1225 |
+| Analyzer (UP-091) | fix/ipairs-array-inference | e41571d3634482e95f2651df927cb6c072762e9b |
+| Analyzer (UP-092) | fix/call-site-collection-generics | df55badc6ae5c5eec2b1a66c4f744750dc12a90d |
+| Analyzer (UP-093) | fix/std-resource-cache-fingerprint | ef3674de6a144a58bfb322398acba45851ad5c40 |
+| Analyzer | work/intellij-modules | 6a6d08d5bb443d4ad97b213c47241e36daba0bbf |
+| EmmyLua2 | work/patched-build | f3cdfb795734f735840219d34a1a87bb57306ba7 |
+| FDE | main (build pin and receipt) | 08e210049cb97643ed3c2e1b66492a82245a6ad7 |
+
+Direct `git ls-remote --heads origin` checks confirm all 111 non-archive/non-backup
+local branch heads match origin across the five repositories. LSP4IJ and the
+toolkit were already current. Historical archive/backup refs remain unchanged.
+The earlier local-only statements describe delivery-time state; the changes are
+now published. This publication note is a separate signed documentation commit.
+No new PR, PR-status action, rebuild or IDE installation. Existing test results,
+package hashes and PR verification dates remain unchanged. Evidence is in
+analyzer `build/publication-audit-20261018-build181/`.
