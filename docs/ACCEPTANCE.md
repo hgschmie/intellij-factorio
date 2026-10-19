@@ -1,3 +1,12 @@
+# LSP4IJ build8 — upstream and cancellable workspace checks (2026-10-19)
+
+Validated `lsp4ij-0.21.1-SNAPSHOT-8.zip` from signed work `0520d240`, rebuilt on
+upstream/main `88b9ece3` and UP-044 `e534e0f0`. UP-055 is now supplied upstream.
+All 70 selected LSP4IJ tests and three native FDE Problems/service-startup tests
+pass. ZIP integrity/descriptor and prepared dependency pin are verified.
+FDE remains 0.8.6-dev; its existing ZIPs and analyzer pin are unchanged.
+[Build and validation receipt](LSP4IJ_BUILD8_2026-10-19.md).
+
 # EmmyLua2 build181 — refresh stale standard-library resources (2026-10-18)
 
 Analyzer pin 6a6d08d5 integrates independent UP-093 (ef3674de, work 80eedd82).

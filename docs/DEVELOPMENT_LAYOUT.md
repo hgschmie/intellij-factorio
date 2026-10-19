@@ -81,10 +81,11 @@ original paths and describe the old layout.
 
 The earlier LSP4IJ contributions are upstream: breakpoint removal (#1679) and
 file-specific server selection/formatting (#1688). The active dependency is now
-`0.21.1-SNAPSHOT-7`, built from
-`work/factorio-build` at `7d11cfe1`. It contains upstream/main `cbe50d3d`,
-UP-044 workspace diagnostics (`08475429`), UP-055 diagnostic cache notifications
-(`bc613d84`), and local IDEA 262 build support. Closed-file diagnostics and their
+`0.21.1-SNAPSHOT-8`, built from
+`work/factorio-build` at `0520d240`. It contains upstream/main `88b9ece3`,
+UP-044 workspace diagnostics (`e534e0f0`) and local IDEA 262 build support.
+UP-055 diagnostic cache notifications are supplied by upstream merge `755ba4d7`.
+Workspace-report file checks use the project's cancellable read-action helper. Closed-file diagnostics and their
 error status are published together through one immutable snapshot. Workspace
 reports honor synchronous/asynchronous DocumentMatchers without connecting
 documents or starting servers. Pending matchers leave lifecycle operations
