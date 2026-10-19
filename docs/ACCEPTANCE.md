@@ -1,3 +1,23 @@
+# EmmyLua2 build181 — refresh stale standard-library resources (2026-10-18)
+
+Analyzer pin 6a6d08d5 integrates independent UP-093 (ef3674de, work 80eedd82).
+Resource caches now refresh when bundled declarations change within the same
+analyzer version. Explicit paths and translated resources use matching cache
+identities. This delivers UP-092's corrected pairs signatures to existing caches.
+
+Standalone: 3 resource tests and 228 server tests pass; integrated: 3 resource
+tests and all 306 server tests pass. Clippy/rustfmt and both forced native
+IntelliJ tests pass. Packaged replay using a copy of the live LTN cache reproduces
+the old unknown key on build180 and returns integer/ltn.FreeTrain on build181.
+A second launch preserves correct hover and unchanged cache-file mtimes.
+The full fixed-source diagnostic set remains six, zero in request_processor.lua.
+
+Install EmmyLua2 0.30.0-181 from workspace plugins/. Cache refresh is automatic
+on the next server start; no manual cache deletion is needed. Keep FDE 0.8.6-dev
+and LSP4IJ 0.21.1-SNAPSHOT-7. Only macOS arm64 has the patched server. Archive
+version/pin, binary identity and Unix0755 modes are verified. No push or PR.
+[Full receipt](LTN_RESOURCE_CACHE_UPGRADE_2026-10-18.md).
+
 # EmmyLua2 build180 — concrete iterator types (2026-10-18)
 
 Analyzer pin 278036c3 integrates independent UP-091/092 on upstream/main
