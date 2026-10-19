@@ -1,3 +1,25 @@
+# EmmyLua2 build180 — concrete iterator types (2026-10-18)
+
+Analyzer pin 278036c3 integrates independent UP-091/092 on upstream/main
+dd80bd92. Standard ipairs infers integer keys and concrete array/dictionary
+values. Call-site hover retains collection generics and displays the selected
+signature; iterator annotations retain all three factory returns.
+
+All 2,908 combined tests pass across completed suites, Clippy/rustfmt pass,
+and both forced native IntelliJ tests pass (2 tests, zero failures/errors/skips).
+A formatter timing test missed 10 ms under parallel execution; the full server
+suite passed serially without any source change or test being disabled.
+Packaged replay of actual request_processor.lua583 shows integer/ltn.FreeTrain
+for both pairs/ipairs hovers and loop variables. The same fixed current-mod
+snapshot retains exactly six diagnostics, zero in request_processor.lua.
+
+Install EmmyLua2 **0.30.0-180** from workspace plugins/. Keep FDE 0.8.6-dev and
+LSP4IJ 0.21.1-SNAPSHOT-7; only FDE's development pin/documentation changes.
+Archive version/pin, binary identity and Unix0755 modes are verified. Only
+macOS arm64 contains the custom analyzer. All changes are signed/local; no
+push, PR or IDE installation was requested.
+[Full receipt](LTN_ITERATOR_HOVER_INVESTIGATION_2026-10-18.md).
+
 # EmmyLua2 build179 — negative numeric literals (2026-10-17)
 
 Analyzer pin 72e36621 integrates independent UP-090. Numeric unary minus now
