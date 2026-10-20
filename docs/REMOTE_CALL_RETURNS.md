@@ -21,7 +21,7 @@ API Definitions. An explicitly configured external FMTK CLI must also contain UP
 The native integration regression checks a nested script.on_event call, a known
 single result that is not repeated into a second slot, fixed multiple and genuine variadic returns,
 and rejection of an event passed to a string parameter. The workspace report
-upstream/VARIADIC_NAMED_TYPES_2026-10-15.md records full validation and package hashes.
+upstream/memory/VARIADIC_NAMED_TYPES_2026-10-15.md records full validation and package hashes.
 
 A separate existing analyzer limitation remains: reading an extra result from an
 ordinary single-result function is shown as any instead of nil. The corrected

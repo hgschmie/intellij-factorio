@@ -7,7 +7,7 @@ All 54 retained contributions are present: 51 without PRs and three open PRs.
 There are 63 unique contribution commits after deduplicating prerequisite copies,
 14 preserved work-only picks, and one final integration/test/documentation commit.
 All 78 commits above upstream have valid signatures. Contribution branches are
-unchanged from the completed [refresh assessment](../../upstream/ANALYZER_PATCH_REFRESH_2026-10-16.md).
+unchanged from the completed [refresh assessment](../../upstream/memory/ANALYZER_PATCH_REFRESH_2026-10-16.md).
 
 UP-008 remains an inactive rollback. UP-009 is obsolete and is omitted. UP-077's
 production backport is omitted because upstream supplies it; its tests are retained.

@@ -22,5 +22,5 @@ Archive: ../plugins/IntelliJ-EmmyLua2-0.30.0-183.zip.
 SHA-256: fd511b115b55c88d01af359a399dd48f994d0a436eeb789bf6fcac14963438bc.
 Descriptor, embedded analyzer pin, executable identity and Unix0755 permissions
 verified. The packaged executable matches the release used for the LTN replay.
-Full report: ../upstream/LTN_EQUALITY_ALIAS_FIXES_2026-10-18.md.
+Full report: ../upstream/memory/LTN_EQUALITY_ALIAS_FIXES_2026-10-18.md.
 No remote push, upstream PR or IDE installation. All task commits are signed.

@@ -13,9 +13,15 @@ workflow changes. Paths within the skill refer to the containing workspace,
 not this documentation directory. Workspace HANDOFF.md and upstream/FIX_INVENTORY.md
 remain the live cross-repository records.
 
+Cross-repository investigation notes and build receipts live in
+`upstream/memory/`. Keep `upstream/FIX_INVENTORY.md` at its existing location
+and put future workspace reports in `upstream/memory/`.
+
 | Path | Purpose |
 | --- | --- |
 | `plugins/` | Shared install-from-disk folder containing copies of validated plugin ZIPs, including all variants directly in this folder |
+| `upstream/FIX_INVENTORY.md` | Canonical upstream contribution and local-fix inventory |
+| `upstream/memory/` | Cross-repository investigation notes, build receipts and validation summaries |
 | `upstream/vscode-factoriomod-debug/` | Toolkit source; keep `work/intellij-toolkit` checked out |
 | `upstream/emmylua-analyzer-rust/` | Analyzer source; compiler outputs stay in `target/` |
 | `upstream/Intellij-EmmyLua2/` | EmmyLua2 source, distribution ZIPs in `build/distributions/` |
@@ -81,16 +87,21 @@ original paths and describe the old layout.
 
 The earlier LSP4IJ contributions are upstream: breakpoint removal (#1679) and
 file-specific server selection/formatting (#1688). The active dependency is now
-`0.21.1-SNAPSHOT-8`, built from
-`work/factorio-build` at `0520d240`. It contains upstream/main `88b9ece3`,
-UP-044 workspace diagnostics (`e534e0f0`) and local IDEA 262 build support.
+`0.21.1-SNAPSHOT-10`, built from
+`work/factorio-build` at `7628736a`. It contains upstream/main `88b9ece3`,
+UP-044 workspace diagnostics (`d7a0b53b`) and local IDEA 262 build support.
 UP-055 diagnostic cache notifications are supplied by upstream merge `755ba4d7`.
 Workspace-report file checks use the project's cancellable read-action helper. Closed-file diagnostics and their
 error status are published together through one immutable snapshot. Workspace
 reports honor synchronous/asynchronous DocumentMatchers without connecting
 documents or starting servers. Pending matchers leave lifecycle operations
 unblocked, failed matches reject only their report, and provider removal clears
-its cached diagnostics and notifies consumers. A file that stops matching clears
+its cached diagnostics while preserving open-file results owned by an active
+document provider with the same identifier. Cache replacement restarts only
+providers with affected result IDs or a matching pending file. Other requests
+continue, filtering stale reports for replaced caches until their next pull.
+Empty reports retain result IDs without allocating caches for uncached, unopened
+files. A file that stops matching clears
 only its provider diagnostics; other files/providers and open-document reports
 are retained. The package version preserves upstream `-SNAPSHOT` and appends the
 separate `pluginBuild` counter. Its checkout is

@@ -26,6 +26,6 @@ Pairs/ipairs hover and loop inference retain integer/ltn.FreeTrain.
 ZIP: `../plugins/IntelliJ-EmmyLua2-0.30.0-182.zip`.
 SHA-256: `bc35a134108a9e791353efadccc9fba67ab17ff566464b286ebbc4417372d97e`.
 Plugin version, embedded pin, binary identity and Unix0755 permissions verified.
-Full branch/dependency report: `../upstream/ANALYZER_REFRESH_2026-10-18.md`;
+Full branch/dependency report: `../upstream/memory/ANALYZER_REFRESH_2026-10-18.md`;
 canonical inventory: `../upstream/FIX_INVENTORY.md`.
 Task changes are signed local commits. No remote push, PR action or IDE installation.

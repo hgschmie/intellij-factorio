@@ -62,7 +62,7 @@ All new commits are signed and have DCO sign-offs. This fix has no pending local
 prerequisite; it works with the existing dictionary/read-write patches on the work
 branch. These commits were initially local, with no PR. Publication status is maintained
 in the workspace inventory at `upstream/FIX_INVENTORY.md`; the earlier publication
-report is `upstream/OUTSTANDING_PUSH_2026-10-15.md`.
+report is `upstream/memory/OUTSTANDING_PUSH_2026-10-15.md`.
 
 ## Validation
 

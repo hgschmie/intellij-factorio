@@ -50,4 +50,4 @@ The reusable example harness and results are in the analyzer repository at
 `historical-results.json`, with `history-*.log` outputs. The script is specific to
 that bug; adapt its fixture for new reports. The versioned narrative is in
 [the UP-057 report](../CLASS_MEMBER_IDENTITY_2026-10-15.md); its workspace source is
-`upstream/CLASS_MEMBER_IDENTITY_2026-10-15.md`.
+`upstream/memory/CLASS_MEMBER_IDENTITY_2026-10-15.md`.

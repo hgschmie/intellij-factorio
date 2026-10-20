@@ -1,3 +1,32 @@
+# LSP4IJ build10 — scoped diagnostic invalidation (2026-10-19)
+
+Validated `lsp4ij-0.21.1-SNAPSHOT-10.zip` from signed work `7628736a`, integrating
+UP-044 / PR #1703 through `d7a0b53b` while retaining local IDEA 262 build support.
+Unrelated workspace requests continue across cache changes, stale reports are
+filtered, and active document-provider diagnostics survive workspace-provider
+removal. Empty reports do not allocate caches for uncached, unopened files.
+
+**97 LSP4IJ tests and three native FDE compatibility tests passed**, with no
+failures/errors/skips. Archive validation and the prepared dependency pin passed.
+FDE remains **0.8.6-dev**, retaining its existing ZIP. Install the new LSP4IJ ZIP
+from the workspace `plugins/` folder.
+[Build and validation receipt](LSP4IJ_BUILD10_2026-10-19.md).
+
+# LSP4IJ build9 — diagnostic cache lifecycle fixes (2026-10-19)
+
+Validated `lsp4ij-0.21.1-SNAPSHOT-9.zip` from signed work `a14983eb`, integrating
+UP-044 / PR #1703 through `cbd1679a` while retaining local IDEA 262 build support.
+Provider removal clears open/closed diagnostics; cache replacement invalidates
+retained IDs and cancels active requests and pending matches before late reports
+can populate the new cache. Production code matches the contribution exactly.
+
+**92 LSP4IJ tests and three native FDE compatibility tests passed**, with no
+failures/errors/skips. Archive validation and the prepared dependency pin passed.
+FDE remains **0.8.6-dev**, retaining its existing ZIP. The installable LSP4IJ ZIP
+is in the workspace `plugins/` folder. Internal builds use local validation;
+CodeRabbit is reserved for upstream contribution branches.
+[Build and validation receipt](LSP4IJ_BUILD9_2026-10-19.md).
+
 # LSP4IJ build8 — upstream and cancellable workspace checks (2026-10-19)
 
 Validated `lsp4ij-0.21.1-SNAPSHOT-8.zip` from signed work `0520d240`, rebuilt on
@@ -134,7 +163,7 @@ attachment during startup and services/closed-file diagnostics without editors.
 
 Logs and XML: `build/investigations/lsp4ij-patched5-20261016/` (`unit`, `platform`).
 Build provenance and archive hash:
-`../upstream/LSP4IJ_PATCHED5_2026-10-16.md` in the workspace.
+`../upstream/memory/LSP4IJ_PATCHED5_2026-10-16.md` in the workspace.
 
 Install only the new LSP4IJ ZIP from the workspace `plugins/` folder. FDE remains
 0.8.6-dev; its existing distribution and all prior FDE ZIPs are byte-identical.
@@ -189,7 +218,7 @@ The independent LSP4IJ contribution is UP-055, `feat/diagnostic-update-hook`
 (`5e3848b9`, `6dc69807`), based on upstream/main `12703a33`. Work integration
 `9e48c797`/`c9a0a23b` and packaging `3d389532` are signed. No push or PR.
 Complete artifact hashes and handoff: workspace
-`upstream/FACTORIO_PROBLEMS_2026-10-14.md`.
+`upstream/memory/FACTORIO_PROBLEMS_2026-10-14.md`.
 
 ## Request/update ordering — EmmyLua2 build158 (2026-10-14)
 
@@ -217,7 +246,7 @@ current semantic tokens at all seven edit stages and correct API completions on
 30 immediate requests with a pending workspace pull. Frozen LTN request_processor
 and interface files retain zero diagnostics. The fix preserves freshness; full
 workspace contention may still delay responses. See workspace
-`upstream/REQUEST_ORDERING_2026-10-14.md` for branch and artifact provenance.
+`upstream/memory/REQUEST_ORDERING_2026-10-14.md` for branch and artifact provenance.
 
 ## Annotation type completion — EmmyLua2 build157 (2026-10-14)
 
@@ -244,7 +273,7 @@ Frozen request_processor.lua and interface.lua retain zero diagnostics.
 Completion requests wait 600ms after edits to isolate this provider fix from the
 known update-queue race; no claim is made that diagnostic contention is repaired.
 Package hashes and complete evidence: workspace
-`upstream/DOC_TYPE_COMPLETION_2026-10-14.md`.
+`upstream/memory/DOC_TYPE_COMPLETION_2026-10-14.md`.
 
 ## Analyzer build156 and UP-008 comparison (2026-10-14)
 
@@ -263,7 +292,7 @@ ownership, automatic cross-file diagnostics and Lua language levels. Evidence is
 under `build/logs/comparison156-platform.log` and
 `build/test-results/comparison156-platform/`. Current completion-provider bugs are
 deliberately unchanged in both packages.
-See workspace `upstream/COMPLETION_COMPARISON_2026-10-14.md` for exact package hashes,
+See workspace `upstream/memory/COMPLETION_COMPARISON_2026-10-14.md` for exact package hashes,
 protocol/real-client evidence and the remaining completion work.
 
 # data-util analyzer fixes — EmmyLua2 build155 (2026-10-14)
@@ -291,7 +320,7 @@ the dependency JARs have not changed. No interactive regular-IDE check was run.
 
 All 2,645 combined Rust tests, standalone suites (1,474/1,475), Clippy and rustfmt
 pass. Package provenance and branch details are recorded in workspace
-`upstream/DATA_UTIL_FIXES_2026-10-14.md` and `upstream/FIX_INVENTORY.md`.
+`upstream/memory/DATA_UTIL_FIXES_2026-10-14.md` and `upstream/FIX_INVENTORY.md`.
 FDE ZIP SHA-256 remains
 `52ba714fb67065d488554a642dc1e754ed2fe921235fb424984c5c27c863f2c3`.
 
@@ -324,7 +353,7 @@ regular-IDE check or installation was performed. Original mods remain unchanged.
 FDE archive SHA-256:
 `52ba714fb67065d488554a642dc1e754ed2fe921235fb424984c5c27c863f2c3`.
 Source branches, package provenance and dependency relationships are recorded in
-workspace `upstream/WORKSPACE_OWNERSHIP_2026-10-14.md` and FIX_INVENTORY.md.
+workspace `upstream/memory/WORKSPACE_OWNERSHIP_2026-10-14.md` and FIX_INVENTORY.md.
 
 # Multi-root duplicate class and diagnostic routing — 2026-10-14
 
@@ -349,7 +378,7 @@ The packaged analyzer removes duplicate-type from metrics.lua in the real
 multi-root setup. A separate assignment mismatch at metrics.lua:44 remains and
 is not part of this fix. The frozen request_processor.lua/interface.lua baseline
 still has zero diagnostics. Package identity, pins and executable modes are
-verified. See workspace `upstream/DUPLICATE_METRICS_2026-10-14.md` for analyzer
+verified. See workspace `upstream/memory/DUPLICATE_METRICS_2026-10-14.md` for analyzer
 suite results and before/after protocol evidence.
 
 Install the two new upstream plugin ZIPs; FDE does not need reinstalling. The
@@ -435,7 +464,7 @@ tests). buildPlugin completed up to date; FDE stays 0.7.8-dev and its archive
 hash/mtime are unchanged. Install only the new EmmyLua2 archive.
 
 Full contribution validation/publication is recorded in workspace
-upstream/ANALYZER_REFRESH_2026-10-14.md. Package and integration evidence is in
+upstream/memory/ANALYZER_REFRESH_2026-10-14.md. Package and integration evidence is in
 analyzer build/investigations/analyzer-refresh-20261014/package-validation.json.
 No interactive IDE test or regular-profile installation was performed. The older
 file-event/RPC timeout cases remain outside this validation.
@@ -461,7 +490,7 @@ time are unchanged. This dependency update requires installing EmmyLua2 only.
 The two older file-event/RPC timeout checks were not retested or fixed; no
 interactive IDE validation or regular-profile installation was performed.
 
-Full report: workspace `upstream/ANALYZER_REFRESH_2026-10-13.md`.
+Full report: workspace `upstream/memory/ANALYZER_REFRESH_2026-10-13.md`.
 Evidence: analyzer `build/investigations/analyzer-refresh-20261013/final-validation.json`.
 
 # Analyzer baseline before full rebase — 2026-10-13
