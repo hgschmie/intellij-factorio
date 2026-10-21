@@ -1,4 +1,27 @@
-# Lua profiling — FDE 0.9.1-dev
+# Lua profiling — FDE 0.9.2-dev
+
+Shutdown guard follow-up **2026-10-20**: Stop, disposal and adapter termination
+now block new recorder commands immediately. A delayed launch acknowledgement
+cannot start profiling after Stop, including the IDE's process-first Stop path.
+Queued recording events still drain normally, so a snapshot already saved can
+still open. This fixes review finding 7 without automatic saving or extra waits.
+
+Validated **0.9.2-dev**: **25 unit and 37 IntelliJ platform tests passed**, with
+zero failures, errors or skips. The new delayed-launch/Stop regression reproduced
+the bug before the fix. These checks use controlled adapters; native Factorio
+capture was not rerun. Independent review is complete with no remaining findings:
+13 focused unit tests and 22 platform tests passed, including the unchanged
+original startup/Stop reproduction. The reviewed source hashes and both ZIPs
+were verified again before committing. See [the review record](PROFILING_REVIEW.md).
+
+Install [`intellij-factorio-0.9.2-dev.zip`](../../plugins/intellij-factorio-0.9.2-dev.zip).
+SHA-256: `2d9dba29bb35be4807abe9fef7055751652d5899daee48df4843174e1dd286d7`.
+[Artifact receipt](../build/logs/profiling-shutdown-guard-artifact.txt) ·
+[Unit results](../build/test-results/profiling-shutdown-guard-unit/) ·
+[Platform results](../build/test-results/profiling-shutdown-guard-platform/).
+Dependency pins are unchanged; the original ZIP remains in `build/distributions/`.
+
+### Previous shutdown revert — 0.9.1-dev
 
 Shutdown follow-up **2026-10-20**: removed automatic profile saving during IDE
 shutdown and restored the previous 15-second cleanup timeout. The extended
@@ -30,11 +53,13 @@ verified resolved. Checkpoint validation: **17 unit tests** plus an independent
 **18-test platform run** (16 regressions and the two original review probes),
 with no failures, errors or skips. The validated ZIP and checksum are recorded
 below; dependencies are EmmyLua2 **0.30.0-185** and LSP4IJ
-**0.21.1-SNAPSHOT-13**; both dependencies remain unchanged in **0.9.1-dev**.
+**0.21.1-SNAPSHOT-13**; both dependencies remain unchanged in **0.9.2-dev**.
 
 The early-startup native adapter stall remains deferred, and recordings must be
 explicitly stopped before in-game Quit. The dated receipts below preserve the
 implementation history, including their then-current commit/build status.
+
+## Using the profiler
 
 Select a Factorio run configuration and choose **Profile with Factorio Lua**
 from IntelliJ's standard Profile menu. FDE launches the game and starts recording

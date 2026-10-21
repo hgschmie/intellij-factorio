@@ -12,6 +12,7 @@ root = Path(ROOT)
 mode = (root / 'mode').read_text()
 lock = threading.Lock()
 sequence = 0
+pending_configuration = None
 
 
 def send(message):
@@ -77,6 +78,9 @@ while True:
     command = request['command']
     body = {}
     success = True
+    if command == 'configurationDone' and mode == 'profile-stop-startup':
+        pending_configuration = request
+        continue
     if command == 'initialize':
         body = {'supportsConfigurationDoneRequest': True, 'supportsTerminateRequest': mode != 'no-terminate'}
     elif command == 'launch':
@@ -91,6 +95,11 @@ while True:
     elif command == 'setBreakpoints':
         body = {'breakpoints': [dict(verified=True, line=b['line']) for b in request['arguments']['breakpoints']]}
     elif command == 'terminate':
+        if pending_configuration is not None:
+            # Reproduce a launch acknowledgement arriving after the user pressed Stop.
+            send({'type': 'response', 'request_seq': pending_configuration['seq'],
+                  'command': 'configurationDone', 'success': True, 'body': {}})
+            pending_configuration = None
         if mode in ('ignore-terminate', 'ignore-signal'):
             continue
         if mode == 'exit-on-terminate':

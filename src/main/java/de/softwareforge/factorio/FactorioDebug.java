@@ -262,6 +262,7 @@ public final class FactorioDebug {
                     } catch(RuntimeException failure) { dispose(); throw failure; }
                 }
                 @Override public void dispose() {
+                    profiling.beginShutdown();
                     if (!disposing.compareAndSet(false, true)) return;
                     if (parent != null || handler == null) { releaseClient(); return; }
                     if (handler.getProcess().isAlive()) shutdown.stop();
@@ -281,9 +282,11 @@ public final class FactorioDebug {
                     try { super.dispose(); } finally { if(parent==null) closeFileLog(); }
                 }
                 @Override public void terminate() {
+                    profiling.beginShutdown();
                     shutdown.stop();
                 }
                 @Override public void terminated(org.eclipse.lsp4j.debug.TerminatedEventArguments args) {
+                    profiling.beginShutdown();
                     if (parent==null && handler!=null && FactorioDapRestart.isRequested(args.getRestart())) {
                         if (restart.request(args.getRestart())) {
                             process.print("Factorio requested a restart. Waiting for the game to exit...",
@@ -299,7 +302,14 @@ public final class FactorioDebug {
                 }
             };
             // The IDE's Stop action can destroy the process before DAPDebugProcess.stop.
-            if (parent == null && handler != null) handler.onStop(client::terminate);
+            if (parent == null && handler != null) {
+                handler.onStopRequested(() -> {
+                    restart.cancel();
+                    profiling.beginShutdown();
+                });
+                if (handler.isProcessTerminating() || handler.isProcessTerminated()) profiling.beginShutdown();
+                handler.onStop(client::terminate);
+            }
             if (parent == null) FactorioRepl.install(process);
             return client;
         }

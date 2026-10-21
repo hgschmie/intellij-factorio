@@ -112,7 +112,7 @@ only its provider diagnostics; other files/providers and open-document reports
 are retained. The package version preserves upstream `-SNAPSHOT` and appends the
 separate `pluginBuild` counter. Its checkout is
 `upstream/lsp4ij/build/checkouts/patched`; the contribution checkout is
-`upstream/lsp4ij/build/checkouts/dap-executor-routing`. FDE **0.9.1-dev** contains
+`upstream/lsp4ij/build/checkouts/dap-executor-routing`. FDE **0.9.2-dev** contains
 the native Lua profiling feature and is built against this dependency.
 
 Run `intellij-factorio/scripts/build-lsp4ij.sh` to prepare the pinned archive.

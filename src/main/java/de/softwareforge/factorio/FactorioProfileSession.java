@@ -7,6 +7,7 @@ import java.util.function.*;
 final class FactorioProfileSession {
     enum State { UNAVAILABLE, IDLE, STARTING, RECORDING, STOPPING, CLOSED }
     private State state = State.UNAVAILABLE;
+    private boolean shuttingDown;
     private long generation;
     private Function<String, CompletableFuture<?>> request;
     private CompletableFuture<Void> pending = CompletableFuture.completedFuture(null);
@@ -28,14 +29,17 @@ final class FactorioProfileSession {
         state = State.IDLE;
     }
     synchronized State state() { return state; }
-    synchronized boolean canStart() { return state == State.IDLE; }
-    synchronized boolean canStop() { return state == State.RECORDING; }
+    synchronized boolean canStart() { return !shuttingDown && state == State.IDLE; }
+    synchronized boolean canStop() { return !shuttingDown && state == State.RECORDING; }
+    // Block new commands immediately, but leave queued recorder events readable until close().
+    // Shutdown neither requests nor waits for a save.
+    synchronized void beginShutdown() { shuttingDown = true; }
     synchronized CompletableFuture<Void> start() {
         if (!canStart()) return pending;
         return command(true);
     }
     synchronized CompletableFuture<Void> stop() {
-        if (state != State.RECORDING) return pending;
+        if (!canStop()) return pending;
         return command(false);
     }
     private CompletableFuture<Void> command(boolean start) {
@@ -48,7 +52,7 @@ final class FactorioProfileSession {
         // not allow another stop/start to race with the native writer.
         CompletableFuture.delayedExecutor(10, TimeUnit.SECONDS).execute(() -> {
             synchronized (this) {
-                if (token != generation || operation.isDone() || state == State.CLOSED) return;
+                if (shuttingDown || token != generation || operation.isDone() || state == State.CLOSED) return;
             }
             status.accept(start ? "Waiting for Factorio to start Lua profiling."
                     : "Factorio is still saving the Lua profile. Large recordings can take several minutes; keep the game open.");

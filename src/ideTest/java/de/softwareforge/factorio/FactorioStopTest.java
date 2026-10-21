@@ -47,6 +47,7 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
     public void testLuaInitiatedRecordingDoesNotDelayShutdown() throws Exception { runStop("profile-lua"); }
     public void testActiveRecordingDoesNotSaveOnIdeStop() throws Exception { runStop("profile-active"); }
     public void testPendingProfileStartDoesNotDelayShutdown() throws Exception { runStop("profile-ignore-start"); }
+    public void testStopBeforeLaunchAcknowledgementDoesNotStartProfiling() throws Exception { runStop("profile-stop-startup"); }
     public void testUnresponsiveProfilerDoesNotBlockShutdown() throws Exception { runStop("profile-ignore-stop"); }
     public void testProfileExecutorStartsAfterLaunchAndSavesOnExplicitProfileStop() throws Exception { runStop("profile-auto"); }
     public void testProfileExecutorIgnoresObsoleteHookSetting() throws Exception {
@@ -81,7 +82,7 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
         config.getOptions().setDapLogToFile(true);
         config.getOptions().setDapLogDirectory(dir.resolve("logs").toString());
         com.intellij.execution.Executor executor = DefaultDebugExecutor.getDebugExecutorInstance();
-        if (mode.equals("profile-auto")) {
+        if (mode.equals("profile-auto") || mode.equals("profile-stop-startup")) {
             executor = com.intellij.profiler.DefaultProfilerExecutorGroup.Companion.getInstance().childExecutors().stream()
                     .filter(e -> e.getId().equals(FactorioProfiling.EXECUTOR_ID)).findFirst().orElseThrow();
         } else if (mode.equals("run")) executor = com.intellij.execution.executors.DefaultRunExecutor.getRunExecutorInstance();
@@ -91,12 +92,14 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
         boolean manualSave = mode.equals("profile") || mode.equals("profile-auto")
                 || mode.equals("profile-no-trace") || mode.equals("profile-slow-stop");
         boolean gameQuit = mode.endsWith("game-quit");
+        boolean stopDuringStartup = mode.equals("profile-stop-startup");
         try {
             ProgramRunnerUtil.executeConfiguration(env, false, false);
-            waitUntil(() -> java.util.Arrays.stream(XDebuggerManager.getInstance(getProject()).getDebugSessions()).anyMatch(s -> s.isSuspended()));
+            if (stopDuringStartup) waitUntil(() -> log(dir).contains("\"command\":\"configurationDone\""));
+            else waitUntil(() -> java.util.Arrays.stream(XDebuggerManager.getInstance(getProject()).getDebugSessions()).anyMatch(s -> s.isSuspended()));
             var session = XDebuggerManager.getInstance(getProject()).getDebugSessions()[0];
             handler = (FactorioDebugProcessHandler)session.getDebugProcess().getProcessHandler();
-            if (mode.startsWith("profile")) {
+            if (mode.startsWith("profile") && !stopDuringStartup) {
                 var profile = handler.getUserData(FactorioProfiling.SESSION);
                 assertNotNull(profile);
                 if (!mode.equals("profile-lua") && !mode.equals("profile-auto")) profile.start();
@@ -121,7 +124,7 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
             if (gameQuit) Files.createFile(dir.resolve("user-quit"));
             else {
                 handler.destroyProcess();
-                session.stop();
+                if (!stopDuringStartup) session.stop();
             }
             var runningHandler = handler;
             waitUntil(runningHandler::isProcessTerminated);
@@ -154,7 +157,8 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
             if (mode.equals("profile-auto")) {
                 assertEquals(1L, commands.stream().filter("startProfile"::equals).count());
                 assertTrue(commands.indexOf("configurationDone") < commands.indexOf("startProfile"));
-            } else if (!mode.startsWith("profile")) assertFalse(commands.contains("startProfile"));
+            } else if (stopDuringStartup || !mode.startsWith("profile"))
+                assertFalse("Cancelled launch must not start profiling: " + commands, commands.contains("startProfile"));
             if (manualSave || mode.equals("profile-ignore-stop")) {
                 assertTrue(commands.indexOf("stopProfile") < commands.indexOf("terminate"));
                 assertEquals(mode.equals("profile") ? 2L : 1L, commands.stream().filter("stopProfile"::equals).count());

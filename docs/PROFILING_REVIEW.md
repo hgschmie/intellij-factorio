@@ -1,11 +1,17 @@
 **Code review: Lua profiler — 2026-10-20**
 
+**Current status: all seven findings independently verified resolved; no new
+findings in the shutdown guard.** The final pre-commit review covered the
+working-tree changes against `eff1b8f`. Independent verification is complete;
+the user authorized committing the reviewed changes on 2026-10-20. The earlier commit review and its failing
+reproduction are retained below as historical evidence.
+
 Reviewed the working-tree changes against `HEAD` (`05e6a9d`), including the
 untracked profiler implementation, tests, fixtures, scripts, and plugin
 registration. The review focuses on the new code. The initial review recorded
 four P2 findings and made no production changes. Independent follow-up review
 added two further P2 findings.
-**Resolution status: all six findings resolved.**
+**Initial profiler review status: findings 1–6 resolved.**
 This report accompanies the completed FDE **0.9.0-dev** profiling checkpoint.
 The review and validation entries preserve their status at the time of each run.
 The validation below distinguishes the fix author's checks, independent
@@ -359,4 +365,161 @@ Evidence: [independent verification log](../build/logs/profiling-watch-verificat
 The earlier failing probe results remain preserved separately. This check made
 no production or versioned test changes and did not rerun native Factorio capture.
 
-**All six findings independently verified resolved; zero unresolved findings remain.**
+**Initial profiler review complete: findings 1–6 independently verified resolved.**
+
+**Latest commit review — `eff1b8f` — 2026-10-20**
+
+Reviewed `eff1b8f5b9ba2b6a054e93f6de10ff899d3f74f0` (`fix: restore
+pre-profiler shutdown behavior`) against its parent `a92cd21`, including all
+11 changed files and the surrounding launch/shutdown lifecycle. The working
+tree was clean at review start. Removing automatic saving on IDE Stop and
+restoring the 15-second cleanup timeout are intentional, documented changes;
+the loss of an explicitly unsaved recording is not a finding. One new P2
+regression was reproduced.
+
+**7. [P2] Resolved — Block automatic profiling once shutdown has begun**
+
+Location: [FactorioDebug.java](../src/main/java/de/softwareforge/factorio/FactorioDebug.java),
+lines 283–285 (`terminate`), together with
+[FactorioProfileSession.java](../src/main/java/de/softwareforge/factorio/FactorioProfileSession.java),
+lines 31–35 (`canStart` / `start`). Introduced by `eff1b8f`.
+
+Stopping a Profile launch before its handshake completes no longer prevents
+the launch-completion callback from starting the recorder. Previously,
+`terminate()` called `profiling.finish()`, which set `closing` before sending
+`terminate`, so a later `profiling.start()` was rejected. The new shutdown path
+does not mark the recording session as closing, and `canStart()` now checks
+only `IDLE`. The session remains eligible to start until `releaseClient()`
+eventually calls `close()` after process/output cleanup.
+
+If the user presses Stop while `configurationDone` is pending, and that response
+arrives during shutdown, the existing `connectToServer().whenComplete` callback
+at line 259 sends `startProfile` after `terminate`. This starts recording for a
+launch the user already cancelled, and a subsequent `profileRunning` event makes
+normal cleanup report an unsaved recording created during shutdown. The new
+pending-start regression does not cover this ordering: it starts recording
+before Stop and leaves the `startProfile` request unanswered.
+
+Confirmed with the real IntelliJ Profile executor, LSP4IJ client and Factorio
+process handler against a disposable adapter. The adapter delays only the
+`configurationDone` response until it receives `terminate`; all subsequent
+shutdown messages follow the existing fixture behavior. The request traces are:
+
+```text
+eff1b8f: initialize, launch, configurationDone, terminate, startProfile, threads, disconnect
+parent:  initialize, launch, configurationDone, terminate,               threads, disconnect
+```
+
+The same probe passes with the three changed lifecycle classes copied verbatim
+from parent `a92cd21`, and fails again after rebuilding the current classes.
+No versioned source was replaced for this control; the Gradle init script
+selects isolated copies under `build/test-work/`.
+
+Retain a shutdown guard that blocks new recorder commands and the automatic
+launch callback as soon as Stop/disposal begins, without requesting or waiting
+for a save. Preserve consumption of already queued completion events during
+output cleanup. Add a regression for Stop before the launch acknowledgement,
+asserting that no `startProfile` follows `terminate`.
+
+Evidence: [current-commit confirmation log](../build/logs/review-eff1b8f-confirm-console.log),
+[failing result](../build/test-results/review-eff1b8f-confirm/TEST-de.softwareforge.factorio.FactorioStartupStopReviewTest.xml),
+[parent control log](../build/logs/review-eff1b8f-parent-control-console.log),
+[passing parent result](../build/test-results/review-eff1b8f-parent-control/TEST-de.softwareforge.factorio.FactorioStartupStopReviewTest.xml),
+and [review-only probe and fixture](../build/test-work/review-eff1b8f/).
+
+**Independent validation of `eff1b8f`**
+
+- **11 focused unit tests passed**: recording lifecycle, process-handler
+  cleanup and restart state. [Results](../build/test-results/review-eff1b8f-unit/)
+  and [log](../build/logs/review-eff1b8f-unit-console.log).
+- **20 existing platform tests passed**: all 19 Stop scenarios and the real
+  runner restart test. The additional startup/Stop probe failed on its explicit
+  unexpected-`startProfile` assertion. These ran together:
+  [results](../build/test-results/review-eff1b8f-probe/) and
+  [log](../build/logs/review-eff1b8f-platform-console.log).
+- The isolated parent control passed; a second current-commit run reproduced
+  finding 7. The final probe waits for recording-state cleanup before teardown.
+  Earlier harness teardown diagnostics are not reported as product findings.
+- Confirmed the documented FDE **0.9.1-dev** installation archive checksum,
+  plugin version and ZIP/nested-JAR integrity. No archive was installed or rebuilt
+  for distribution by this review.
+- Checked that reviewed source hashes remained unchanged and that the current
+  implementation was rebuilt after the parent control. Production code and
+  versioned tests were not edited. Native Factorio capture was not rerun; this
+  review establishes the protocol ordering with a controlled adapter, not a
+  native-game reproduction. [Source hashes](../build/test-work/review-eff1b8f/reviewed-source-hashes.json).
+
+**Historical `eff1b8f` review result: one open P2 finding (7); findings 1–6 remained resolved.**
+
+**Finding 7 resolution — author validation, 2026-10-20**
+
+Added a synchronized shutdown guard to the recording session. The process-first
+Stop callback, DAP terminate/terminated and disposal set it before shutdown work.
+Start/Stop actions and the automatic launch callback cannot send recorder
+commands after that point, including when the transport connects late. Pending
+commands and queued recorder events remain intact until normal client cleanup;
+already saved snapshots still open. No automatic save or additional shutdown
+wait has been restored, and the 15-second cleanup timeout is unchanged.
+
+The versioned adapter fixture now delays `configurationDone` until `terminate`.
+Its new real-runner regression failed before the fix with `startProfile` after
+`terminate`, and passes after the fix. Two unit regressions cover shutdown before
+and after connection, command rejection throughout recording states, and queued
+completion delivery without a false unsaved-recording report.
+
+**25 unit tests + 37 IntelliJ platform tests passed**, zero failures, errors or
+skips. Coverage includes all 20 Stop scenarios, restart and the profiler views.
+Built and validated **FDE 0.9.2-dev**; the installation ZIP is in flat `plugins/`.
+No native game capture was rerun. Changes remain **uncommitted and unpushed**;
+these author checks do not constitute independent review completion.
+
+[Failing regression](../build/test-results/profiling-shutdown-guard-before/) ·
+[Unit results](../build/test-results/profiling-shutdown-guard-unit/) ·
+[Platform results](../build/test-results/profiling-shutdown-guard-platform/) ·
+[Build/test log](../build/logs/profiling-shutdown-guard-platform-console.log) ·
+[Artifact receipt](../build/logs/profiling-shutdown-guard-artifact.txt) ·
+[Validated source hashes](../build/logs/profiling-shutdown-guard-source-hashes.json).
+
+**Independent review of the uncommitted shutdown guard — 2026-10-20**
+
+Reviewed all working-tree changes against `eff1b8f`, including the shutdown
+guard, callback registration, regression fixture/tests and release documentation.
+Finding 7 is independently verified resolved. No new findings were identified.
+
+`beginShutdown()` and recorder commands share the session lock. The guard is
+set synchronously in the process-first Stop callback, as well as DAP termination
+and disposal. Registration also handles a process already stopping or stopped.
+A late transport connection does not clear the guard. Start/Stop actions and
+the automatic launch callback therefore cannot issue new recorder commands
+after it is set. Queued running/completion events remain consumable, and the
+guard does not resolve pending operations, initiate a save or extend cleanup.
+
+Independent validation:
+
+- **13 focused unit tests passed**: seven recording-session tests, two process
+  handler tests and four restart-state tests. This includes command rejection
+  before/after connection and completion delivery during shutdown.
+  [Results](../build/test-results/review-shutdown-guard-unit/) ·
+  [Log](../build/logs/review-shutdown-guard-unit-console.log).
+- **22 platform tests passed**: all 20 Stop scenarios, the real-runner restart
+  test and the original review-only startup/Stop reproduction, reused without
+  modification. Zero failures, errors or skips in either suite.
+  [Results](../build/test-results/review-shutdown-guard-platform/) ·
+  [Log](../build/logs/review-shutdown-guard-platform-console.log).
+- The original probe now records `initialize, launch, configurationDone,
+  terminate, threads, disconnect`, with no `startProfile` after `terminate`.
+  [Original probe's passing result](../build/test-results/review-shutdown-guard-platform/TEST-de.softwareforge.factorio.FactorioStartupStopReviewTest.xml).
+  The earlier failing result remains preserved in the finding's evidence.
+- Verified both FDE **0.9.2-dev** archives against the documented SHA-256,
+  checked ZIP/nested-JAR integrity, plugin version and the packaged shutdown
+  guard. [Artifact verification](../build/test-work/review-shutdown-guard/artifact-verification.txt).
+- Reviewed sources, dependency pins and the original probe remained unchanged
+  throughout validation. [Source hashes](../build/test-work/review-shutdown-guard/reviewed-source-hashes.json)
+  and [reviewed implementation diff](../build/test-work/review-shutdown-guard/reviewed-diff.patch).
+
+This review changed only this report and ignored validation artifacts. No
+production code or versioned tests were edited, no distribution was installed,
+and no commit or push was made. Native Factorio capture was not rerun; lifecycle
+verification used controlled adapters.
+
+**Independent review complete: all seven findings resolved; zero open findings.**

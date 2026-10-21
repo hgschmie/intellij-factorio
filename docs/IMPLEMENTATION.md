@@ -6,6 +6,10 @@ in 0.9.0-dev; see [profiling](PROFILING.md). The milestones below are historical
 
 ## Profiling checkpoint — 2026-10-20
 
+Follow-up **0.9.2-dev** prevents delayed launch acknowledgements from starting
+profiling after Stop or disposal begins. Already queued recording events are
+still consumed during cleanup; no automatic save or additional wait is added.
+
 Follow-up **0.9.1-dev** restores the shutdown path and 15-second cleanup budget
 from before profiling. Neither IntelliJ Stop nor in-game Quit initiates or waits
 for a profile save; use **Stop Lua Profiling** and wait for completion first.
