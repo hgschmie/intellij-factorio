@@ -207,7 +207,6 @@ public final class FactorioDebug {
             var profiling = parent == null ? FactorioProfiling.install(process) : new FactorioProfileSession(path -> {}, message -> {});
             var client = new com.redhat.devtools.lsp4ij.dap.client.DAPClient(process, parameters, debug, mode, trace, parent) {
                 private final java.util.concurrent.atomic.AtomicBoolean disposing = new java.util.concurrent.atomic.AtomicBoolean();
-                private final java.util.concurrent.atomic.AtomicBoolean terminating = new java.util.concurrent.atomic.AtomicBoolean();
                 private final java.util.concurrent.CompletableFuture<Void> protocolClosed = new java.util.concurrent.CompletableFuture<>();
                 private volatile boolean listeningStarted;
                 private final FactorioDapShutdown shutdown = new FactorioDapShutdown(this::getDebugProtocolServer,
@@ -265,13 +264,11 @@ public final class FactorioDebug {
                 @Override public void dispose() {
                     if (!disposing.compareAndSet(false, true)) return;
                     if (parent != null || handler == null) { releaseClient(); return; }
-                    if (handler.getProcess().isAlive()) terminate();
+                    if (handler.getProcess().isAlive()) shutdown.stop();
                     ApplicationManager.getApplication().executeOnPooledThread(() -> {
                         // waitFor includes IntelliJ's stdout readers. The DAP parser must
                         // then consume their final messages before its pipes are closed.
-                        // Stop may still be writing a multi-GB profile. Do not close the
-                        // protocol pipes while waiting for its completion event.
-                        handler.waitFor((FactorioProfiling.SHUTDOWN_SAVE_SECONDS + 15L) * 1_000);
+                        handler.waitFor(15_000);
                         shutdown.exited();
                         try { if (listeningStarted) protocolClosed.get(5, java.util.concurrent.TimeUnit.SECONDS); }
                         catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); }
@@ -284,16 +281,9 @@ public final class FactorioDebug {
                     try { super.dispose(); } finally { if(parent==null) closeFileLog(); }
                 }
                 @Override public void terminate() {
-                    if (terminating.compareAndSet(false, true)) {
-                        profiling.finish().copy().completeOnTimeout(null, FactorioProfiling.SHUTDOWN_SAVE_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
-                                .whenCompleteAsync((unused, failure) -> shutdown.stop());
-                    }
+                    shutdown.stop();
                 }
                 @Override public void terminated(org.eclipse.lsp4j.debug.TerminatedEventArguments args) {
-                    // Native Factorio no longer services recorder requests after this
-                    // event. Do not start a doomed stopProfile/terminate cycle from
-                    // super.terminated -> dispose; close() reports any unsaved recording.
-                    terminating.set(true);
                     if (parent==null && handler!=null && FactorioDapRestart.isRequested(args.getRestart())) {
                         if (restart.request(args.getRestart())) {
                             process.print("Factorio requested a restart. Waiting for the game to exit...",

@@ -35,16 +35,25 @@ class FactorioProfileSessionTest {
         assertEquals(FactorioProfileSession.State.CLOSED, session.state());
         assertEquals(1, paths.size());
     }
-    @Test void shutdownWaitsForStartingRecordingThenStopsIt() {
-        var requests = new ArrayList<String>();
-        var session = new FactorioProfileSession(path -> {}, error -> fail(error));
-        session.connect(method -> { requests.add(method); return CompletableFuture.completedFuture(null); });
-        session.start(); var finished = session.finish();
-        assertFalse(finished.isDone());
-        session.running();
-        assertEquals(List.of("startProfile", "stopProfile"), requests);
-        session.complete("saved.cpuprofile");
-        assertTrue(finished.isDone()); assertFalse(session.canStart());
+    @Test void closingDoesNotSendRecorderRequestsOrWaitForPendingOperations() {
+        for (var state : List.of(FactorioProfileSession.State.STARTING,
+                FactorioProfileSession.State.RECORDING, FactorioProfileSession.State.STOPPING)) {
+            var requests = new ArrayList<String>(); var errors = new ArrayList<String>();
+            var session = new FactorioProfileSession(path -> fail("Closed recording cannot produce a snapshot"), errors::add);
+            session.connect(method -> { requests.add(method); return new CompletableFuture<>(); });
+            var pending = session.start();
+            if (state != FactorioProfileSession.State.STARTING) session.running();
+            if (state == FactorioProfileSession.State.STOPPING) pending = session.stop();
+            assertEquals(state, session.state());
+            var beforeClose = List.copyOf(requests);
+            session.close(); session.close();
+            session.running(); session.complete("late.cpuprofile");
+            assertTrue(pending.isDone());
+            assertEquals(FactorioProfileSession.State.CLOSED, session.state());
+            assertEquals(beforeClose, requests);
+            assertEquals(1, errors.size());
+            assertFalse(session.canStart()); assertFalse(session.canStop());
+        }
     }
     @Test void slowSaveStaysPendingAndItsLateCompletionIsSuccessful() throws Exception {
         var status = new LinkedBlockingQueue<String>();

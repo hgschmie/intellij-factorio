@@ -6,6 +6,10 @@ in 0.9.0-dev; see [profiling](PROFILING.md). The milestones below are historical
 
 ## Profiling checkpoint — 2026-10-20
 
+Follow-up **0.9.1-dev** restores the shutdown path and 15-second cleanup budget
+from before profiling. Neither IntelliJ Stop nor in-game Quit initiates or waits
+for a profile save; use **Stop Lua Profiling** and wait for completion first.
+
 FDE **0.9.0-dev** implements native Lua capture, the Factorio Profile executor,
 manual start/stop, streamed snapshot import, native Flame Graph/Call Tree/Method
 List, source navigation, stable mod/file colors, Lua execution timing, module

@@ -97,10 +97,10 @@ while True:
             exit_cleanly()
         success = mode != 'terminate-error'
     elif command == 'startProfile':
+        if mode == 'profile-ignore-start':
+            continue
         # Native Factorio sends this event without a body.
         send({'type': 'event', 'event': 'profileRunning'})
-        if mode == 'profile-game-quit':
-            threading.Thread(target=user_quit, daemon=True).start()
     elif command == 'stopProfile':
         if mode == 'profile-ignore-stop':
             continue
@@ -111,6 +111,8 @@ while True:
         continue
     send({'type': 'response', 'request_seq': request['seq'], 'command': command, 'success': success, 'body': body})
     if command == 'configurationDone':
+        if mode.endswith('game-quit'):
+            threading.Thread(target=user_quit, daemon=True).start()
         if mode == 'profile-lua':
             send({'type': 'event', 'event': 'profileRunning'})
         send({'type': 'event', 'event': 'stopped', 'body': {'reason': 'pause', 'threadId': 1, 'allThreadsStopped': True}})

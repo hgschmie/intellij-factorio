@@ -1,7 +1,11 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.9.0-dev.
+`de.softwareforge.factorio`. Development release 0.9.1-dev.
+
+This release restores the pre-profiler shutdown timing. Ending a game session
+does not request or wait for a profile save. Choose **Stop Lua Profiling** and
+wait for the saved snapshot before using IntelliJ Stop or quitting Factorio.
 
 Lua profiling now uses Factorio's native recorder and IntelliJ's **Profiler**
 window, with Flame Graph, Call Tree, Method List, caller/callee exploration and
@@ -111,7 +115,7 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 ## Install and configure
 
-Install `../plugins/intellij-factorio-0.9.0-dev.zip`,
+Install `../plugins/intellij-factorio-0.9.1-dev.zip`,
 `../plugins/IntelliJ-EmmyLua2-0.30.0-185.zip` and
 `../plugins/lsp4ij-0.21.1-SNAPSHOT-13.zip` using **Install Plugin from Disk**.
 The custom analyzer is packaged for macOS arm64. See the

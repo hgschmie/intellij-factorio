@@ -1,13 +1,36 @@
-# Lua profiling — FDE 0.9.0-dev
+# Lua profiling — FDE 0.9.1-dev
 
-Implementation checkpoint **2026-10-20**: capture, import, native views,
+Shutdown follow-up **2026-10-20**: removed automatic profile saving during IDE
+shutdown and restored the previous 15-second cleanup timeout. The extended
+135-second timeout applied even when profiling was inactive; it was broader
+than necessary. No recording request now delays termination, and normal
+disconnect/process-kill fallbacks are unchanged. Explicit **Stop Lua Profiling**
+still waits for the recording to be saved while the game remains running.
+
+Validated **0.9.1-dev**: **23 unit tests and 36 IntelliJ platform tests passed**,
+with zero failures/errors/skips. Coverage includes IDE Stop with an active
+recording, pending start or unresponsive save; in-game Quit with/without
+profiling; explicit repeated/slow saves; restart; and all profiler views. These
+use disposable adapter fixtures; native Factorio capture was not rerun. The
+shutdown methods match the pre-profiler implementation apart from recording-state
+cleanup when releasing the client.
+
+Install [`intellij-factorio-0.9.1-dev.zip`](../../plugins/intellij-factorio-0.9.1-dev.zip).
+SHA-256: `6bf0d780552b1619a4eac17e00dece3c09f99aff50cbdc16e7b860bb756a0ae8`.
+[Artifact receipt](../build/logs/profiling-shutdown-revert-artifact.txt) ·
+[Unit results](../build/test-results/profiling-shutdown-revert-unit/) ·
+[Platform results](../build/test-results/profiling-shutdown-revert-platform/).
+Dependency pins are unchanged. The original archive remains in
+`build/distributions/`; the validated installation copy is in flat `plugins/`.
+
+Initial **0.9.0-dev** implementation checkpoint **2026-10-20**: capture, import, native views,
 navigation, colors, execution-time selection, module filtering and comparison
 are complete. All six [review findings](PROFILING_REVIEW.md) are independently
-verified resolved. Latest validation: **17 unit tests** plus an independent
+verified resolved. Checkpoint validation: **17 unit tests** plus an independent
 **18-test platform run** (16 regressions and the two original review probes),
 with no failures, errors or skips. The validated ZIP and checksum are recorded
 below; dependencies are EmmyLua2 **0.30.0-185** and LSP4IJ
-**0.21.1-SNAPSHOT-13**. The development version remains **0.9.0-dev**.
+**0.21.1-SNAPSHOT-13**; both dependencies remain unchanged in **0.9.1-dev**.
 
 The early-startup native adapter stall remains deferred, and recordings must be
 explicitly stopped before in-game Quit. The dated receipts below preserve the
@@ -26,8 +49,8 @@ so another interval can be recorded without relaunching it. **Explicitly end
 profiling with Stop Lua Profiling and wait for the saved snapshot before ending
 the game session.** In-game Quit does not save the recording. We do not attempt
 to work around that native Factorio bug with shutdown-output hooks or periodic
-captures. IntelliJ's Stop action retains a best-effort save, but the documented
-workflow is to stop profiling explicitly. Rerunning a Profile launch starts a
+captures. IntelliJ's Stop action also ends the session without saving an active
+recording; stop profiling explicitly first. Rerunning a Profile launch starts a
 new recording; the saved Run/Debug configuration is not changed.
 
 IDE-started recordings always exclude profiler hook timings. FDE sends
@@ -141,8 +164,8 @@ Profiling initiated through `debugadapter.start_profile()` and
 `debugadapter.stop_profile()` uses the same UI. Large recordings may take tens of
 seconds to save. FDE reports that saving is still in progress after ten seconds;
 it keeps the operation pending and disables duplicate start/stop requests.
-Debugger Stop waits up to two minutes for the recording before terminating
-Factorio. Crashes, in-game quit, force termination, or an unresponsive recorder
+Debugger Stop terminates Factorio without waiting for the recording. Crashes,
+in-game quit, force termination, or an unresponsive recorder
 may prevent a final snapshot. FDE reports an unsaved recording when the transport
 closes. Previously completed recordings remain.
 
@@ -623,6 +646,10 @@ Earlier parser/shutdown validation below remains applicable. No dependency
 change, commit or push.
 
 ### Large-recording and shutdown follow-up — 2026-10-20
+
+Historical receipt: **0.9.1-dev** removes the automatic save-on-shutdown and
+extended cleanup waits described here. Streaming and explicit manual-save
+handling remain in place.
 
 Rebuilt the same uncommitted **0.9.0-dev** feature and replaced the installation
 ZIP in flat `../plugins/`; the repository archive is retained in

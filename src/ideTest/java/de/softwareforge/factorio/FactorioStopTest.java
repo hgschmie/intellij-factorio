@@ -42,11 +42,13 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
     public void testUnansweredDisconnectFallsBackToSigterm() throws Exception { runStop("ignore-disconnect"); }
     public void testUnresponsiveGameIsEventuallyKilled() throws Exception { runStop("ignore-signal"); }
     public void testExitWithoutTerminatedEventStillCleansUp() throws Exception { runStop("exit-on-terminate"); }
-    public void testProfilingSavesBeforeShutdown() throws Exception { runStop("profile"); }
+    public void testExplicitProfileStopSavesBeforeShutdown() throws Exception { runStop("profile"); }
     public void testProfilingWithoutProtocolTracing() throws Exception { runStop("profile-no-trace"); }
-    public void testLuaInitiatedProfilingSavesBeforeShutdown() throws Exception { runStop("profile-lua"); }
+    public void testLuaInitiatedRecordingDoesNotDelayShutdown() throws Exception { runStop("profile-lua"); }
+    public void testActiveRecordingDoesNotSaveOnIdeStop() throws Exception { runStop("profile-active"); }
+    public void testPendingProfileStartDoesNotDelayShutdown() throws Exception { runStop("profile-ignore-start"); }
     public void testUnresponsiveProfilerDoesNotBlockShutdown() throws Exception { runStop("profile-ignore-stop"); }
-    public void testProfileExecutorStartsRecordingAfterLaunchAndSavesOnStop() throws Exception { runStop("profile-auto"); }
+    public void testProfileExecutorStartsAfterLaunchAndSavesOnExplicitProfileStop() throws Exception { runStop("profile-auto"); }
     public void testProfileExecutorIgnoresObsoleteHookSetting() throws Exception {
         var persisted = new org.jdom.Element("state").addContent(new org.jdom.Element("option")
                 .setAttribute("name", "profileShowHookEvents").setAttribute("value", "true"));
@@ -55,7 +57,8 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
         runStop("profile-auto");
     }
     public void testRunExecutorDoesNotStartRecording() throws Exception { runStop("run"); }
-    public void testSlowProfileSaveFinishesBeforeIdeShutdown() throws Exception { runStop("profile-slow-stop"); }
+    public void testExplicitSlowProfileSaveCanFinishBeforeIdeShutdown() throws Exception { runStop("profile-slow-stop"); }
+    public void testGameQuitWithoutProfilingUsesNormalShutdown() throws Exception { runStop("game-quit"); }
     public void testGameQuitDoesNotRequestAProfileAfterTermination() throws Exception { runStop("profile-game-quit"); }
 
     private void runStop(String mode) throws Exception {
@@ -85,6 +88,9 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
         String launchConfiguration = config.getLaunchConfiguration();
         var env = ExecutionEnvironmentBuilder.create(executor, settings).build();
         FactorioDebugProcessHandler handler = null;
+        boolean manualSave = mode.equals("profile") || mode.equals("profile-auto")
+                || mode.equals("profile-no-trace") || mode.equals("profile-slow-stop");
+        boolean gameQuit = mode.endsWith("game-quit");
         try {
             ProgramRunnerUtil.executeConfiguration(env, false, false);
             waitUntil(() -> java.util.Arrays.stream(XDebuggerManager.getInstance(getProject()).getDebugSessions()).anyMatch(s -> s.isSuspended()));
@@ -94,7 +100,8 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
                 var profile = handler.getUserData(FactorioProfiling.SESSION);
                 assertNotNull(profile);
                 if (!mode.equals("profile-lua") && !mode.equals("profile-auto")) profile.start();
-                waitUntil(() -> profile.state() == FactorioProfileSession.State.RECORDING);
+                if (mode.equals("profile-ignore-start")) assertEquals(FactorioProfileSession.State.STARTING, profile.state());
+                else waitUntil(() -> profile.state() == FactorioProfileSession.State.RECORDING);
                 if (mode.equals("profile")) {
                     profile.stop();
                     waitUntil(profile::canStart);
@@ -102,16 +109,27 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
                     profile.start();
                     waitUntil(profile::canStop);
                 }
+                if (manualSave) {
+                    profile.stop();
+                    waitUntil(profile::canStart);
+                } else if (mode.equals("profile-ignore-stop")) {
+                    profile.stop();
+                    assertEquals(FactorioProfileSession.State.STOPPING, profile.state());
+                }
             }
             // Exercise the Stop action's process-first path as well as LSP4IJ's stop callback.
-            if (mode.equals("profile-game-quit")) Files.createFile(dir.resolve("user-quit"));
+            if (gameQuit) Files.createFile(dir.resolve("user-quit"));
             else {
                 handler.destroyProcess();
                 session.stop();
             }
             var runningHandler = handler;
-            waitUntil(runningHandler::isProcessTerminated, mode.equals("profile-ignore-stop") ? 150 : 30);
+            waitUntil(runningHandler::isProcessTerminated);
             waitUntil(() -> XDebuggerManager.getInstance(getProject()).getDebugSessions().length == 0);
+            if (mode.startsWith("profile")) {
+                var profile = handler.getUserData(FactorioProfiling.SESSION);
+                waitUntil(() -> profile.state() == FactorioProfileSession.State.CLOSED);
+            }
             assertFalse("Factorio must never observe premature stdin EOF", Files.exists(dir.resolve("premature-eof")));
             if (mode.equals("ignore-signal")) {
                 assertTrue(Files.exists(dir.resolve("sigterm")));
@@ -137,16 +155,14 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
                 assertEquals(1L, commands.stream().filter("startProfile"::equals).count());
                 assertTrue(commands.indexOf("configurationDone") < commands.indexOf("startProfile"));
             } else if (!mode.startsWith("profile")) assertFalse(commands.contains("startProfile"));
-            if (mode.equals("profile-game-quit")) {
-                assertFalse(commands.contains("stopProfile"));
-            } else if (mode.startsWith("profile")) {
+            if (manualSave || mode.equals("profile-ignore-stop")) {
                 assertTrue(commands.indexOf("stopProfile") < commands.indexOf("terminate"));
                 assertEquals(mode.equals("profile") ? 2L : 1L, commands.stream().filter("stopProfile"::equals).count());
-                if (!mode.equals("profile-ignore-stop")) {
+                if (manualSave) {
                     waitUntil(() -> com.intellij.openapi.wm.ToolWindowManager.getInstance(getProject()).getToolWindow("Profiler") != null);
                 }
-            }
-            assertEquals(mode.equals("no-terminate") || mode.equals("profile-game-quit") ? 0L : 1L, commands.stream().filter("terminate"::equals).count());
+            } else assertFalse("Shutdown must not request a profile save", commands.contains("stopProfile"));
+            assertEquals(mode.equals("no-terminate") || gameQuit ? 0L : 1L, commands.stream().filter("terminate"::equals).count());
             assertEquals(mode.equals("exit-on-terminate") ? 0L : 1L, commands.stream().filter("disconnect"::equals).count());
             for (var request : requests) {
                 if (request.get("command").getAsString().equals("disconnect")) {

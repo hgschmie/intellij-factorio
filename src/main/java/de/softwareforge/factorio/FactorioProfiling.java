@@ -20,7 +20,6 @@ import java.util.function.UnaryOperator;
 
 public final class FactorioProfiling {
     public static final String EXECUTOR_ID = "FactorioLuaProfiler";
-    static final int SHUTDOWN_SAVE_SECONDS = 120;
     static final Key<FactorioProfileSession> SESSION = Key.create("factorio.profile.session");
 
     static FactorioProfileSession install(DAPDebugProcess process) {

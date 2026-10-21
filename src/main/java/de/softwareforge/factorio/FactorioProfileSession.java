@@ -7,7 +7,6 @@ import java.util.function.*;
 final class FactorioProfileSession {
     enum State { UNAVAILABLE, IDLE, STARTING, RECORDING, STOPPING, CLOSED }
     private State state = State.UNAVAILABLE;
-    private boolean closing;
     private long generation;
     private Function<String, CompletableFuture<?>> request;
     private CompletableFuture<Void> pending = CompletableFuture.completedFuture(null);
@@ -29,8 +28,8 @@ final class FactorioProfileSession {
         state = State.IDLE;
     }
     synchronized State state() { return state; }
-    synchronized boolean canStart() { return !closing && state == State.IDLE; }
-    synchronized boolean canStop() { return !closing && state == State.RECORDING; }
+    synchronized boolean canStart() { return state == State.IDLE; }
+    synchronized boolean canStop() { return state == State.RECORDING; }
     synchronized CompletableFuture<Void> start() {
         if (!canStart()) return pending;
         return command(true);
@@ -55,14 +54,12 @@ final class FactorioProfileSession {
                     : "Factorio is still saving the Lua profile. Large recordings can take several minutes; keep the game open.");
         });
         operation.whenComplete((unused, failure) -> {
-            boolean report;
             synchronized (this) {
                 if (failure == null || token != generation || state == State.CLOSED) return;
                 ++generation;
                 state = start ? State.IDLE : State.RECORDING;
-                report = !closing;
             }
-            if (report) error.accept("Could not " + (start ? "start" : "stop") + " profiling: " + failureMessage(failure));
+            error.accept("Could not " + (start ? "start" : "stop") + " profiling: " + failureMessage(failure));
         });
         try {
             request.apply(start ? "startProfile" : "stopProfile").whenComplete((unused, failure) -> {
@@ -89,26 +86,18 @@ final class FactorioProfileSession {
         if (path == null || path.isBlank()) error.accept("Factorio completed profiling without a snapshot path.");
         else completed.accept(path);
     }
-    synchronized CompletableFuture<Void> finish() {
-        closing = true;
-        if (state == State.STARTING) {
-            return pending.handle((unused, failure) -> null).thenCompose(unused -> stop());
-        }
-        return stop();
-    }
     void close() {
         boolean unsaved;
         synchronized (this) {
             if (state == State.CLOSED) return;
             unsaved = state == State.STARTING || state == State.RECORDING || state == State.STOPPING;
             ++generation;
-            closing = true;
             state = State.CLOSED;
             pending.complete(null);
             request = null;
         }
         if (unsaved) error.accept("Factorio exited before the Lua profile was saved. "
-                + "Use Stop Lua Profiling and wait for the saved snapshot before quitting inside Factorio.");
+                + "Use Stop Lua Profiling and wait for the saved snapshot before ending the game session.");
     }
     private static String failureMessage(Throwable failure) {
         while ((failure instanceof CompletionException || failure instanceof ExecutionException) && failure.getCause() != null)
