@@ -87,17 +87,18 @@ original paths and describe the old layout.
 
 The earlier LSP4IJ contributions are upstream: breakpoint removal (#1679), file-specific
 server selection/formatting (#1688), workspace diagnostics (#1703) and diagnostic
-cache notifications (#1704). The active dependency is `0.21.1-SNAPSHOT-14`,
-built from `work/factorio-build` at `b7d2e75a`. It contains upstream/main
+cache notifications (#1704). The active dependency is `0.21.1-SNAPSHOT-15`,
+built from `work/factorio-build` at `f68b95ca`. It contains upstream/main
 `ef2b18c3`, UP-098's DAP executor routing fix, UP-104's signature-popup refresh
 fix, and local IDEA 262 build settings,
 package numbering, documentation and test adaptations. Generic DAP sessions
 accept Run/Debug by default; custom adapters explicitly opt into other executors.
 FDE opts into **Profile with Factorio Lua**. See the
-[build 14 receipt](../../upstream/memory/LSP4IJ_BUILD14_2026-10-21.md).
-All 156 selected LSP4IJ tests and three native FDE compatibility tests pass.
-The parameter popup safely refreshes growing, shrinking or reordered overload
-lists. FDE retains its 0.9.3-dev version and existing ZIP for this dependency-only
+[build 15 receipt](../../upstream/memory/LSP4IJ_BUILD15_2026-10-21.md).
+All 31 signature-help tests and three native FDE compatibility tests pass.
+Build14 also passed the broader 156-test suite. The parameter popup safely
+refreshes growing, shrinking or reordered overload lists and changed metadata
+for duplicate labels; unique-label metadata continues updating in place. FDE retains its 0.9.3-dev version and existing ZIP for this dependency-only
 update.
 Workspace-report file checks use the project's cancellable read-action helper. Closed-file diagnostics and their
 error status are published together through one immutable snapshot. Workspace
