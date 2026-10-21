@@ -1,7 +1,12 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.9.2-dev.
+`de.softwareforge.factorio`. Development release 0.9.3-dev.
+
+Changelog duplicate detection now compares complete entries, including continuation
+text. Repeating a credit under two different bugfix entries no longer produces
+a false error; identical complete entries and duplicate sibling subentries still
+do. See [the changelog fix](docs/CHANGELOG_DUPLICATES_2026-10-21.md).
 
 Stopping a launch now prevents a delayed launch response from starting profiling
 during shutdown. This release retains the pre-profiler shutdown timing. Ending a game session
@@ -116,8 +121,8 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 ## Install and configure
 
-Install `../plugins/intellij-factorio-0.9.2-dev.zip`,
-`../plugins/IntelliJ-EmmyLua2-0.30.0-185.zip` and
+Install `../plugins/intellij-factorio-0.9.3-dev.zip`,
+`../plugins/IntelliJ-EmmyLua2-0.30.0-186.zip` and
 `../plugins/lsp4ij-0.21.1-SNAPSHOT-13.zip` using **Install Plugin from Disk**.
 The custom analyzer is packaged for macOS arm64. See the
 [latest fixes and validation](docs/LTN_STOP_UPDATE_2026-10-16.md).
