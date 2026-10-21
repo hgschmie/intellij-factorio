@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.intellij.platform.grammarkit") version "2.18.1"
 }
 group = "de.softwareforge.factorio"
-version = "0.8.6-dev"
+version = "0.9.0-dev"
 repositories { mavenCentral(); intellijPlatform { defaultRepositories() } }
 // Defaults follow the workspace layout; every external location can be overridden with -P.
 val workspaceDir = projectDir.parentFile
@@ -26,6 +26,7 @@ val ideaContents = if (ideaDir.resolve("Contents").isDirectory) ideaDir.resolve(
 dependencies {
     intellijPlatform {
         if (ideaDir.isDirectory) local(ideaDir)
+        bundledModule("intellij.profiler.common")
         if (lsp4ijDir.isDirectory) localPlugin(lsp4ijDir)
         if (emmyDir.isDirectory) localPlugin(emmyDir)
         if (ideaContents.resolve("plugins/json").isDirectory) localPlugin(ideaContents.resolve("plugins/json"))

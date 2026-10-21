@@ -4,15 +4,19 @@
   <vendor>Softwareforge</vendor>
   <description><![CDATA[
     <p>Factorio Development Environment (FDE) brings Factorio mod development to IntelliJ IDEA:
-    EmmyLua2 integration, locale and changelog services, native debugging, packaging and publishing.</p>
+    EmmyLua2 integration, locale and changelog services, native debugging and profiling, packaging and publishing.</p>
     <p>FDE uses <a href="https://github.com/justarandomgeek/vscode-factoriomod-debug">Factorio Modding Tool Kit (FMTK)</a>
     under the hood for API definitions, locale and changelog language services, and mod tooling.</p>
   ]]></description>
   <depends>com.intellij.modules.platform</depends>
   <depends optional="true" config-file="factorio-json.xml">com.intellij.modules.json</depends>
   <depends optional="true" config-file="factorio-import.xml">com.intellij.java</depends>
+  <depends optional="true" config-file="factorio-profiler.xml">com.intellij.modules.profiler</depends>
   <depends>com.cppcxy.Intellij-EmmyLua</depends>
   <depends>com.redhat.devtools.lsp4ij</depends>
+  <extensionPoints>
+    <extensionPoint name="profileViewer" interface="de.softwareforge.factorio.FactorioProfileViewer" dynamic="true"/>
+  </extensionPoints>
   <extensions defaultExtensionNs="com.intellij">
     <problemsViewPanelProvider implementation="de.softwareforge.factorio.FactorioProblemsPanel$Provider"/>
     <lang.parserDefinition language="FactorioChangelog" implementationClass="de.softwareforge.factorio.FactorioChangelogParserDefinition"/>
@@ -38,8 +42,20 @@
     <languageLevelProvider implementation="de.softwareforge.factorio.FactorioLuaLanguageLevel"/>
   </extensions>
   <actions>
+    <action id="SoftwareforgeFactorio.ProfileStart" class="de.softwareforge.factorio.FactorioProfiling$Start">
+      <add-to-group group-id="XDebugger.ToolWindow.TopToolbar" anchor="last"/>
+      <add-to-group group-id="XDebugger.ToolWindow.TopToolbar3" anchor="last"/>
+    </action>
+    <action id="SoftwareforgeFactorio.ProfileStop" class="de.softwareforge.factorio.FactorioProfiling$Stop">
+      <add-to-group group-id="XDebugger.ToolWindow.TopToolbar" anchor="last"/>
+      <add-to-group group-id="XDebugger.ToolWindow.TopToolbar3" anchor="last"/>
+    </action>
     <group id="SoftwareforgeFactorio" text="Factorio" popup="true" icon="de.softwareforge.factorio.FactorioIcons.FACTORIO">
       <add-to-group group-id="ToolsMenu" anchor="last"/>
+      <reference ref="SoftwareforgeFactorio.ProfileStart"/>
+      <reference ref="SoftwareforgeFactorio.ProfileStop"/>
+      <action id="SoftwareforgeFactorio.OpenProfile" class="de.softwareforge.factorio.FactorioProfiling$Open" text="Open Factorio Profile…"/>
+      <separator/>
       <action id="SoftwareforgeFactorio.Configure" class="de.softwareforge.factorio.FactorioActions$Setup" text="Configure Factorio Project…"/>
       <action id="SoftwareforgeFactorio.Generate" class="de.softwareforge.factorio.FactorioActions$Generate" text="Regenerate Factorio API Definitions"/>
       <action id="SoftwareforgeFactorio.Diagnose" class="de.softwareforge.factorio.FactorioActions$Diagnose" text="Check Factorio Toolchain"/>

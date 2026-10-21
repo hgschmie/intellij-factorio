@@ -1,0 +1,9 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="com.intellij">
+    <profiler.executor implementation="de.softwareforge.factorio.profiler.FactorioProfilerExecutor"/>
+    <profiler.api.ProfilerDumpParserProvider implementation="de.softwareforge.factorio.profiler.FactorioProfileImporter"/>
+  </extensions>
+  <extensions defaultExtensionNs="de.softwareforge.factorio">
+    <profileViewer implementation="de.softwareforge.factorio.profiler.FactorioProfileImporter"/>
+  </extensions>
+</idea-plugin>

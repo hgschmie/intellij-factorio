@@ -54,6 +54,12 @@ def end_session():
     send({'type': 'event', 'event': 'terminated', 'body': {}})
 
 
+def user_quit():
+    while not (root / 'user-quit').exists():
+        time.sleep(.02)
+    end_session()
+
+
 while True:
     headers = {}
     while True:
@@ -90,10 +96,23 @@ while True:
         if mode == 'exit-on-terminate':
             exit_cleanly()
         success = mode != 'terminate-error'
+    elif command == 'startProfile':
+        # Native Factorio sends this event without a body.
+        send({'type': 'event', 'event': 'profileRunning'})
+        if mode == 'profile-game-quit':
+            threading.Thread(target=user_quit, daemon=True).start()
+    elif command == 'stopProfile':
+        if mode == 'profile-ignore-stop':
+            continue
+        if mode == 'profile-slow-stop':
+            time.sleep(12)
+        send({'type': 'event', 'event': 'profileComplete', 'body': {'path': str(root / 'profile.cpuprofile')}})
     elif command == 'disconnect' and mode in ('ignore-disconnect', 'ignore-signal'):
         continue
     send({'type': 'response', 'request_seq': request['seq'], 'command': command, 'success': success, 'body': body})
     if command == 'configurationDone':
+        if mode == 'profile-lua':
+            send({'type': 'event', 'event': 'profileRunning'})
         send({'type': 'event', 'event': 'stopped', 'body': {'reason': 'pause', 'threadId': 1, 'allThreadsStopped': True}})
     elif command == 'terminate' and success:
         threading.Thread(target=end_session, daemon=True).start()

@@ -85,12 +85,15 @@ or the historical `spike/ide/`; it copied LSP4IJ and reusable protocol/module
 inputs from those historical locations. Historical acceptance notes retain their
 original paths and describe the old layout.
 
-The earlier LSP4IJ contributions are upstream: breakpoint removal (#1679) and
-file-specific server selection/formatting (#1688). The active dependency is now
-`0.21.1-SNAPSHOT-10`, built from
-`work/factorio-build` at `7628736a`. It contains upstream/main `88b9ece3`,
-UP-044 workspace diagnostics (`d7a0b53b`) and local IDEA 262 build support.
-UP-055 diagnostic cache notifications are supplied by upstream merge `755ba4d7`.
+The earlier LSP4IJ contributions are upstream: breakpoint removal (#1679), file-specific
+server selection/formatting (#1688), workspace diagnostics (#1703) and diagnostic
+cache notifications (#1704). The active dependency is `0.21.1-SNAPSHOT-13`,
+built from `work/factorio-build` at `fa781ebd`. It contains upstream/main
+`ef2b18c3`, UP-098's DAP executor routing fix, and local IDEA 262 build settings,
+package numbering, documentation and test adaptations. Generic DAP sessions
+accept Run/Debug by default; custom adapters explicitly opt into other executors.
+FDE opts into **Profile with Factorio Lua**. See the
+[build 13 receipt](../../upstream/memory/LSP4IJ_BUILD13_2026-10-20.md).
 Workspace-report file checks use the project's cancellable read-action helper. Closed-file diagnostics and their
 error status are published together through one immutable snapshot. Workspace
 reports honor synchronous/asynchronous DocumentMatchers without connecting
@@ -100,14 +103,17 @@ its cached diagnostics while preserving open-file results owned by an active
 document provider with the same identifier. Cache replacement restarts only
 providers with affected result IDs or a matching pending file. Other requests
 continue, filtering stale reports for replaced caches until their next pull.
+Repeated changes to the same cache replace its URI-keyed filter, keeping
+long-lived requests from accumulating duplicate predicates. Upstream's updated
+build tools and document lifecycle fixes are retained.
 Empty reports retain result IDs without allocating caches for uncached, unopened
 files. A file that stops matching clears
 only its provider diagnostics; other files/providers and open-document reports
 are retained. The package version preserves upstream `-SNAPSHOT` and appends the
 separate `pluginBuild` counter. Its checkout is
 `upstream/lsp4ij/build/checkouts/patched`; the contribution checkout is
-`upstream/lsp4ij-worktrees/workspace-diagnostics`. FDE retains version 0.8.6-dev
-and its existing distribution for this dependency-only refresh.
+`upstream/lsp4ij/build/checkouts/dap-executor-routing`. FDE **0.9.0-dev** contains
+the native Lua profiling feature and is built against this dependency.
 
 Run `intellij-factorio/scripts/build-lsp4ij.sh` to prepare the pinned archive.
 For a local build, `lsp4ij.lock` records the version, source revision and SHA-256;

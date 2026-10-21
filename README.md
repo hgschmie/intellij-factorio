@@ -1,7 +1,30 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.8.6-dev.
+`de.softwareforge.factorio`. Development release 0.9.0-dev.
+
+Lua profiling now uses Factorio's native recorder and IntelliJ's **Profiler**
+window, with Flame Graph, Call Tree, Method List, caller/callee exploration and
+Lua source navigation. Choose **Profile with Factorio Lua** from the standard
+Profile menu to launch with recording enabled. For manual capture intervals, use
+**Start Lua Profiling** and **Stop Lua Profiling** in the Debug toolbar, or
+**Tools → Factorio**. Saved recordings can be reopened with
+**Open Factorio Profile…**, which preselects the recording folder and remembers
+it per project. Large recordings are streamed without a timing-entry
+limit. Explicitly choose **Stop Lua Profiling** and wait for the saved snapshot
+before ending the game session; native Factorio currently discards an active
+recorder during in-game Quit.
+IDE-started recordings exclude profiler hook timings automatically.
+Flame graph colors now follow mod and source-file identity, with separate
+native, hook, runtime and unattributed-time colors in light and dark themes.
+Profiles open in **Lua execution** view, using the recorded calls as the timing
+total so time outside Lua does not squeeze the graph. Choose **Including
+unattributed time** in the Profiler's **Show** selector to see the entire
+recording. The choice applies to Flame Graph, Call Tree and Method List.
+Use **Modules: All** above the views to select one or several modules. The filter
+includes their library/native callees, trims unrelated paths and recalculates
+totals. Existing recordings can be filtered without capturing again.
+See [profiling](docs/PROFILING.md).
 
 The Factorio Problems tab now shows separate information and hint counts in its
 module and total summaries. Select **Information** or **Hints** to inspect those
@@ -12,8 +35,8 @@ See [the flow fixes and remaining-problem triage](docs/LTN_FLOW_TRIAGE_2026-10-1
 LocalisedString now follows Factorio's documented recursive array types, including
 runtime nil. Typed LocalisedString[] values can be passed, returned and cast to
 LocalisedString with EmmyLua2 build167. The first array element still needs to be
-the localisation key when Factorio interprets the value. Install FDE 0.8.6-dev
-and EmmyLua2 build168; use LSP4IJ patched5. See
+the localisation key when Factorio interprets the value. This was introduced in
+FDE 0.8.6-dev with EmmyLua2 build168. See
 [LocalisedString types](docs/LOCALISED_STRING.md) for details.
 
 Known remote-interface calls also preserve their declared single, multiple or
@@ -32,10 +55,9 @@ diagnostics and preserves module/severity/text filters and navigation.
 See [Factorio Problems](docs/PROBLEMS.md) for reporting coverage.
 
 Source-root ownership coordination with EmmyLua2 remains enabled. Use EmmyLua2
-`0.30.0-172` (normal UP-045) and LSP4IJ `0.21.1-6`. Both installable ZIPs are
-collected in `../plugins/`. FDE remains 0.8.6-dev for this analyzer/dependency
-update. Targets IntelliJ IDEA 2026.2 (build 262).
-LuaLS and profiling are not supported.
+`0.30.0-185` and LSP4IJ `0.21.1-SNAPSHOT-13`. Installable ZIPs are
+collected in `../plugins/`. Targets IntelliJ IDEA 2026.2 (build 262).
+LuaLS is not supported.
 
 FDE uses [Factorio Modding Tool Kit (FMTK)](https://github.com/justarandomgeek/vscode-factoriomod-debug)
 under the hood for API definitions, locale and changelog language services, and
@@ -89,9 +111,9 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 ## Install and configure
 
-Install `../plugins/IntelliJ-EmmyLua2-0.30.0-172.zip` and
-`../plugins/lsp4ij-0.21.1-6.zip` using **Install Plugin from Disk**. Keep FDE
-0.8.6-dev, or install its existing archive from the same folder if needed.
+Install `../plugins/intellij-factorio-0.9.0-dev.zip`,
+`../plugins/IntelliJ-EmmyLua2-0.30.0-185.zip` and
+`../plugins/lsp4ij-0.21.1-SNAPSHOT-13.zip` using **Install Plugin from Disk**.
 The custom analyzer is packaged for macOS arm64. See the
 [latest fixes and validation](docs/LTN_STOP_UPDATE_2026-10-16.md).
 

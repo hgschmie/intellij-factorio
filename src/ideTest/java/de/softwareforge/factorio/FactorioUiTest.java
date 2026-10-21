@@ -44,6 +44,7 @@ public class FactorioUiTest extends HeavyPlatformTestCase {
         ui.reset();assertFalse(addresses.isSelected());assertFalse(ui.isModified());
         addresses.doClick();ui.apply();assertTrue(settings.hideDebugAddresses);assertFalse(ui.isModified());
         ui.reset();assertTrue(addresses.isSelected());
+        assertFalse(children(component,JCheckBox.class).stream().anyMatch(c -> c.getText().equals("Include hook timing events")));
         var persisted=com.intellij.util.xmlb.XmlSerializer.serialize(settings);
         assertTrue(com.intellij.util.xmlb.XmlSerializer.deserialize(persisted,FactorioSettings.Data.class).hideDebugAddresses);
         assertEquals(5,children(component,TextFieldWithBrowseButton.class).size());

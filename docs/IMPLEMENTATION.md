@@ -1,7 +1,25 @@
 # Implementation progress
 
 Target: Java integration for IDEA 262, EmmyLua2 only, LSP4IJ 0.21.0, bundled
-FMTK CLI, installed Node and native Factorio DAP. Profiling is deferred.
+FMTK CLI, installed Node and native Factorio DAP. Native Lua profiling was added
+in 0.9.0-dev; see [profiling](PROFILING.md). The milestones below are historical.
+
+## Profiling checkpoint — 2026-10-20
+
+FDE **0.9.0-dev** implements native Lua capture, the Factorio Profile executor,
+manual start/stop, streamed snapshot import, native Flame Graph/Call Tree/Method
+List, source navigation, stable mod/file colors, Lua execution timing, module
+selection and snapshot comparison. All six [review findings](PROFILING_REVIEW.md)
+are independently verified resolved. The validated installation set is FDE
+0.9.0-dev, EmmyLua2 0.30.0-185 and LSP4IJ 0.21.1-SNAPSHOT-13 (UP-098).
+
+Profiling must be explicitly stopped before in-game Quit. The early-startup
+native debug-adapter stall is deferred; the user confirmed manual profiling
+works at later breakpoints. Ignoring test folders remains planned follow-up work
+and is not part of this implementation. See [the profiling record](PROFILING.md)
+for validation, artifacts and the preserved investigation history.
+
+## Earlier milestones
 
 - [x] Reproducible plugin distribution and settings implementation
 - [x] API generation, safe EmmyLua configuration, dependency import implementation
