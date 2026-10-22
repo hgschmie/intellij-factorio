@@ -324,9 +324,19 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         Files.delete(dep.resolve("init.lua")); Files.delete(dep.resolve("control.lua"));
         Path helper=dep.resolve("helper.lua"); Files.writeString(helper,"return { before_value = true }\n");
         for(Path root:List.of(a,b)) Files.writeString(root.resolve("control.lua"),"local dep = require('__dependency__/helper')\nlocal result = dep.\n");
+        var settings=FactorioSettings.get(getProject());
+        settings.serviceMode="ENABLED";
+        settings.apiDocs=System.getProperty("factorio.test.apiDocs");
+        settings.dependencies=dep.toString();
         attach(List.of(a,b));
-        var manager=FactorioServerManager.get(getProject()); FactorioSettings.get(getProject()).serviceMode="ENABLED";
-        manager.configure(List.of(scope(a,List.of(dep)),scope(b,List.of(dep))));
+        // Use the same scopes as automatic module reconciliation, which would
+        // otherwise replace manually injected servers while this test uses them.
+        await(CompletableFuture.runAsync(() -> {
+            try { Definitions.generate(getProject(),new com.intellij.openapi.progress.EmptyProgressIndicator(),message -> {}); }
+            catch(Exception e) { throw new CompletionException(e); }
+        }));
+        var manager=FactorioServerManager.get(getProject());
+        manager.startServices();
         String aid=manager.luaServer(a.resolve("control.lua")),bid=manager.luaServer(b.resolve("control.lua"));
         var as=server(aid); var bs=server(bid);
         java.util.function.Function<LanguageServerItem,String> members=item -> {
@@ -391,8 +401,8 @@ public class PerModServersTest extends HeavyPlatformTestCase {
             await(LanguageServiceAccessor.getInstance(getProject()).getLanguageServers(psi, null, null));
             editors.openFile(typesFile, true);
             var document = Objects.requireNonNull(FileDocumentManager.getInstance().getDocument(typesFile));
-            // Initial workspace pull populates the closed consumer's diagnostics.
-            eventually(() -> wrapper.getClosedDocument(control.toUri(), false) != null);
+            // Empty workspace reports need not allocate a closed-document cache.
+            // The edit below must create a real diagnostic before we check removal.
             BooleanSupplier missing = () -> {
                 var open = wrapper.getOpenedDocument(control.toUri());
                 var cached = open != null ? open : wrapper.getClosedDocument(control.toUri(), false);
