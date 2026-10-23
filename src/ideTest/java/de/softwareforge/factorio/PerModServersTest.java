@@ -335,6 +335,10 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         }));
         var manager=FactorioServerManager.get(getProject());
         manager.startServices();
+        var accessor=LanguageServiceAccessor.getInstance(getProject());
+        eventually(() -> accessor.getStartedServers().stream()
+            .filter(item -> item.getServerDefinition().getId().startsWith("de.softwareforge.factorio.")
+                && item.getServerStatus()==ServerStatus.started).count()==4);
         String aid=manager.luaServer(a.resolve("control.lua")),bid=manager.luaServer(b.resolve("control.lua"));
         var as=server(aid); var bs=server(bid);
         java.util.function.Function<LanguageServerItem,String> members=item -> {
