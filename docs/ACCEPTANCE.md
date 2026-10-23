@@ -1,3 +1,36 @@
+# EmmyLua2 build202 — callable compatibility and copied signatures (2026-10-23)
+
+FDE's development analyzer pin is `3219ece399ba8256868457213fe34355be0d652d`.
+The EmmyLua2 **0.30.0-202** archive has SHA-256
+`e2c9fe2663fe7c946a7e2a3b5ded6150cf64e298ed00b743b753d814fc805a1c`;
+its macOS arm64 executable is
+`d033dc4a7b2b0dfd6354bb1d42bb2c60eced6f4e7ade3ce509cac36b89ae7902`, mode0755.
+The IDE test sandbox loaded the matching executable and embedded analyzer pin.
+Only the macOS arm64 analyzer contains these local patches.
+
+All **18 native integration tests passed**, with zero failures/errors/skips:
+17 PerModServersTest cases plus FactorioLuaLanguageLevelTest. The forced run used
+private EmmyLua2/LSP4IJ copies, the independent toolkit checkout at
+`dce9f47a3f37a6e0df8029c77a0721180a7fcbb9`, copied real-mod fixtures and the
+existing service-startup fixture correction `f80b24fb400bd5ac4045486153530fb1b723a06d`.
+This batch required no FDE runtime or test changes.
+
+All 199 original mod inputs and 20 private EmmyLua2 files retained their hashes.
+The 29,705-entry upstream toolkit tree, including ignored outputs and Git metadata,
+was unchanged. FDE remains **0.9.3-dev**; both existing ZIP copies retain SHA-256
+`82eeb3355df04075667c42fcf4ebaebe1728d06f19bba55c0f8183b40393488d`.
+LSP4IJ SNAPSHOT-15 is unchanged. No push or regular IDE installation was performed.
+
+Native evidence: `build/logs/callable-alias-20261023-121606.log` and
+`build/reports/callable-alias-fixes-20261023/build202-native/` contain the XML,
+HTML, IDE log, summary and integrity comparison. The parent directory records
+artifact verification, input manifests and the exact runner.
+Investigations separately accepted all 33 new cases/42 type observations and
+the unchanged prior 126 cases/100 types using the same packaged executable.
+See the [shared assignment and owner receipts](../../memory/findings/F-20261023-114101-callable-alias-fixes-build/finding.md)
+for reported-case acceptance and Integration's publication gate.
+API-model and pure-self-alias findings remain outside this batch.
+
 # EmmyLua2 build201 — five analyzer fixes (2026-10-23)
 
 FDE's development analyzer pin is `98696a91ac84e52e63c238f929d76a423a18a276`.
