@@ -1,3 +1,46 @@
+# EmmyLua2 build201 — five analyzer fixes (2026-10-23)
+
+FDE's development analyzer pin is `98696a91ac84e52e63c238f929d76a423a18a276`.
+The corrected EmmyLua2 **0.30.0-201** archive has SHA-256
+`459bd870ba1c89371acc6b952a6f805577a4ccc1b4b0d1a7091fa1f9166edaa1`;
+its macOS arm64 executable is
+`f131ad14742aeb8c5ece0dc1424fe58e53809b65b7c5bd4c707b88a7a7aa0386`, mode0755.
+The IDE test sandbox's binary and pin matched this exact candidate.
+
+All **18 native integration tests passed**, with zero failures/errors/skips:
+all 17 PerModServersTest cases plus FactorioLuaLanguageLevelTest. The forced run
+used private EmmyLua2/LSP4IJ copies and the independent toolkit checkout at
+`dce9f47a3f37a6e0df8029c77a0721180a7fcbb9`, with copied real-mod fixtures.
+Coverage includes unsaved dependencies, diagnostics and lifecycle, module/VFS
+reload, semantic tokens, formatting, generated APIs, asymmetric attributes,
+typed remote calls, LocalisedString, real-mod navigation and Lua language level.
+
+The first candidate exposed a fixture startup race: startServices schedules four
+services, but the unsaved-dependency test had awaited only the two analyzers.
+Signed fixture commit `f80b24fb400bd5ac4045486153530fb1b723a06d` waits for all four
+services before edits, preserving strict thread-leak teardown. Failed/full and
+isolated runs, the build200 comparison and the passing corrected suite are retained.
+Private toolkit setup is in signed commit `1b9552334184ec66b9b0824cfcd4ebb7af1551cf`.
+
+All 199 original mod inputs and all 20 private EmmyLua2 files retained their
+hashes. The 29,705-entry upstream toolkit tree, including ignored outputs and Git
+metadata, was unchanged. FDE remains **0.9.3-dev**; both existing ZIP copies retain
+SHA-256 `82eeb3355df04075667c42fcf4ebaebe1728d06f19bba55c0f8183b40393488d`.
+No FDE runtime implementation, release archive, push or IDE installation changed.
+Only the macOS arm64 analyzer includes the local patches.
+
+Known API-model observations remain separate: two frozen LTN MapPosition warnings
+and a LuaGuiElement.style warning use over-broad generated read types. Private
+annotation controls identify their cause; no model fix or analyzer suppression
+is included here. See the [model finding](../../memory/findings/F-20261023-010622-map-position-read-contract/finding.md)
+and [style assessment](../../memory/findings/F-20261023-010622-map-position-read-contract/fde-gui-style-directionality.md).
+
+Native evidence: `build/logs/five-fixes-20261023-030853.log` and
+`build/reports/five-analyzer-fixes/corrected201-native/` (XML, HTML, IDE log,
+summary and input-integrity results). Exact invocation and dependency verification
+are recorded in the same evidence directory's parent. Packaged reported-case
+acceptance and publication are tracked in the [shared assignment receipts](../../memory/findings/F-20261023-000345-five-analyzer-fixes/finding.md).
+
 # LSP4IJ build10 — scoped diagnostic invalidation (2026-10-19)
 
 Validated `lsp4ij-0.21.1-SNAPSHOT-10.zip` from signed work `7628736a`, integrating
