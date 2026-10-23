@@ -749,6 +749,63 @@ public class PerModServersTest extends HeavyPlatformTestCase {
         }
     }
 
+    public void testNumericDefinesUseGeneratedContracts() throws Exception {
+        Path docs = Path.of(System.getProperty("factorio.test.apiDocs"));
+        assertTrue("Numeric enum coverage requires Factorio API docs", Files.isRegularFile(docs.resolve("runtime-api.json")));
+        Path root = mod("numeric-defines", "state"), control = root.resolve("control.lua");
+        String source = """
+            ---@param entity LuaEntity
+            ---@param direction defines.direction
+            ---@param broad number
+            ---@return defines.direction
+            local function rotate(entity, direction, broad)
+                for line_index = 1, entity.get_max_transport_line_index() do
+                    entity.get_transport_line(line_index)
+                end
+                entity.get_transport_line(defines.transport_line.left_line)
+                entity.get_transport_line(broad) -- invalid-number
+                entity.get_transport_line('bad') -- invalid-string
+                local rotated = (direction + 4) % 16
+                return rotated
+            end
+            local north = defines.direction.north
+            ---@type defines.direction
+            local accepted = north
+            ---@type integer
+            local numeric = north
+            """;
+        Files.writeString(control, source);
+        attach(List.of(root));
+        var settings = FactorioSettings.get(getProject());
+        settings.serviceMode = "ENABLED"; settings.apiDocs = docs.toString();
+        await(CompletableFuture.runAsync(() -> {
+            try { Definitions.generate(getProject(), new com.intellij.openapi.progress.EmptyProgressIndicator(), message -> {}); }
+            catch (Exception error) { throw new CompletionException(error); }
+        }));
+        var item = server(FactorioServerManager.get(getProject()).luaServer(control));
+        var document = new TextDocumentIdentifier(control.toUri().toString());
+        eventually(() -> {
+            try { return diagnostics(item, control).contains("param-type-mismatch"); }
+            catch (Exception error) { return false; }
+        });
+        var params = new DocumentDiagnosticParams(); params.setTextDocument(document);
+        var report = await(item.getServer().getTextDocumentService().diagnostic(params)).getLeft();
+        var problems = report.getItems().stream()
+            .filter(d -> d.getCode() != null && !"unused".equals(d.getCode().getLeft())).toList();
+        assertEquals(problems.toString(), 2, problems.size());
+        assertEquals(Set.of(9, 10), problems.stream().map(d -> d.getRange().getStart().getLine())
+            .collect(java.util.stream.Collectors.toSet()));
+        for (var problem : problems) assertEquals("param-type-mismatch", problem.getCode().getLeft());
+        String rotated = String.valueOf(await(item.getServer().getTextDocumentService().hover(
+            new HoverParams(document, new Position(11, 12)))));
+        assertTrue(rotated, rotated.contains("rotated: integer"));
+        String north = String.valueOf(await(item.getServer().getTextDocumentService().hover(
+            new HoverParams(document, new Position(14, 7)))));
+        assertTrue(north, north.contains("defines.direction.north"));
+        String target = definitions(item, control, 14, 34);
+        assertTrue(target, target.contains("runtime-api/defines.lua"));
+    }
+
     public void testTypedRemoteCallReturnShapes() throws Exception {
         Path docs=Path.of(System.getProperty("factorio.test.apiDocs"));
         org.junit.Assume.assumeTrue(Files.isRegularFile(docs.resolve("runtime-api.json")));

@@ -1,7 +1,13 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.9.3-dev.
+`de.softwareforge.factorio`. Development release 0.9.4-dev.
+
+Generated direction and transport-line enums now retain their integer contracts.
+Together with the matching EmmyLua2 update, this supports computed transport-line
+indices and direction arithmetic while preserving invalid-argument diagnostics.
+Opening a project after the upgrade generates a fresh managed API automatically.
+See [numeric enums and flow validation](docs/DOLLIES_FLOW_ENUMS_2026-10-23.md).
 
 Changelog duplicate detection now compares complete entries, including continuation
 text. Repeating a credit under two different bugfix entries no longer produces
@@ -65,7 +71,7 @@ diagnostics and preserves module/severity/text filters and navigation.
 See [Factorio Problems](docs/PROBLEMS.md) for reporting coverage.
 
 Source-root ownership coordination with EmmyLua2 remains enabled. Use EmmyLua2
-`0.30.0-185` and LSP4IJ `0.21.1-SNAPSHOT-13`. Installable ZIPs are
+`0.30.0-203` and LSP4IJ `0.21.1-SNAPSHOT-15`. Installable ZIPs are
 collected in `../plugins/`. Targets IntelliJ IDEA 2026.2 (build 262).
 LuaLS is not supported.
 
@@ -121,11 +127,11 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 ## Install and configure
 
-Install `../plugins/intellij-factorio-0.9.3-dev.zip`,
-`../plugins/IntelliJ-EmmyLua2-0.30.0-187.zip` and
-`../plugins/lsp4ij-0.21.1-SNAPSHOT-13.zip` using **Install Plugin from Disk**.
+Install `../plugins/intellij-factorio-0.9.4-dev.zip`,
+`../plugins/IntelliJ-EmmyLua2-0.30.0-203.zip` and
+`../plugins/lsp4ij-0.21.1-SNAPSHOT-15.zip` using **Install Plugin from Disk**.
 The custom analyzer is packaged for macOS arm64. See the
-[latest fixes and validation](docs/LTN_STOP_UPDATE_2026-10-16.md).
+[latest fixes and validation](docs/DOLLIES_FLOW_ENUMS_2026-10-23.md).
 
 This LSP4IJ build adds workspace diagnostic pulls that are absent from the
 previous official nightly. Install it from disk and retain it while testing this

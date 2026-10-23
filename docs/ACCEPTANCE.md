@@ -1,3 +1,26 @@
+# FDE 0.9.4-dev and EmmyLua2 build203 — numeric enums and receiver flow (2026-10-23)
+
+Validated FDE **0.9.4-dev** with toolkit `1c1db13d8543714bbf4471ff9db7c63bea2238fc`
+and corrected analyzer `633268c36d7a429a2ac097f5ffacb4ec22fa747b`.
+All **20 native tests passed**, zero failures/errors/skips: the 18 existing checks
+plus generated numeric-enum and cache-upgrade regressions. The new enum test was
+meaningfully red with the old toolkit/build202 and passes unchanged with this pair.
+The unit suite has 83 passed and one existing opt-in real-game DAP test skipped.
+
+The exact bundled generator produces a new managed API cache automatically;
+no manual cache edit or FDE cache implementation change is needed. All 218 original
+mod inputs, 20 private EmmyLua2 files and 1,171 generated API files retain their
+hashes. Only defines.lua changes from the old generator for the same 2.1.23 docs.
+The initial 203 LTN generic-assignment regression was corrected and revalidated;
+its original artifact/results remain preserved separately.
+
+FDE ZIP SHA-256: `c4db2b9e86c7b13a44b7b7fd67c100b2c790b4207a607750af5bcbaa4ace539a`.
+Corrected EmmyLua2 ZIP SHA-256: `ad5978b48ea0c47f2f921e9be45b78950f9eb3df677127b7e18af6793786559c`.
+LSP4IJ SNAPSHOT-15 and prior archives remain unchanged; custom analyzer patches
+apply to macOS arm64 only. No push or regular IDE installation.
+See [release inputs, validation and inherited toolkit limits](DOLLIES_FLOW_ENUMS_2026-10-23.md)
+and `build/reports/dollies-flow-enum-20261023/corrected203-native/`.
+
 # EmmyLua2 build202 — callable compatibility and copied signatures (2026-10-23)
 
 FDE's development analyzer pin is `3219ece399ba8256868457213fe34355be0d652d`.
