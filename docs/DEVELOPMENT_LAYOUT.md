@@ -13,15 +13,17 @@ workflow changes. Paths within the skill refer to the containing workspace,
 not this documentation directory. Workspace HANDOFF.md and upstream/FIX_INVENTORY.md
 remain the live cross-repository records.
 
-Cross-repository investigation notes and build receipts live in
-`upstream/memory/`. Keep `upstream/FIX_INVENTORY.md` at its existing location
-and put future workspace reports in `upstream/memory/`.
+New cross-repository investigation notes and build receipts live in
+`memory/findings/`; `upstream/memory/` retains historical reports. Keep
+`upstream/FIX_INVENTORY.md` at its existing location. FDE development consumes
+`upstream/` read-only and requests inventory updates through findings.
 
 | Path | Purpose |
 | --- | --- |
 | `plugins/` | Shared install-from-disk folder containing copies of validated plugin ZIPs, including all variants directly in this folder |
 | `upstream/FIX_INVENTORY.md` | Canonical upstream contribution and local-fix inventory |
-| `upstream/memory/` | Cross-repository investigation notes, build receipts and validation summaries |
+| `memory/findings/` | Current cross-role findings, build receipts and handoffs |
+| `upstream/memory/` | Historical cross-repository reports |
 | `upstream/vscode-factoriomod-debug/` | Toolkit source; keep `work/intellij-toolkit` checked out |
 | `upstream/emmylua-analyzer-rust/` | Analyzer source; compiler outputs stay in `target/` |
 | `upstream/Intellij-EmmyLua2/` | EmmyLua2 source, distribution ZIPs in `build/distributions/` |
@@ -36,6 +38,7 @@ and put future workspace reports in `upstream/memory/`.
 | `dev/fixtures/module-ui/` | Copied module fixtures referenced by the isolated IDE project |
 | `dev/fixtures/protocol/` | Reusable protocol-test seed, copied before testing |
 | `intellij-factorio/build/distributions/` | Installable Factorio plugin ZIPs |
+| `intellij-factorio/build/dependencies/` | Private pinned toolkit checkout and immutable plugin copies for FDE validation |
 | `intellij-factorio/build/logs/` | Build invocation logs (automatically captured by build.sh) |
 | `intellij-factorio/build/reports/` | Gradle test and verifier reports |
 | `intellij-factorio/build/test-work/` | Disposable platform/protocol/publishing/package test files and evidence |
@@ -59,6 +62,25 @@ source pins and the EmmyLua routing hook, installs locked npm dependencies,
 builds the toolkit and generates/bundles notices when needed. All local dependency
 paths have defaults; `-PideaPath`, `-Plsp4ijPath`, `-PemmyPath` and `-PtoolkitPath`
 override them. `clean`, `help` and `tasks` do not prepare external dependencies.
+
+FDE builds must pass `-PtoolkitPath` pointing to an independent private checkout
+under `intellij-factorio/build/dependencies/` at the revision in `toolkit.lock`.
+Create it with `git clone --no-hardlinks --no-checkout`, then check out that exact
+revision; do not use an upstream-linked worktree, object alternates or a symlink.
+The toolkit dependency installation, patch application and bundle generation
+write into this private checkout. Native server tests use the same configured
+toolkit CLI through `factorio.test.toolkitCli`.
+
+Use `-PemmyPath` and `-Plsp4ijPath` for private copies of validated plugin archives,
+preserving normal directory/executable permissions and dependency lock files. Otherwise coordinate
+access to shared prepared plugins with Integration through the workspace build
+lock. FDE must not refresh upstream prepared dependencies itself.
+
+Private preparation was validated on 2026-10-23 with toolkit `dce9f47a3f37`,
+EmmyLua2 build200 and LSP4IJ SNAPSHOT-15. Dependency verification, toolkit bundling
+and all three selected native API/language-level tests passed; the upstream
+toolkit tree, including ignored outputs and Git metadata, was unchanged. See
+[the preparation receipt](../../memory/findings/F-20261022-115000-fde-private-toolkit-build/finding.md).
 
 The optional `bash scripts/build.sh ...` wrapper selects the isolated shared
 cache/home/temp directories and JDK, captures output, and delegates to Gradle.

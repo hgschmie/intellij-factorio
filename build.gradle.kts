@@ -178,6 +178,7 @@ if (providers.gradleProperty("platformTests").isPresent) {
         systemProperty("idea.load.plugins.id", "de.softwareforge.factorio,com.cppcxy.Intellij-EmmyLua,com.redhat.devtools.lsp4ij")
         systemProperty("factorio.test.work", layout.buildDirectory.dir("test-work/platform").get().asFile.absolutePath)
         systemProperty("factorio.test.workspace", projectDir.parentFile.absolutePath)
+        systemProperty("factorio.test.toolkitCli", toolkitDir.resolve("dist/fmtk-cli.js").absolutePath)
         systemProperty("factorio.test.apiDocs", providers.gradleProperty("apiDocs").orElse("/Applications/factorio.app/Contents/doc-html").get())
         systemProperty("factorio.test.realMods", providers.gradleProperty("realMods").orElse("").get())
     }

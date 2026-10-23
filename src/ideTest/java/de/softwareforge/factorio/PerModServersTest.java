@@ -22,15 +22,13 @@ import java.util.function.BooleanSupplier;
 /** Exercises the registered definitions, real child processes, and workspace boundaries. */
 public class PerModServersTest extends HeavyPlatformTestCase {
     private Path temporary;
-    private Path workspace;
     @Override protected void setUp() throws Exception {
         super.setUp();
-        workspace=Path.of(System.getProperty("factorio.test.workspace"));
         temporary=Files.createTempDirectory(Files.createDirectories(Path.of(System.getProperty("factorio.test.work"))),"server-manager-");
         Files.createDirectories(Toolkit.root(getProject()));
         var settings=FactorioSettings.get(getProject());
         settings.serviceMode="DISABLED";
-        settings.cli=workspace.resolve("upstream/vscode-factoriomod-debug/dist/fmtk-cli.js").toString();
+        settings.cli=System.getProperty("factorio.test.toolkitCli");
     }
     @Override protected void tearDown() throws Exception {
         try { FactorioServerManager.get(getProject()).configure(List.of()); }
