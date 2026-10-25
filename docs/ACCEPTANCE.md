@@ -1,3 +1,41 @@
+# EmmyLua2 build204 — analyzer branch refresh (2026-10-25)
+
+FDE's development analyzer pin is `1429a6fd5ba9024e50bb57f3d19277ad9f80d3b3`.
+The exact EmmyLua2 **0.30.0-204** archive has SHA-256
+`2a4243d33c0ad32fc6e30ac1dbf66d30d1456fd9bdc04091efcf30acb8ec1605`;
+its macOS arm64 executable is
+`faffe93db5db4b26b09ef204fdb27d492d1657b42496b1d326b091b839d4c28b`, mode0755.
+The IDE test sandbox's embedded pin and executable match these inputs exactly.
+Only the macOS arm64 analyzer includes the local patches.
+
+All **20 native tests passed**, zero failures/errors/skips: 18 PerModServersTest
+cases, FactorioLuaLanguageLevelTest and DefinitionsUpgradeTest. The forced run
+used private EmmyLua2/LSP4IJ dependencies and the independent toolkit checkout at
+`1c1db13d8543714bbf4471ff9db7c63bea2238fc`; its CLI retains SHA-256
+`4197640edba13b9b4d7e521a9e0d716b7e2cbf6c5f95779174a1204c58754b3a`.
+The same 20 tests also passed with accepted build203 on today's mod copies before
+the pin update. No FDE runtime or test changes were required; the unit suite was
+not rerun for this dependency-only refresh.
+
+All 218 original mod inputs, 20 private EmmyLua2 files and 1,171 immutable generated
+API files retained their hashes during testing. The installed API docs remain
+Factorio 2.1.23 with the accepted bytes. Eleven original mod files had changed
+before this task relative to the October 23 snapshot; that existing drift is
+recorded separately from frozen semantic comparisons. No additional input drift
+occurred between today's baseline and build204 validation.
+
+FDE remains **0.9.4-dev**. Both existing FDE ZIP copies retain SHA-256
+`c4db2b9e86c7b13a44b7b7fd67c100b2c790b4207a607750af5bcbaa4ace539a`.
+Accepted Emmy203 and LSP4IJ SNAPSHOT-15 archives remain unchanged.
+No FDE ZIP rebuild, push or regular IDE installation was performed.
+
+Evidence: `build/logs/analyzer-refresh-20261025-013857.log` and
+`build/reports/analyzer-upstream-refresh-20261025/build204-native/` contain the
+XML, HTML, IDE log, exact case names and integrity summary. The parent directory
+records artifact verification, input manifests, sandbox identity and the runner.
+See the [shared assignment and owner receipts](../../memory/findings/F-20261025-003435-analyzer-upstream-refresh/finding.md)
+for source provenance, independent packaged semantic acceptance and publication.
+
 # FDE 0.9.4-dev and EmmyLua2 build203 — numeric enums and receiver flow (2026-10-23)
 
 Validated FDE **0.9.4-dev** with toolkit `1c1db13d8543714bbf4471ff9db7c63bea2238fc`
