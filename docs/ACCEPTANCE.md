@@ -1,3 +1,48 @@
+# LSP4IJ build16 with EmmyLua2 build204 — consumer acceptance (2026-10-26)
+
+Validated **LSP4IJ 0.21.1-SNAPSHOT-16** from
+`044671ffa1ef6b0d95f02fd98035fdf9878ad7fa`, based on upstream `42f1f16e`.
+ZIP SHA-256: `9bb3199a478ef3f8f1fe62f6f102e0c92989a14ee4fd40cfd248635bc2a70d4f`.
+Main plugin JAR SHA-256: `7961fdd02ecd82e85943b8bf5245906ed360e1018a1fe0689c8918c9b6282e0a`.
+The development pin and private artifact.lock agree; all 24 private and sandbox
+archive files, plugin ID/version, since-build262 and nested CRCs were verified.
+The analyzer remains accepted Emmy204, pin `1429a6fd5ba9024e50bb57f3d19277ad9f80d3b3`.
+
+All **48 native tests passed**, zero failures/errors/skips: 20 analyzer/API/cache
+checks and 28 DAP/profiler/executor checks covering breakpoint removal, restart,
+REPL/completion/tracing, shutdown/profile lifecycles and Factorio-only executor
+routing. The full unit suite passed **83 tests**, with one existing opt-in
+real-game DAP test skipped (84 discovered). An earlier focused 28-test native
+run also passed. No FDE runtime compatibility change was required.
+
+The initial old204/LSP15 baseline exposed a fixture teardown race: profile CLOSED
+and session removal precede completion of asynchronous client/log cleanup.
+Signed fixture commit `62922bd3e8530212ea839c763a9750b167dbe09d` waits for actual
+log completion before disposing the test project, preserving strict thread-leak
+checks and all protocol assertions. Its targeted 20 shutdown cases and corrected
+full 48-test old-dependency baseline passed. The observed production notification
+exception-safety risk remains a [separate follow-up](../../memory/findings/F-20261026-121806-dap-cleanup-notification-race/finding.md).
+
+All 218 original mod files stayed unchanged during final validation. Six LTN files
+changed before that run relative to the earlier baseline; their exact manifests
+are retained separately. All 1,171 immutable API files, installed Factorio2.1.23
+docs, toolkit `1c1db13`/CLI `4197640e` and old release archives retain their hashes.
+
+FDE remains **0.9.4-dev**. Its sandbox JAR exactly equals the retained release JAR
+(SHA-256 `0e2be233cf3474054d02ec6b562f754d57744fad12b7e8f977a2b785fe33c490`,
+all 182 classes), validating the existing ZIP against the new dependency.
+Both FDE ZIP copies retain `c4db2b9e86c7b13a44b7b7fd67c100b2c790b4207a607750af5bcbaa4ace539a`;
+no FDE rebuild, version bump or regular IDE installation was performed.
+
+Evidence: `build/reports/analyzer-lsp-refresh-20261026/emmy204-lsp16-full48/`
+and `emmy204-lsp16-unit/` preserve XML/HTML, exact cases and integrity summaries;
+native log: `build/logs/analyzer-lsp-refresh-emmy204-lsp16-full48-20261026-130625.log`.
+The parent directory retains artifact/sandbox verification and initial/corrected
+baseline evidence. LSP's owning source-suite result retains 41 matched old15
+assertion failures and three existing skips; it is not a green source-suite claim.
+See the [owner receipts and bounded validation limits](../../memory/findings/F-20261026-120748-analyzer-lsp-upstream-refresh/finding.md)
+for source validation, Emmy client checks and Integration's publication.
+
 # EmmyLua2 build204 — analyzer branch refresh (2026-10-25)
 
 FDE's development analyzer pin is `1429a6fd5ba9024e50bb57f3d19277ad9f80d3b3`.
