@@ -86,13 +86,14 @@ public final class FactorioActions {
     public static class Command extends ProjectAction {
         private final String command;
         protected Command(String command) { this.command=command; }
+        final List<String> initialArguments() { return List.of(command); }
         @Override public void actionPerformed(AnActionEvent e) {
             Project p=e.getProject(); if(p==null)return;
             final ModDiscovery.Mod selected;
             try { selected=Toolkit.selectMod(e); } catch(Exception ex) { report(p,ex.getMessage(),true); return; }
             if(selected==null)return;
             final Path mod=selected.root();
-            List<String> args=new ArrayList<>(); args.add(command);
+            List<String> args=new ArrayList<>(initialArguments());
             Map<String,String> env=new HashMap<>();
             String config=FactorioModules.get(p).packageConfig(selected);
             if(!config.isBlank())env.put("FMTK_CONFIG",config);
@@ -105,9 +106,9 @@ public final class FactorioActions {
                     : new PublishConfig(config, false)) {
                     if (!publishConfig.path().isBlank()) env.put("FMTK_CONFIG", publishConfig.path());
                     if(Set.of("publish","upload","details").contains(command)) {
-                        String summary=ReleaseSummary.create(mod,command,publishConfig.path(),FactorioSettings.get(p).commandPath);
+                        var summary=ReleaseSummary.create(mod,args,publishConfig.path(),FactorioSettings.get(p).commandPath);
                         int[] decision={Messages.CANCEL};
-                        ApplicationManager.getApplication().invokeAndWait(()->decision[0]=Messages.showOkCancelDialog(p,summary,"Publish Mod","Continue","Cancel",Messages.getWarningIcon()));
+                        ApplicationManager.getApplication().invokeAndWait(()->decision[0]=Messages.showOkCancelDialog(p,summary.message(),summary.title(),summary.acceptText(),"Cancel",Messages.getWarningIcon()));
                         if(decision[0]!=Messages.OK)throw new ProcessCanceledException();
                         var attributes=new CredentialAttributes("Softwareforge Factorio Mod Portal");
                         String key=PasswordSafe.getInstance().getPassword(attributes);

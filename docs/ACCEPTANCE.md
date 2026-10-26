@@ -1,3 +1,43 @@
+# FDE 0.9.5-dev — portal operation confirmations (2026-10-26)
+
+**Synchronize Mod Portal Details** now identifies the metadata inputs and image
+effects, with its own dialog title and synchronization button. It keeps the
+existing `details` CLI route. **Upload Mod ZIP** identifies the selected archive;
+**Publish** retains the full release warning. Details and upload previews no
+longer inspect Git or publish configuration.
+
+The full unit suite passed **87 tests**, with one existing opt-in real-game DAP
+test skipped (88 discovered). Four new cases cover action routing, details with
+`sync_portal_details: false`, configured/default Markdown sources, gallery
+pruning/retention, the selected upload ZIP and the full publish warning.
+
+The pinned CLI's details command also passed a disposable loopback-portal test
+with fake credentials. It submitted exactly one metadata edit with the expected
+title, homepage, summary, README and FAQ. All local file bytes and version 3.4.3
+were unchanged; a Git-call trap recorded no invocations, hooks did not execute,
+and no release upload occurred. The first test expectation used LF for Markdown
+form fields; the recorded multipart body used CRLF, and that transport-level
+expectation was corrected before the passing rerun. No production behavior or
+semantic assertion was relaxed.
+
+Dependencies remain accepted EmmyLua2 **0.30.0-204**, LSP4IJ
+**0.21.1-SNAPSHOT-16**, and toolkit `1c1db13` / CLI `4197640e`.
+This UI correction is separate from the analyzer refresh: private builds 205 and
+206 remain unaccepted pending their independent protocol gates. Their native
+results against the retained FDE 0.9.4 archive remain preserved separately.
+
+The distribution passed `buildPlugin` and `verifyPluginStructure`; ZIP SHA-256
+`a6208f00b5b2ea418ab8129b78639f1b9978c8150e7c469c3d0e69475a22b929`. Its bundled CLI is byte-identical
+to the accepted toolkit and passed the same loopback check from the extracted ZIP.
+Only the two intended production classes change behavior; seven action constructors
+have identical disassembly with shifted source line metadata, and one preview
+record is added. The existing 0.9.4 archive remains unchanged.
+
+Evidence in the isolated FDE checkout: `build/reports/portal-details-20261026/`
+and `build/test-work/portal-details/run-kn7c6f0_/`. The durable handoff is
+[the portal confirmation finding](../../memory/findings/F-20261026-164141-details-publish-confirmation/finding.md).
+No real portal synchronization, release upload or IDE installation was performed.
+
 # LSP4IJ build16 with EmmyLua2 build204 — consumer acceptance (2026-10-26)
 
 Validated **LSP4IJ 0.21.1-SNAPSHOT-16** from

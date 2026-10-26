@@ -1,7 +1,11 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.9.4-dev.
+`de.softwareforge.factorio`. Development release 0.9.5-dev.
+
+Portal confirmations now describe the selected operation. Synchronizing details
+shows its metadata and image inputs; ZIP upload and full publishing each have
+their own confirmation. See [mod release actions](#mod-release-actions).
 
 Generated direction and transport-line enums now retain their integer contracts.
 Together with the matching EmmyLua2 update, this supports computed transport-line
@@ -127,7 +131,7 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 ## Install and configure
 
-Install `../plugins/intellij-factorio-0.9.4-dev.zip`,
+Install `../plugins/intellij-factorio-0.9.5-dev.zip`,
 `../plugins/IntelliJ-EmmyLua2-0.30.0-204.zip` and
 `../plugins/lsp4ij-0.21.1-SNAPSHOT-16.zip` using **Install Plugin from Disk**.
 The custom analyzer is packaged for macOS arm64. See the
@@ -328,6 +332,14 @@ semantics, including `info.json` package options and hook scripts. Select the
 mod in the editor or Project view before invoking them. When context does not
 identify a mod, the action asks you to choose one. Commands run in the background and can be
 cancelled; cancellation does not undo changes already made by hooks or publish.
+
+**Synchronize Mod Portal Details** updates the portal title, homepage and summary
+from `info.json`, plus the configured README, FAQ and images. Its confirmation
+shows these inputs and the gallery removal policy. It uploads no release ZIP and
+does not change the local version or run Git commands. The `sync_portal_details`
+package option controls the full Publish workflow; it does not disable this
+explicit synchronization action. **Upload Mod ZIP** has a separate confirmation
+for the selected existing archive, while **Publish** describes the full release.
 
 Portal credentials are stored in IntelliJ PasswordSafe. They are supplied to
 child processes through the environment, never command arguments or project
