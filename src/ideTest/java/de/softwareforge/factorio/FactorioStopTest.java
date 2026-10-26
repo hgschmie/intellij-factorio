@@ -89,6 +89,7 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
         String launchConfiguration = config.getLaunchConfiguration();
         var env = ExecutionEnvironmentBuilder.create(executor, settings).build();
         FactorioDebugProcessHandler handler = null;
+        FactorioDapLog sessionLog = null;
         boolean manualSave = mode.equals("profile") || mode.equals("profile-auto")
                 || mode.equals("profile-no-trace") || mode.equals("profile-slow-stop");
         boolean gameQuit = mode.endsWith("game-quit");
@@ -99,6 +100,10 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
             else waitUntil(() -> java.util.Arrays.stream(XDebuggerManager.getInstance(getProject()).getDebugSessions()).anyMatch(s -> s.isSuspended()));
             var session = XDebuggerManager.getInstance(getProject()).getDebugSessions()[0];
             handler = (FactorioDebugProcessHandler)session.getDebugProcess().getProcessHandler();
+            var descriptor = ((com.redhat.devtools.lsp4ij.dap.DAPDebugProcess)session.getDebugProcess()).getServerDescriptor();
+            sessionLog = com.intellij.util.ReflectionUtil.getField(FactorioDebug.Descriptor.class,
+                    descriptor, FactorioDapLog.class, "dapLog");
+            if (!mode.equals("profile-no-trace")) assertNotNull("File logging must be active before shutdown", sessionLog);
             if (mode.startsWith("profile") && !stopDuringStartup) {
                 var profile = handler.getUserData(FactorioProfiling.SESSION);
                 assertNotNull(profile);
@@ -183,6 +188,9 @@ public class FactorioStopTest extends HeavyPlatformTestCase {
             if (handler != null && handler.getProcess().isAlive()) handler.getProcess().destroyForcibly();
             for (var session : XDebuggerManager.getInstance(getProject()).getDebugSessions()) session.stop();
             waitUntil(() -> XDebuggerManager.getInstance(getProject()).getDebugSessions().length == 0);
+            // Profile CLOSED precedes notification delivery and transport cleanup; keep the project alive until both finish.
+            var closingLog = sessionLog;
+            if (closingLog != null) waitUntil(() -> closingLog.completion().isDone());
         }
     }
 
