@@ -75,7 +75,7 @@ diagnostics and preserves module/severity/text filters and navigation.
 See [Factorio Problems](docs/PROBLEMS.md) for reporting coverage.
 
 Source-root ownership coordination with EmmyLua2 remains enabled. Use EmmyLua2
-`0.30.0-204` and LSP4IJ `0.21.1-SNAPSHOT-16`. Installable ZIPs are
+`0.30.0-207` and LSP4IJ `0.21.1-SNAPSHOT-16`. Installable ZIPs are
 collected in `../plugins/`. Targets IntelliJ IDEA 2026.2 (build 262).
 LuaLS is not supported.
 
@@ -132,7 +132,7 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 ## Install and configure
 
 Install `../plugins/intellij-factorio-0.9.5-dev.zip`,
-`../plugins/IntelliJ-EmmyLua2-0.30.0-204.zip` and
+`../plugins/IntelliJ-EmmyLua2-0.30.0-207.zip` and
 `../plugins/lsp4ij-0.21.1-SNAPSHOT-16.zip` using **Install Plugin from Disk**.
 The custom analyzer is packaged for macOS arm64. See the
 [latest validation and retained release archives](docs/ACCEPTANCE.md).

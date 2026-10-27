@@ -1,3 +1,56 @@
+# EmmyLua2 build207 with FDE 0.9.5-dev — consumer acceptance (2026-10-26)
+
+The development analyzer pin is `ce1164dde2450d2d6ab778da086244e6e859a8d3`.
+Verified EmmyLua2 **0.30.0-207** ZIP SHA-256:
+`00762d43aac16b34d69fc7e84479716e31f5a405b1b5cb6d7b60cafe08e6fda2`.
+Its macOS arm64 executable is
+`22e2795fd8f96b2ba55f9340e72823ab43d15e9547231d64db86ee63960efddf`, mode0755.
+The final source differs from tested `93ec820b` only in documentation/manifests;
+crates and Cargo inputs are identical. All 20 private/sandbox files, nested CRCs,
+descriptor and pin match. The 378 client classes equal accepted build204; the
+three off-platform analyzers remain unchanged and do not include these patches.
+LSP4IJ remains **0.21.1-SNAPSHOT-16**, source `044671ff`, ZIP `9bb3199a`.
+
+The exact packaged207/LSP16 pair passed **48 native tests**, zero failures,
+errors or skips, on current FDE0.9.5: 20 analyzer/API/cache checks and 28
+DAP/profiler/executor checks. The full unit suite passed **87 tests**, with one
+existing opt-in real-game DAP test skipped (88 discovered). No FDE source or test
+assertions changed for this dependency update.
+Integration also passed 35 client tests with the immutable207 JAR first on the
+test classpath, main compilation outputs excluded, and the test sandbox JAR
+byte-identical to the archive. FDE independently rehashed its six XML suites,
+log and both JARs; earlier source-only client runs remain separate evidence.
+
+Independent packaged protocol acceptance passed with no unapproved differences:
+203 selected diagnostic cases,255 type assertions,5 navigation assertions,
+38 complete comparisons,59 length cases and3 closure cases, frozen LTN and all
+supplemental GUI/global-member/UP-064/UP-133 controls. Only the separately approved
+12 GUI and2 supplemental hover responses differ from their frozen comparisons;
+required nil diagnostics remain exact. This preserves guards across unknown or
+harmless calls while invalidating narrowing for visible conflicting writes.
+All16,336 frozen protocol evidence/input records stayed unchanged. Private builds205 and206
+remain rejected history; their failing cases and prior FDE results are retained.
+
+All218 current original mod files stayed unchanged during the FDE run. Six LTN
+edits earlier on October26 remain separately sealed; there was no additional drift
+since the build206 intake. All1,171 immutable API files, Factorio2.1.23 docs,
+toolkit1c1db13/CLI4197640e and five runtime bundles retain their accepted bytes.
+
+FDE remains **0.9.5-dev**. The entire sandbox JAR equals the published release JAR
+`5ef861d99db732b88ea4d0a9cbd75a46f270c0df1c71de5dff662d6c22886e83`.
+All three retained0.9.5 ZIP copies remain
+`a6208f00b5b2ea418ab8129b78639f1b9978c8150e7c469c3d0e69475a22b929`;
+older0.9.4/Emmy203/204/LSP15/16 archives are also preserved. This analyzer update
+requires no FDE version bump or ZIP rebuild. No regular IDE installation occurred.
+
+Evidence: `build/reports/analyzer-lsp-refresh-20261026/emmy207-lsp16-full48/`
+and `emmy207-lsp16-unit/` preserve fresh XML/HTML, exact cases and input manifests.
+Native log: `build/logs/analyzer-lsp-refresh-emmy207-lsp16-full48-20261026-182533.log`.
+The independent protocol receipt is preserved as `emmy207-protocol-acceptance.json`
+(SHA256 `b619bb7684f57856fed8dab6ba0e739cbace4be5deb5ba5475a4dbefc14ec7fb`).
+See the [cross-role source, protocol and publication receipts](../../memory/findings/F-20261026-120748-analyzer-lsp-upstream-refresh/finding.md)
+for source/client validation, approved precision changes and Integration's publication.
+
 # FDE 0.9.5-dev — portal operation confirmations (2026-10-26)
 
 **Synchronize Mod Portal Details** now identifies the metadata inputs and image
