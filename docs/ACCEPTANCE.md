@@ -1,3 +1,82 @@
+# EmmyLua2 build 208 with FDE 0.9.5-dev — consumer acceptance (2026-10-26)
+
+The development analyzer pin is `82345f4b17be2aa7c2b2bcbe0b47a6b18c1ad671`.
+This appends the reviewed UP-015 amendment `7704989b` to accepted build 207;
+there is no additional upstream-base refresh. EmmyLua2 **0.30.0-208** ZIP SHA-256:
+`ddfba329aa9ad40ddd952a7eeda833d1a248b3efa607e8cac2e2759683b39e30`.
+Its macOS arm64 executable is
+`825728a5a5c32882c190d6a8226f199c2c0fe199a1b0b65b79a280ce937753d6`, mode 0755.
+Final source differs from tested `544a45f8` only in documentation; crates and
+Cargo inputs are identical. Packaging is `e1eb9542`. All 20 private/sandbox files,
+CRCs, descriptor and pin match. All 378 client classes equal accepted 207; the
+three off-platform analyzers remain unchanged and do not include these patches.
+LSP4IJ remains **0.21.1-SNAPSHOT-16**, source `044671ff`, ZIP `9bb3199a`.
+
+The exact 208/LSP16 pair passed **48 native tests**, zero failures, errors or skips,
+on current FDE 0.9.5: 20 analyzer/API/cache checks and 28 debugger/profile cases.
+The full unit suite passed **87 tests**, with the existing opt-in real-game DAP
+test skipped (88 discovered). Exact prior case sets and assertions are retained.
+No FDE runtime or test source changed for this analyzer dependency update.
+
+The first exact-artifact client run passed 34 of 35 tests and failed a strict
+thread-leak assertion during code-style teardown. The listener name belongs to
+the earlier runtime-configuration fixture. One bounded comparison then passed
+all 35 tests on accepted 207 and all 35 on 208, with identical test names and
+assertions. FDE independently verified the XML/logs and the exact 208 JAR first
+on the classpath, with main compilation outputs excluded and the sandbox JAR
+byte-identical to the archive. The only 208 launch-init change was its evidence
+output filename. The initial failure and every assertion are preserved. Both 208
+runs used the same six-class order; 207 ran code-style first, so that baseline
+does not establish
+identical ordering or an inherited failure.
+
+Fixes classified the failure as an unresolved listener lifetime across fixtures,
+consistent with asynchronous startup/shutdown timing. It was not reproduced on 207,
+and indirect 208 timing effects remain possible: no inherited failure or repaired
+root cause is claimed. Manager decision `6288c57c`, with order addendum
+`5cb109ce`, accepts compatibility of this exact source/binary/ZIP with that known
+validation limitation. It neither changes assertions nor claims the leak fixed;
+any cleanup implementation remains a separate task.
+
+Independent packaged protocol acceptance passed the original 203 diagnostic
+cases, 255 type observations, five navigation checks, 38 complete comparisons
+and all supplemental gates. Existing twelve GUI and two precision decisions
+remain separate; required called-writer nil diagnostics are unchanged. Exactly
+six existing Dollies `cursor_ghost` hover responses restore the paragraphs/link
+already present in the frozen generated API. Their types, ranges, diagnostics
+and every other 207 response remain exact. Manager's bounded decision `6df4118f`
+and independent FDE/source reviews bind those complete responses and API hashes.
+The initial strict failure is preserved alongside the passing reviewed validator.
+
+The new 19-case UP-015 gate and complete paired comparison pass: directional
+callback context, LF/CRLF and named/string/integer paragraph hovers, no-space
+prose, boundaries, inline/range/navigation controls and completion. Five exact
+synthetic callback assignment warnings are explicitly classified: contextual
+inference uses the final repeated writer, while assignment checking still uses
+the first writer, as already observed for ordinary duplicate fields in 207.
+This update does not repair that existing inconsistency. No original diagnostic
+was waived, and no broader prose normalization was introduced. All 16,336 previously
+sealed paths and 4,349 accepted 207 evidence records remain unchanged. FDE
+independently rehashed the final 5,283-record evidence seal and owner receipts.
+
+All 218 original mod files remained unchanged throughout FDE validation, with
+no drift from 207. The 1,171 immutable API files, Factorio 2.1.23 docs,
+toolkit `1c1db13` / CLI `4197640e` and five runtime bundles retain their bytes.
+FDE remains **0.9.5-dev**. The complete sandbox JAR equals the published release
+JAR `5ef861d99db732b88ea4d0a9cbd75a46f270c0df1c71de5dff662d6c22886e83`.
+All three retained 0.9.5 ZIP copies remain
+`a6208f00b5b2ea418ab8129b78639f1b9978c8150e7c469c3d0e69475a22b929`;
+ten retained archive copies, including older FDE/Emmy/LSP releases, are unchanged.
+No FDE version bump, ZIP rebuild or regular IDE installation was needed.
+
+Evidence: `build/reports/up015-review-analyzer208-20261026/` contains native/unit
+XML/HTML, logs, exact input manifests and independent client/protocol intakes.
+Protocol receipt SHA-256:
+`f1b081fcc33318c0680679067ffa98f462a748496d77def0d5a22c01cd318d27`;
+evidence seal: `9c0c37282f91c7102417f7a8eae49cc5948fa4ae97efaeafe463629876b39796`.
+See the [source, review, client and publication receipts](../../memory/findings/F-20261026-211533-up015-analyzer208/finding.md)
+for Integration's 3,399 Rust tests/static checks and the complete handoff.
+
 # EmmyLua2 build207 with FDE 0.9.5-dev — consumer acceptance (2026-10-26)
 
 The development analyzer pin is `ce1164dde2450d2d6ab778da086244e6e859a8d3`.
