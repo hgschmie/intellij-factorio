@@ -1,3 +1,35 @@
+# Refreshed analyzer and FDE 0.9.6-dev — consumer acceptance (2026-11-02)
+
+The coordinated dependencies are EmmyLua2 **0.30.0-213** (analyzer
+`06b0960b4a3c63036a975f849ffa0e9f26f734b1`) and LSP4IJ **0.30.0-SNAPSHOT-18**.
+FDE updates its editor-cache invalidation call for EmmyLua2's project-scoped API;
+the development version is **0.9.6-dev**. Toolkit remains pinned to
+`1c1db13d8543714bbf4471ff9db7c63bea2238fc` for this release.
+
+The exact213 archive passed all19 relevant native language/API/cache checks and
+all87 unit tests, with the existing opt-in real-game test skipped (88 discovered).
+The generated-API hover test now passes: independent analyzer UP-144 restores
+the method return type that current upstream omitted from the hover. Inferred
+types are unchanged. Frozen API/mod/plugin inputs are hash-verified unchanged.
+The28 earlier debugger/profile cases are retained prior coverage, not rerun here.
+
+The analyzer's approved composition includes all79 maintained heads covering97
+active fixes. Its420 language-server tests and static checks pass; unchanged
+analysis code retains the recorded3,848-test full-workspace validation with30
+existing ignored tests. All52 protocol responses match the approved pre-hover
+composition; the separate hover fixture restores the expected nullable return.
+Historical baseline differences and the LTN203 comparator exception remain
+explicitly assessed in the workspace release receipts.
+
+Only the macOS arm64 analyzer contains these local patches. The held212 archive
+and its failed hover test remain preserved, along with accepted209 and earlier
+FDE/LSP archives. No regular IDE installation is performed. Build/verifier and
+publication outcomes, exact archive hashes and source IDs are in
+`../../memory/findings/F-20261102-generated-api-hover/`; see its
+`fde213-package.json` and `publication213.json` for final distribution status.
+
+Historical acceptance records follow.
+
 # EmmyLua2 build 208 with FDE 0.9.5-dev — consumer acceptance (2026-10-26)
 
 The development analyzer pin is `82345f4b17be2aa7c2b2bcbe0b47a6b18c1ad671`.

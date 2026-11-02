@@ -1,7 +1,10 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.9.5-dev.
+`de.softwareforge.factorio`. Development release 0.9.6-dev.
+
+This release refreshes the language-service dependencies and updates editor cache
+refreshes for the current EmmyLua2 project-scoped cache API.
 
 Portal confirmations now describe the selected operation. Synchronizing details
 shows its metadata and image inputs; ZIP upload and full publishing each have
@@ -75,7 +78,7 @@ diagnostics and preserves module/severity/text filters and navigation.
 See [Factorio Problems](docs/PROBLEMS.md) for reporting coverage.
 
 Source-root ownership coordination with EmmyLua2 remains enabled. Use EmmyLua2
-`0.30.0-208` and LSP4IJ `0.21.1-SNAPSHOT-16`. Installable ZIPs are
+`0.30.0-213` and LSP4IJ `0.30.0-SNAPSHOT-18`. Installable ZIPs are
 collected in `../plugins/`. Targets IntelliJ IDEA 2026.2 (build 262).
 LuaLS is not supported.
 
@@ -131,9 +134,9 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 ## Install and configure
 
-Install `../plugins/intellij-factorio-0.9.5-dev.zip`,
-`../plugins/IntelliJ-EmmyLua2-0.30.0-208.zip` and
-`../plugins/lsp4ij-0.21.1-SNAPSHOT-16.zip` using **Install Plugin from Disk**.
+Install `../plugins/intellij-factorio-0.9.6-dev.zip`,
+`../plugins/IntelliJ-EmmyLua2-0.30.0-213.zip` and
+`../plugins/lsp4ij-0.30.0-SNAPSHOT-18.zip` using **Install Plugin from Disk**.
 The custom analyzer is packaged for macOS arm64. See the
 [latest validation and retained release archives](docs/ACCEPTANCE.md).
 

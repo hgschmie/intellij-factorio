@@ -239,7 +239,7 @@ public final class FactorioServerManager implements Disposable {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (disposed || project.isDisposed()) return;
             for (VirtualFile file : FileEditorManager.getInstance(project).getOpenFiles()) {
-                LuaGutterCacheManager.INSTANCE.clearCache(file.getUrl());
+                LuaGutterCacheManager.INSTANCE.clearCache(project, file.getUrl());
                 var psi = PsiManager.getInstance(project).findFile(file);
                 if (psi != null) {
                     if (LSPFileSupport.hasSupport(psi)) LSPFileSupport.getSupport(psi).dispose();
