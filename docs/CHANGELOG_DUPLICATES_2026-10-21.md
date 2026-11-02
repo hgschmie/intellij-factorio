@@ -1,3 +1,26 @@
+# Game-compatible duplicate lines restored — 0.9.7-dev (2026-11-02)
+
+The earlier UP-100 diagnosis below was incorrect: this is a game-format
+restriction, not a false-positive diagnostic. The current
+[Factorio specification](https://lua-api.factorio.com/latest/auxiliary/changelog-format.html)
+requires unique physical entry/continuation lines within one version/category,
+including identical links or credits under different entries. The
+[Factorio staff response](https://forums.factorio.com/viewtopic.php?p=480814)
+confirms the restriction.
+
+At the user's direction, the complete-entry exemption is reverted to the
+upstream checker. Regression coverage now expects the game-compatible errors,
+including repeated continuation links across blank lines with LF/CRLF endings.
+Different categories and versions remain separate scopes. The prior branch and
+commits are archived; the rejected upstream proposal remains recorded as such.
+The maintained fix branch now contributes only corrected regression coverage.
+
+FDE0.9.7-dev bundles the corrected toolkit. EmmyLua2 0.30.0-213 and LSP4IJ
+0.30.0-SNAPSHOT-18 are unchanged. Exact build and packaged-CLI results are in
+`../../memory/findings/F-20261102-up100-game-changelog/`.
+
+The following original report is retained as historical evidence and is superseded.
+
 # Changelog duplicate entries — 0.9.3-dev
 
 FMTK previously compared each physical changelog line across a category. In LTN,

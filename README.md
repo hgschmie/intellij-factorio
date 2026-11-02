@@ -1,10 +1,10 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.9.6-dev.
+`de.softwareforge.factorio`. Development release 0.9.7-dev.
 
-This release refreshes the language-service dependencies and updates editor cache
-refreshes for the current EmmyLua2 project-scoped cache API.
+This release restores Factorio's changelog duplicate-line restrictions. It retains
+the refreshed language services and project-scoped editor cache updates from 0.9.6-dev.
 
 Portal confirmations now describe the selected operation. Synchronizing details
 shows its metadata and image inputs; ZIP upload and full publishing each have
@@ -16,10 +16,10 @@ indices and direction arithmetic while preserving invalid-argument diagnostics.
 Opening a project after the upgrade generates a fresh managed API automatically.
 See [numeric enums and flow validation](docs/DOLLIES_FLOW_ENUMS_2026-10-23.md).
 
-Changelog duplicate detection now compares complete entries, including continuation
-text. Repeating a credit under two different bugfix entries no longer produces
-a false error; identical complete entries and duplicate sibling subentries still
-do. See [the changelog fix](docs/CHANGELOG_DUPLICATES_2026-10-21.md).
+Changelog validation follows Factorio's physical-line duplicate rule. Repeating
+an identical continuation line within one version and category is an error,
+including credits or links under different entries. The earlier complete-entry
+exception has been reverted. See [changelog compatibility](docs/CHANGELOG_DUPLICATES_2026-10-21.md).
 
 Stopping a launch now prevents a delayed launch response from starting profiling
 during shutdown. This release retains the pre-profiler shutdown timing. Ending a game session
@@ -134,7 +134,7 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 ## Install and configure
 
-Install `../plugins/intellij-factorio-0.9.6-dev.zip`,
+Install `../plugins/intellij-factorio-0.9.7-dev.zip`,
 `../plugins/IntelliJ-EmmyLua2-0.30.0-213.zip` and
 `../plugins/lsp4ij-0.30.0-SNAPSHOT-18.zip` using **Install Plugin from Disk**.
 The custom analyzer is packaged for macOS arm64. See the

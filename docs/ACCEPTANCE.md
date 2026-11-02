@@ -1,3 +1,39 @@
+# FDE 0.9.7-dev — game-compatible changelogs (2026-11-02)
+
+UP-100's complete-entry exemption is reverted because Factorio rejects repeated
+physical entry/continuation lines within the same version and category. The
+toolkit pin is `880e00756d3b096ba74a51d3e134b492ff6e5777`. The independent maintained
+branch now contains only corrected regression coverage above upstream; its prior
+source and rejected proposal are preserved as history.
+
+The restored checker passes45 focused/LSP tests, including10 duplicate-line
+regressions. Clean-checkout typechecking and affected-file ESLint pass. The source
+branch has the same two unused-field typecheck errors as its exact upstream base;
+the maintained work branch includes the existing fixes and typechecks cleanly.
+The original checkout's broad TypeScript glob also included old checkouts under
+build/; the successful clean check uses the exact same work commit and no changed
+compiler configuration.
+
+The rebuilt ZIP passes plugin-structure validation and13 fresh packaged-CLI
+protocol checks. These cover credits, repeated first/continuation/nested lines,
+category/version scopes, reopened categories, blank lines, LF/CRLF links and the
+frozen real LTN changelog. The original LTN diagnostic is restored at line23,
+referring to line21; the source fixture is unchanged.
+
+All183 product classes match0.9.6-dev exactly. Other non-toolkit ZIP contents
+are unchanged except the product JAR name and its manifest/plugin version.
+EmmyLua2 0.30.0-213 and LSP4IJ 0.30.0-SNAPSHOT-18 are unchanged. Therefore the
+same-day87-unit/19-native validation and verifier assessment below are reused,
+not rerun: Compatible, with8 inherited internal-API uses causing the strict task
+to fail (also15 deprecated/47 experimental uses). No policy is relaxed.
+
+The original ZIP remains in build/distributions/ and the installable copy is
+published in ../plugins/. The same tested bundled CLI is distributed separately
+under the toolkit's build/distributions/. Nothing is installed into the regular IDE.
+Exact hashes, inputs and diagnostics: `../../memory/findings/F-20261102-up100-game-changelog/publication.json`.
+
+Previous release acceptance follows.
+
 # Refreshed analyzer and FDE 0.9.6-dev — consumer acceptance (2026-11-02)
 
 The coordinated dependencies are EmmyLua2 **0.30.0-213** (analyzer
