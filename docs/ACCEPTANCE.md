@@ -28,6 +28,16 @@ publication outcomes, exact archive hashes and source IDs are in
 `../../memory/findings/F-20261102-generated-api-hover/`; see its
 `fde213-package.json` and `publication213.json` for final distribution status.
 
+Plugin Verifier reports **Compatible** against IU-262.11879.100 with the exact
+213/LSP18 dependencies: no unresolved classes or binary compatibility problems.
+The strict Gradle task exits unsuccessfully for eight internal API usages; all
+eight flagged call sites are unchanged from the prior FDE source. It also reports
+15 deprecated and 47 experimental API usages. No verifier policy was changed and
+no warnings were suppressed. This retains the documented development-release
+limitation; it does not represent a clean strict-verifier pass.
+
+The final ZIP's 183 product classes exactly match the native test sandbox.
+
 Historical acceptance records follow.
 
 # EmmyLua2 build 208 with FDE 0.9.5-dev — consumer acceptance (2026-10-26)
