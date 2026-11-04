@@ -1,3 +1,32 @@
+# EmmyLua2 0.30.0-215 — analyzer-only update (2026-11-03)
+
+The development analyzer pin is `5b465dde700adbf5933d9c4476efe1b0d23113a1`.
+Approved UP-124 and UP-033/UP-078 performance corrections eliminate the
+compaktcircuit recursive-call stall. The exact packaged server completes all
+27 frozen mod files in 5.522 seconds including startup and indexing, with
+unchanged diagnostic payloads. All 52 accepted frozen LSP observations match;
+that replay is retained by exact native-binary identity.
+
+The exact 215 archive passes all 48 EmmyLua2 client tests and all 19 relevant
+FDE native language/API/cache tests with no failures or skips. Frozen dependency
+and fixture hashes remain unchanged. The first client attempt aborted during
+sandboxed macOS application registration; the unchanged retry outside the
+sandbox passes. All 379 client classes are identical to build 214. The analyzer
+composition has the same tree as the validated private source: 3,867 workspace
+passes / 30 existing ignores, plus the final convergence regression among 54
+focused cases; static checks pass. Repeated suites retain the earlier full-run
+PASS for the unchanged linear stress test. The historical LTN203 comparator
+exception is unchanged.
+
+FDE stays at 0.9.7-dev with its existing ZIP; this changes only its development
+analyzer dependency and documentation. LSP4IJ stays at 0.30.0-SNAPSHOT-18 and
+toolkit at `880e00756d3b096ba74a51d3e134b492ff6e5777`. Prior FDE unit and verifier
+coverage below is retained, not rerun. The custom analyzer applies to macOS arm64;
+other platform payloads are unchanged. Nothing is installed into the regular IDE.
+Exact evidence: `../../memory/findings/F-20261103-compaktcircuit-release215/`.
+
+Previous release acceptance follows.
+
 # FDE 0.9.7-dev — game-compatible changelogs (2026-11-02)
 
 UP-100's complete-entry exemption is reverted because Factorio rejects repeated
