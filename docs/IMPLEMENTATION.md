@@ -40,7 +40,7 @@ for validation, artifacts and the preserved investigation history.
 - [x] Clean DAP console and graceful Stop with bounded fallback
 - [x] Installation documentation, evidence, signed implementation checkpoint
 
-All development outputs stay under ~/ai/fmtk. Active resources use the
+All development outputs stay under ~/ai/fde. Active resources use the
 [development layout](DEVELOPMENT_LAYOUT.md): shared resources in `dev/`,
 repository-local logs/results in `build/`, and historical evidence in `spike/`. Publishing validation uses copied
 mods, fake credentials, a local portal mock and disposable local Git remotes.

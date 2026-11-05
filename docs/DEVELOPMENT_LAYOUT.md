@@ -1,8 +1,21 @@
 # Development tree
 
-All paths below are relative to `~/ai/fmtk`. Active builds and tests do not use
+All paths below are relative to `~/ai/fde`. Active builds and tests do not use
 `spike/`. That directory preserves historical investigations, logs, screenshots,
 old profiles and unused artifacts. Do not redirect new validation logs there.
+
+The workspace moved from `/Users/henning/ai/fmtk` to `/Users/henning/ai/fde`
+on 2026-10-27. Existing logs, checksummed receipts and historical fixtures retain
+their original paths and bytes; resolve an old workspace prefix against the current
+root when locating their files. See the shared
+[relocation record](../../memory/WORKSPACE_RELOCATION.md). FDE build wrappers derive
+the workspace from their script location. After moving a linked FDE checkout,
+repair its Git links from the main repository with
+`git worktree repair /absolute/path/to/moved-checkout`; preserve its branch and files.
+The reusable `dev/fixtures/protocol` seed and isolated IDE's live configuration
+now use the current root. Existing disposable protocol trees retain historical
+absolute paths; use the fresh test-root command below for new runs and preserve
+prior test trees as evidence.
 
 The workspace root itself is not a Git repository. The analyzer investigation
 skill has a versioned copy in [analyzer-workflow/SKILL.md](analyzer-workflow/SKILL.md),
@@ -98,7 +111,16 @@ launcher derives the workspace path and honors `FMTK_IDEA_PATH`.
 Protocol scripts create `build/test-work/protocol/fixture` from the seed if absent,
 rewrite its absolute configuration paths, and keep logs/evidence/runtime writes
 in that disposable tree. `FACTORIO_TEST_ROOT` overrides the test-work root.
-Delete its `fixture/` directory to reset it from the reusable seed.
+For the first protocol replay after the move, start from the FDE repository and
+select this unused root before running a protocol script:
+
+```sh
+export FACTORIO_TEST_ROOT="$PWD/build/test-work/protocol-relocated-20261027"
+```
+
+The protocol helper copies the relocated reusable seed into that fresh root and
+rewrites its configuration to the new copy. Choose another unused test root for a
+later reset; preserve earlier test trees and their evidence.
 
 The `dev/` tree contains local-only resources and licensing/preferences. It must
 not be committed. Repository-local `build/` directories are already ignored.

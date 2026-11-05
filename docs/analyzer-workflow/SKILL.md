@@ -5,6 +5,14 @@ description: Investigate incorrect EmmyLua Lua diagnostics, inference, hover or 
 
 # Find Lua analyzer bug
 
+The workspace root is `/Users/henning/ai/fde`. Resolve workspace-relative paths
+below from that root; keep the document links relative so relocation preserves them.
+
+Workspace [ROLES.md](../../../ROLES.md) governs write ownership. The combined
+workflow retained below predates the role split; use the active
+[investigation skill](../../../.agents/skills/find-lua-analyzer-bug/SKILL.md) for
+current handoffs. This versioned reference does not expand any role's ownership.
+
 Use the user's source and observed IDE behavior to identify the faulty layer,
 produce a reviewable regression fix, and validate the packaged analyzer against
 the reported case. Respect a request for investigation only; otherwise carry the

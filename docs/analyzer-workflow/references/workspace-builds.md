@@ -2,7 +2,7 @@
 
 Resolve the workspace from the directory containing HANDOFF.md and upstream/;
 this skill lives in that workspace's .agents/skills directory. All explicit
-outputs stay under the workspace (currently ~/ai/fmtk). Do not modify original
+outputs stay under the workspace (currently ~/ai/fde). Do not modify original
 mods under ~/factorio; symlinks may be followed for reading. Incidental OS/app
 runtime writes were authorized, which does not authorize explicit outputs elsewhere.
 

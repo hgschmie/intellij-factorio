@@ -4,7 +4,10 @@ Recorded at the user's request on 2026-10-15. When asked whether an analyzer bug
 was introduced by our patches, start historical reproductions at these fixed
 upstream revisions. They are comparison anchors, not development branch bases.
 
-Repository: `upstream/emmylua-analyzer-rust` relative to the workspace.
+Repository: `upstream/emmylua-analyzer-rust` relative to the current workspace,
+`/Users/henning/ai/fde`. When locating evidence recorded under a former workspace
+root, map the root to this location without rewriting original logs, hash receipts
+or provenance commits; see [workspace relocation guidance](../../../../memory/WORKSPACE_RELOCATION.md).
 Dates below retain the upstream commit timezone (+08:00).
 
 | Position | Immutable commit | Date | Meaning |
