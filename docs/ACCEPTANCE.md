@@ -1,3 +1,27 @@
+# EmmyLua2 0.30.0-216 — train-tracker fixes (2026-11-05)
+
+The development analyzer pin is `7fda1835e6b0a1446affae363fbb27abe5b89852`.
+UP-145 clears the false runtime-member assignment warning in train-tracker's
+framework/prototypes/data-util.lua:68; UP-146 clears two false generic argument
+warnings in stdlib/area/area.lua. The exact packaged server removes those three
+warnings with no additions and matches the approved source's diagnostics.
+
+The packaged server completes all27 compaktcircuit files in
+5.223s and retains all52 accepted frozen LSP observations by
+exact native-binary identity. All48 exact packaged-client tests and19 relevant
+FDE native language/API/cache tests pass without failures or skips. All379
+client classes and non-arm64 server payloads are unchanged from215. The combined
+source retains425 language-server tests and workspace static checks; earlier
+full-suite scopes and historical comparator exceptions remain documented in the
+source integration receipts.
+
+FDE stays at0.9.7-dev with its existing ZIP. Only its development analyzer pin
+and release documentation change. LSP4IJ18 and toolkit880e0075 remain unchanged.
+The custom analyzer applies to macOS arm64. Nothing is installed into the IDE.
+Evidence: `../../memory/findings/F-20261105-train-tracker-release216/`.
+
+Earlier acceptance records follow.
+
 # EmmyLua2 0.30.0-215 — analyzer-only update (2026-11-03)
 
 The development analyzer pin is `5b465dde700adbf5933d9c4476efe1b0d23113a1`.
