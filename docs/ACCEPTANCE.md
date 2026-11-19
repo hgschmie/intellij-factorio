@@ -1,3 +1,22 @@
+# FDE 0.9.8-dev — IntelliJ IDEA 2026.2 and 2026.3 (2026-11-18)
+
+The distribution was compiled against IDEA 2026.2 (IU-262.8665.258). Its
+descriptor accepts builds 262 through 263.*. On 2026.3 the Problems tab uses
+the bundled Problems View plugin. Filtering a profiler recording retains the
+path captured at import, including after the original file is moved or deleted.
+
+JetBrains Plugin Verifier 1.411 reported the same ZIP compatible with
+IU-262.8665.258 and IU-263.7307.200 using EmmyLua2 0.30.0-219 and LSP4IJ
+0.30.0-SNAPSHOT-18. Both reports list eight internal and 47 experimental API
+usages. The 2026.2 report lists 15 deprecated usages. The 2026.3 report lists
+13 deprecated usages and one usage scheduled for removal.
+
+All 73 IDE integration tests passed on IU-263.7307.200. On IU-262.8665.258,
+72 passed on the first run. The closed-file Lua diagnostic test timed out,
+then passed with its original 30-second timeout when rerun from the project
+checkout. Both IDEs loaded the same packaged FDE JAR and exercised the
+Factorio Problems tab and profiler filtering.
+
 # EmmyLua2 0.30.0-216 — train-tracker fixes (2026-11-05)
 
 The development analyzer pin is `7fda1835e6b0a1446affae363fbb27abe5b89852`.

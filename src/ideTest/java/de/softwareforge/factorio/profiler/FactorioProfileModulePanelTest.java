@@ -161,7 +161,7 @@ public class FactorioProfileModulePanelTest extends HeavyPlatformTestCase {
             awaitCurrent(execution);
             var content = com.intellij.profiler.ProfilerToolWindowManager.getInstance(getProject()).getCurrentTab();
             var replacement = (com.intellij.profiler.ProfilerDumpPanel) content.getComponent();
-            assertEquals(file.toFile(), replacement.getSnapshotFile());
+            assertEquals(file.toString(), replacement.getSnapshotFile().toString());
             assertEquals("cpuprofile", replacement.getFileExtension());
             assertEquals("Moved recording", content.getDisplayName());
             assertTrue(content.isPinned());

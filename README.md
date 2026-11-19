@@ -1,9 +1,10 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.9.7-dev.
+`de.softwareforge.factorio`. Development release 0.9.8-dev supports IntelliJ IDEA
+2026.2 and 2026.3 with the same plugin ZIP.
 
-This release restores Factorio's changelog duplicate-line restrictions. It retains
+Version 0.9.7-dev restored Factorio's changelog duplicate-line restrictions and retained
 the refreshed language services and project-scoped editor cache updates from 0.9.6-dev.
 
 Portal confirmations now describe the selected operation. Synchronizing details
@@ -78,8 +79,8 @@ diagnostics and preserves module/severity/text filters and navigation.
 See [Factorio Problems](docs/PROBLEMS.md) for reporting coverage.
 
 Source-root ownership coordination with EmmyLua2 remains enabled. Use EmmyLua2
-`0.30.0-216` and LSP4IJ `0.30.0-SNAPSHOT-18`. Installable ZIPs are
-collected in `../plugins/`. Targets IntelliJ IDEA 2026.2 (build 262).
+`0.30.0-219` and LSP4IJ `0.30.0-SNAPSHOT-18`. Installable ZIPs are
+collected in `../plugins/`.
 LuaLS is not supported.
 
 FDE uses [Factorio Modding Tool Kit (FMTK)](https://github.com/justarandomgeek/vscode-factoriomod-debug)
@@ -111,7 +112,9 @@ The IDE SDK and plugin dependencies are prepared separately. Gradle defaults to
 `../dev/plugins/lsp4ij` and
 `../upstream/Intellij-EmmyLua2/build/prepared/IntelliJ-EmmyLua2`.
 Override these with `-PideaPath`, `-Plsp4ijPath` and `-PemmyPath`.
-`FMTK_IDEA_PATH` is also supported. `./gradlew verifyIdeDependencies` checks
+`FMTK_IDEA_PATH` is also supported. To build the distribution for both IDE
+versions, set `-PideaPath` to the IntelliJ IDEA 2026.2 SDK.
+`./gradlew verifyIdeDependencies` checks
 prepared plugin source pins and the EmmyLua routing hook.
 
 To prepare those dependencies, use `bash scripts/build-lsp4ij.sh` and the
@@ -134,8 +137,8 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 ## Install and configure
 
-Install `../plugins/intellij-factorio-0.9.7-dev.zip`,
-`../plugins/IntelliJ-EmmyLua2-0.30.0-216.zip` and
+Install `../plugins/intellij-factorio-0.9.8-dev.zip`,
+`../plugins/IntelliJ-EmmyLua2-0.30.0-219.zip` and
 `../plugins/lsp4ij-0.30.0-SNAPSHOT-18.zip` using **Install Plugin from Disk**.
 The custom analyzer is packaged for macOS arm64. See the
 [latest validation and retained release archives](docs/ACCEPTANCE.md).

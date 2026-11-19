@@ -118,13 +118,12 @@ final class FactorioProfileModulePanel extends JPanel implements Disposable {
         var ordered = new ArrayList<>(trees);
         if (requested == null && lastAllIncludedUnattributed && ordered.size() > 1)
             Collections.swap(ordered, 0, 1);
-        var file = owner.getSnapshotFile();
         // This is an in-memory view of an already imported recording. Passing
         // a descriptor makes the native constructor reread file attributes;
         // the original recording may since have been moved or deleted.
         var next = new com.intellij.profiler.ProfilerDumpPanel(project,
                 new FactorioProfileImporter.FilteredData(data, ordered, requested, lastAllIncludedUnattributed, selectedTab),
-                owner.getTabName(), content.getHelpId(), null, file == null ? null : file.toString());
+                owner.getTabName(), content.getHelpId(), null, data.snapshot == null ? null : data.snapshot.toString());
         var nextContent = next.getContent();
         nextContent.setDisplayName(content.getDisplayName());
         nextContent.setPinned(content.isPinned());

@@ -2,6 +2,8 @@ package de.softwareforge.factorio;
 
 import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.profiler.ProfilerDumpParserProviderFinder;
+import com.intellij.profiler.api.ProfilerDumpParserProvider;
 import com.intellij.testFramework.HeavyPlatformTestCase;
 import com.intellij.profiler.api.Success;
 import de.softwareforge.factorio.profiler.FactorioProfileImporter;
@@ -46,17 +48,30 @@ public class FactorioProfileTest extends HeavyPlatformTestCase {
                 create("com.intellij.profiler.api.ProfilerDumpParserProvider").getExtensionList();
         var factorio = providers.stream().filter(p -> p.getId().equals("factorio.lua")).findFirst().orElseThrow();
         for (var file : List.of(generic, nativeFile)) {
-            var finder = new com.intellij.profiler.ProfilerDumpParserProviderFinder();
-            var found = finder.findParserProvider(file.toFile(), providers);
+            var found = findParserProvider(file, providers);
             if (found instanceof com.intellij.profiler.ProfilerDumpParserProviderFinder.Result.Success automatic)
                 assertFalse(automatic.getProvider() instanceof FactorioProfileImporter);
-            var isolated = finder.findParserProvider(file.toFile(), List.of(factorio));
+            var isolated = findParserProvider(file, List.of(factorio));
             assertTrue(isolated instanceof com.intellij.profiler.ProfilerDumpParserProviderFinder.Result.Failure);
             assertEquals(List.of(factorio), ((com.intellij.profiler.ProfilerDumpParserProviderFinder.Result.Failure) isolated)
                     .getProvidersWithoutSignaturesAndExtension());
         }
         assertTrue(factorio.createParser(getProject()).parse(nativeFile.toFile(), new EmptyProgressIndicator()) instanceof Success);
     }
+
+    private static ProfilerDumpParserProviderFinder.Result findParserProvider(Path file, List<ProfilerDumpParserProvider> providers)
+            throws ReflectiveOperationException {
+        var finder = new ProfilerDumpParserProviderFinder();
+        // The IDE's parser chooser accepts Path in 2026.3 and File in 2026.2.
+        try {
+            var method = finder.getClass().getMethod("findParserProvider", Path.class, List.class);
+            return (ProfilerDumpParserProviderFinder.Result) method.invoke(finder, file, providers);
+        } catch (NoSuchMethodException olderIde) {
+            var method = finder.getClass().getMethod("findParserProvider", java.io.File.class, List.class);
+            return (ProfilerDumpParserProviderFinder.Result) method.invoke(finder, file.toFile(), providers);
+        }
+    }
+
     public void testSourceNavigationAndUnresolvedNativeFrames() throws Exception {
         FactorioSettings.get(getProject()).serviceMode = "DISABLED";
         var root = Files.createTempDirectory(Path.of(System.getProperty("factorio.test.work")), "profile-source-");

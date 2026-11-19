@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.intellij.platform.grammarkit") version "2.18.1"
 }
 group = "de.softwareforge.factorio"
-version = "0.9.7-dev"
+version = "0.9.8-dev"
 repositories { mavenCentral(); intellijPlatform { defaultRepositories() } }
 // Defaults follow the workspace layout; every external location can be overridden with -P.
 val workspaceDir = projectDir.parentFile
@@ -21,12 +21,17 @@ val toolkitDir = file(providers.gradleProperty("toolkitPath").orElse("../upstrea
 val npmCommand = providers.gradleProperty("npmExecutable").orElse("npm")
 val npmCache = workspaceDir.resolve("dev/cache/npm")
 val ideaContents = if (ideaDir.resolve("Contents").isDirectory) ideaDir.resolve("Contents") else ideaDir
+val problemsViewPlugin = ideaContents.resolve("plugins/platform-problemView-plugin")
 
 // Do not resolve external IDE dependencies just to run clean/help/tasks.
 dependencies {
     intellijPlatform {
         if (ideaDir.isDirectory) local(ideaDir)
         bundledModule("intellij.profiler.common")
+        bundledModule("intellij.platform.debugger")
+        bundledModule("intellij.platform.debugger.impl.ui")
+        bundledModule("intellij.platform.debugger.impl.shared")
+        if (problemsViewPlugin.isDirectory) bundledModule("intellij.platform.problemView.ui")
         if (lsp4ijDir.isDirectory) localPlugin(lsp4ijDir)
         if (emmyDir.isDirectory) localPlugin(emmyDir)
         if (ideaContents.resolve("plugins/json").isDirectory) localPlugin(ideaContents.resolve("plugins/json"))
@@ -42,7 +47,7 @@ intellijPlatform {
         id = "de.softwareforge.factorio"
         name = "Factorio Development Environment"
         version = project.version.toString()
-        ideaVersion { sinceBuild = "262"; untilBuild = "262.*" }
+        ideaVersion { sinceBuild = "262"; untilBuild = "263.*" }
         vendor { name = "Softwareforge" }
     }
     buildSearchableOptions = false
@@ -175,7 +180,12 @@ if (providers.gradleProperty("platformTests").isPresent) {
     sourceSets.test { java.setSrcDirs(listOf("src/ideTest/java")) }
     tasks.test {
         dependsOn(bundleToolkit)
-        systemProperty("idea.load.plugins.id", "de.softwareforge.factorio,com.cppcxy.Intellij-EmmyLua,com.redhat.devtools.lsp4ij")
+        val testPlugins = mutableListOf("de.softwareforge.factorio", "com.cppcxy.Intellij-EmmyLua", "com.redhat.devtools.lsp4ij")
+        if (problemsViewPlugin.isDirectory) {
+            // 2026.3 splits the Problems view, VCS and native process services into bundled plugins.
+            testPlugins.addAll(listOf("com.intellij.problemsView", "com.intellij.platform.vcs", "com.intellij.modules.pty4j"))
+        }
+        systemProperty("idea.load.plugins.id", testPlugins.joinToString(","))
         systemProperty("factorio.test.work", layout.buildDirectory.dir("test-work/platform").get().asFile.absolutePath)
         systemProperty("factorio.test.workspace", projectDir.parentFile.absolutePath)
         systemProperty("factorio.test.toolkitCli", toolkitDir.resolve("dist/fmtk-cli.js").absolutePath)

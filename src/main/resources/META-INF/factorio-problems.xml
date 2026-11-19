@@ -1,0 +1,3 @@
+<!-- In 2026.3 this dependency supplies the Problems view classes. The shared
+     tab registration in plugin.xml also serves 2026.2, which bundles them in the platform. -->
+<idea-plugin/>

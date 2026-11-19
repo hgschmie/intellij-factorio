@@ -24,7 +24,7 @@ public final class FactorioProfileImporter implements ProfilerDumpParserProvider
             @Override public ProfilerDumpFileParsingResult parse(java.io.File file, com.intellij.openapi.progress.ProgressIndicator indicator) {
                 try {
                     var profile = FactorioProfile.read(file.toPath(), indicator::checkCanceled);
-                    return new Success(data(project, profile, indicator::checkCanceled));
+                    return new Success(data(project, profile, file.toPath(), indicator::checkCanceled));
                 } catch (java.io.IOException e) { return new Failure("Cannot read Factorio profile: " + e.getMessage()); }
             }
         };
@@ -35,9 +35,9 @@ public final class FactorioProfileImporter implements ProfilerDumpParserProvider
                 snapshot.toFile(), this, new AtomicInteger()).open();
     }
     public static SamplingProfilerData data(Project project, FactorioProfile profile) {
-        return data(project, profile, com.intellij.openapi.progress.ProgressManager::checkCanceled);
+        return data(project, profile, null, com.intellij.openapi.progress.ProgressManager::checkCanceled);
     }
-    private static SamplingProfilerData data(Project project, FactorioProfile profile, Runnable checkCancelled) {
+    private static SamplingProfilerData data(Project project, FactorioProfile profile, Path snapshot, Runnable checkCancelled) {
         var names = FactorioProfileSources.displayNames(project, profile, checkCancelled);
         var modules = new FactorioProfileModules(profile, FactorioModules.get(project).mods(), checkCancelled);
         var styles = FactorioProfileColors.create(profile, modules, checkCancelled);
@@ -63,20 +63,21 @@ public final class FactorioProfileImporter implements ProfilerDumpParserProvider
                 return ((LuaFrame) element).style.colors();
             }
         };
-        return new Data(profile, modules, Map.copyOf(frames), renderer, checkCancelled);
+        return new Data(profile, snapshot, modules, Map.copyOf(frames), renderer, checkCancelled);
     }
     /** Immutable import context, reused by per-viewer module selections. */
     static final class Data extends SingleCallTreeProfilerData {
         final FactorioProfile profile;
+        final Path snapshot;
         final FactorioProfileModules modules;
         final Map<FactorioProfile.Frame, LuaFrame> frames;
         final BaseCallStackElementRenderer renderer;
         private final List<CallTreeBuildingData> trees;
-        Data(FactorioProfile profile, FactorioProfileModules modules, Map<FactorioProfile.Frame, LuaFrame> frames,
+        Data(FactorioProfile profile, Path snapshot, FactorioProfileModules modules, Map<FactorioProfile.Frame, LuaFrame> frames,
              BaseCallStackElementRenderer renderer, Runnable checkCancelled) {
             super(new CallTreeBuildingData("Lua execution", renderer,
                     new Builder(profile, frames, false, checkCancelled), "factorio.lua.execution"));
-            this.profile = profile; this.modules = modules; this.frames = frames; this.renderer = renderer;
+            this.profile = profile; this.snapshot = snapshot; this.modules = modules; this.frames = frames; this.renderer = renderer;
             trees = profile.durationNanos() == 0 ? List.of() : List.of(super.getTrees().getFirst(),
                     new CallTreeBuildingData("Including unattributed time", renderer,
                             new Builder(profile, frames, true, checkCancelled), "factorio.lua.recording"));
