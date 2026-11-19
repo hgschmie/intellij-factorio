@@ -1,3 +1,19 @@
+# FDE 0.9.9-dev — runtime position types (2026-11-19)
+
+This release bundles Toolkit revision `3e9460e6a955019ae2af4f1966edaba19c901047`.
+Generated EmmyLua annotations expose named coordinates on runtime position reads.
+Both named coordinates and positional tuples remain valid inputs. Records used as
+both inputs and outputs retain their public type so a mod can edit a returned
+record and pass it back to the game. The development analyzer pin is
+`7512c454f0eefc868a7fbb8a9e83e1e9fdc1646c` from EmmyLua2 0.30.0-220.
+
+The packaged generator reproduced all 1,171 files from the reviewed Factorio
+2.1.25 generator output and selected a new definitions cache. The generator
+upgrade and asymmetric API integration tests passed with the packaged plugin JAR
+on IU-262.8665.258. JetBrains Plugin Verifier 1.411 reported the ZIP compatible
+with that IDE and IU-263.7307.200 using EmmyLua2 0.30.0-220 and LSP4IJ
+0.30.0-SNAPSHOT-18. Both IDEs reported the same API usages as FDE 0.9.8-dev.
+
 # FDE 0.9.8-dev — IntelliJ IDEA 2026.2 and 2026.3 (2026-11-18)
 
 The distribution was compiled against IDEA 2026.2 (IU-262.8665.258). Its
