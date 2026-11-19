@@ -1,3 +1,18 @@
+# FDE 0.9.10-dev — runtime geometry, colors and property types (2026-11-19)
+
+Toolkit revision `73d44dcd4d0d128a51947393c71c55c632806722` supplies the generated Factorio
+annotations. They distinguish the geometry, colors and render targets returned
+by the game from the forms accepted as inputs. GUI styles, research queues
+and tile filters use their documented read and write types. The analyzer is
+EmmyLua2 0.30.0-220.
+
+The packaged CLI reproduced all 1,171 files in the Factorio 2.1.25 reference
+output. On IntelliJ IDEA IU-262.8665.258 and IU-263.7307.200, the packaged JAR
+passed the cache-upgrade, asymmetric-property and runtime-shape tests using the
+bundled CLI. The runtime test checks valid geometry and member access and keeps
+the type warning for assigning a style object where the game expects its name. JetBrains Plugin Verifier
+1.411 reported compatibility on both IDEs with the same API findings as 0.9.9-dev.
+
 # FDE 0.9.9-dev — runtime position types (2026-11-19)
 
 This release bundles Toolkit revision `3e9460e6a955019ae2af4f1966edaba19c901047`.

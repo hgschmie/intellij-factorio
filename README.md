@@ -1,10 +1,10 @@
 # Factorio Development Environment (FDE)
 
 Factorio mod development for IntelliJ IDEA, implemented in Java under
-`de.softwareforge.factorio`. Development release 0.9.9-dev supports IntelliJ IDEA
-2026.2 and 2026.3. The bundled Toolkit now describes direct runtime
-position reads with numeric `x` and `y` coordinates. API inputs continue to
-accept both named coordinates and positional tuples.
+`de.softwareforge.factorio`. Development release 0.9.10-dev supports IntelliJ IDEA
+2026.2 and 2026.3. The bundled Toolkit describes the geometry and colors the
+game returns and the coordinate and color forms it accepts. It also distinguishes
+reads from writes for GUI styles, research queues and tile filters.
 
 Version 0.9.7-dev restored Factorio's changelog duplicate-line restrictions and retained
 the refreshed language services and project-scoped editor cache updates from 0.9.6-dev.
@@ -139,7 +139,7 @@ See [development layout](docs/DEVELOPMENT_LAYOUT.md) for all paths.
 
 ## Install and configure
 
-Install `../plugins/intellij-factorio-0.9.9-dev.zip`,
+Install `../plugins/intellij-factorio-0.9.10-dev.zip`,
 `../plugins/IntelliJ-EmmyLua2-0.30.0-220.zip` and
 `../plugins/lsp4ij-0.30.0-SNAPSHOT-18.zip` using **Install Plugin from Disk**.
 The custom analyzer is packaged for macOS arm64. See the
